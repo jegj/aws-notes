@@ -504,3 +504,267 @@ expertise.
 - Services follow the shared responsibility model:
   AWS manages the ML infrastructure, customers manage
   their data and access controls
+
+### AWS Shared Responsibility Model
+
+The AWS Shared Responsibility Model defines the division
+of security and compliance responsibilities between AWS
+and the customer. Understanding this model is fundamental
+to operating securely in the cloud.
+
+**Core Principle:**
+
+- **AWS is responsible for security "OF" the cloud** -
+  the infrastructure that runs all the services offered
+  in the AWS Cloud
+- **The customer is responsible for security "IN" the
+  cloud** - the configuration and management of the
+  services they use
+
+**AWS Responsibilities (Security of the Cloud):**
+
+- Physical security of data centers (facilities,
+  environmental controls, physical access)
+- Hardware and infrastructure (servers, storage,
+  networking equipment)
+- Software infrastructure (host operating system,
+  virtualization layer, service software)
+- Network infrastructure (routers, switches, load
+  balancers, firewalls)
+- Global infrastructure (Regions, Availability Zones,
+  Edge Locations)
+- Managed services underlying infrastructure (patching,
+  maintenance of managed services like RDS, Lambda,
+  DynamoDB)
+
+**Customer Responsibilities (Security in the Cloud):**
+
+- Customer data (encryption, integrity, backups)
+- Identity and access management (IAM users, roles,
+  policies, MFA)
+- Operating system and network configuration (EC2
+  instance OS patching, firewall/security group rules)
+- Application-level security (application code,
+  encryption in transit)
+- Client-side data encryption and data integrity
+  authentication
+- Server-side encryption (file system and/or data
+  encryption)
+- Network traffic protection (VPC configuration, NACLs,
+  security groups, SSL/TLS)
+
+**Responsibility Varies by Service Type:**
+
+1. **Infrastructure Services (e.g., EC2)**
+   - Customer manages: OS, applications, security groups,
+     firewall rules, network configuration, account
+     management
+   - AWS manages: Hardware, global infrastructure,
+     compute, storage, networking foundation
+   - Most customer responsibility
+
+2. **Container Services (e.g., RDS, ECS)**
+   - Customer manages: Firewall rules, IAM, customer
+     data, encryption
+   - AWS manages: OS, platform, hardware, networking,
+     patching
+   - Shared responsibility
+
+3. **Abstracted Services (e.g., S3, DynamoDB, Lambda)**
+   - Customer manages: Client-side encryption, IAM,
+     bucket/table policies, data classification
+   - AWS manages: Server-side encryption, platform,
+     OS, networking, infrastructure
+   - Least customer responsibility
+
+**Key Examples for the Exam:**
+
+- **Patching**: AWS patches managed services (RDS engine,
+  Lambda runtime); customer patches EC2 instances and
+  guest OS
+- **Encryption**: AWS provides encryption tools and
+  features; customer is responsible for enabling and
+  managing encryption
+- **Physical security**: Always AWS responsibility
+- **IAM configuration**: Always customer responsibility
+- **Security groups and NACLs**: Customer responsibility
+- **Data center access controls**: AWS responsibility
+- **AWS Global Infrastructure protection**: AWS
+  responsibility
+- **Customer data classification and handling**: Customer
+  responsibility
+
+### AWS Database Services
+
+AWS offers a variety of purpose-built database services
+designed for different data models and use cases,
+enabling customers to choose the right tool for each
+workload.
+
+**Relational Databases:**
+
+1. **Amazon RDS (Relational Database Service)**
+   - Managed relational database service that simplifies
+     setup, operation, and scaling of databases in the
+     cloud
+   - Supported engines: MySQL, PostgreSQL, MariaDB,
+     Oracle, Microsoft SQL Server
+   - Features: Automated backups, software patching,
+     Multi-AZ deployment for high availability, read
+     replicas for read scaling, automated failover
+   - Use case: Traditional applications, ERP, CRM,
+     e-commerce platforms requiring structured data
+     with complex queries
+
+2. **Amazon Aurora**
+   - MySQL and PostgreSQL-compatible relational database
+     built for the cloud, combining the performance and
+     availability of high-end commercial databases with
+     the simplicity and cost-effectiveness of open-source
+   - Performance: Up to 5x faster than standard MySQL and
+     3x faster than standard PostgreSQL
+   - Features: Auto-scaling storage (up to 128 TB),
+     up to 15 read replicas, continuous backup to S3,
+     Multi-AZ by default, Aurora Serverless for
+     variable workloads, Global Database for cross-region
+     replication
+   - Availability: 99.99%
+   - Use case: Enterprise applications, SaaS products,
+     high-performance workloads requiring relational data
+
+3. **Amazon Redshift**
+   - Fully managed, petabyte-scale data warehouse service
+     for analytics and reporting
+   - Features: Columnar storage, massively parallel
+     processing (MPP), Redshift Spectrum for querying
+     data in S3, machine learning integration,
+     concurrency scaling
+   - Performance: Up to 10x faster than traditional data
+     warehouses
+   - Use case: Business intelligence, big data analytics,
+     data lake analytics, log analysis
+
+**Key-Value and Document Databases:**
+
+1. **Amazon DynamoDB**
+   - Fully managed NoSQL key-value and document database
+     delivering single-digit millisecond performance at
+     any scale
+   - Features: Serverless (no infrastructure to manage),
+     automatic scaling, built-in security, backup and
+     restore, in-memory caching with DAX, global tables
+     for multi-region replication, ACID transaction
+     support
+   - Capacity modes: On-demand (pay-per-request) or
+     provisioned (predictable workloads)
+   - Use case: Web and mobile applications, gaming,
+     IoT, ad tech, session management, shopping carts
+
+2. **Amazon DocumentDB (with MongoDB compatibility)**
+   - Managed document database service that supports
+     MongoDB workloads
+   - Features: MongoDB-compatible API, auto-scaling
+     storage up to 64 TB, up to 15 read replicas,
+     continuous backup to S3, encryption at rest and
+     in transit
+   - Use case: Content management, catalogs, user
+     profiles, applications currently using MongoDB
+
+**In-Memory Databases:**
+
+1. **Amazon ElastiCache**
+   - Fully managed in-memory caching service for
+     sub-millisecond data access
+   - Supported engines:
+     - Redis: Advanced data structures, persistence,
+       replication, pub/sub messaging
+     - Memcached: Simple caching, multi-threaded
+       performance
+   - Features: Automatic failover, backup and restore,
+     Multi-AZ, scaling, encryption
+   - Use case: Caching, session stores, real-time
+     analytics, gaming leaderboards, message queues
+
+2. **Amazon MemoryDB for Redis**
+   - Redis-compatible, durable, in-memory database
+     service for ultra-fast performance with data
+     durability
+   - Features: Microsecond read and single-digit
+     millisecond write latency, Multi-AZ durability,
+     data persistence, up to 100+ TB of storage
+   - Use case: Applications needing both Redis speed
+     and database durability (session stores,
+     financial transactions)
+
+**Graph Databases:**
+
+1. **Amazon Neptune**
+   - Fully managed graph database service for building
+     and running applications that work with highly
+     connected datasets
+   - Supported models: Property Graph (Apache
+     TinkerPop/Gremlin) and RDF (SPARQL)
+   - Features: Up to 15 read replicas, point-in-time
+     recovery, continuous backup to S3, encryption at
+     rest, Multi-AZ high availability
+   - Use case: Social networking, knowledge graphs,
+     fraud detection, recommendation engines, network
+     management
+
+**Time Series Databases:**
+
+1. **Amazon Timestream**
+   - Fully managed, serverless time series database
+     for collecting, storing, and analyzing time-ordered
+     data
+   - Features: Automatic data tiering (in-memory and
+     magnetic storage), built-in time series analytics
+     functions, up to 1000x faster and 1/10th the cost
+     of relational databases for time series data
+   - Use case: IoT applications, DevOps monitoring,
+     application monitoring, industrial telemetry
+
+**Ledger Databases:**
+
+1. **Amazon QLDB (Quantum Ledger Database)**
+   - Fully managed ledger database that provides a
+     transparent, immutable, and cryptographically
+     verifiable transaction log
+   - Features: Immutable journal, SHA-256 cryptographic
+     verification, serverless, document data model,
+     PartiQL query language (SQL-compatible)
+   - Use case: Financial transactions, supply chain
+     tracking, registration systems, audit trails
+
+**Database Migration:**
+
+1. **AWS DMS (Database Migration Service)**
+   - Service for migrating databases to AWS with minimal
+     downtime
+   - Features: Supports homogeneous (same engine) and
+     heterogeneous (different engine) migrations,
+     continuous data replication, Schema Conversion Tool
+     (SCT) for heterogeneous migrations
+   - Supported sources: Oracle, SQL Server, MySQL,
+     PostgreSQL, MongoDB, and others
+   - Use case: Database migration to AWS, cross-region
+     replication, development and test database creation,
+     database consolidation
+
+**Key Concepts for the Cloud Practitioner Exam:**
+
+- **Purpose-built databases**: AWS recommends choosing
+  the right database for each workload rather than using
+  one database for everything
+- **Managed vs. unmanaged**: AWS managed database services
+  (RDS, DynamoDB) handle patching, backups, and scaling;
+  self-managed databases on EC2 require customer management
+- **SQL vs. NoSQL**: RDS and Aurora for structured,
+  relational data; DynamoDB for flexible, key-value or
+  document data
+- **Data warehousing**: Redshift is purpose-built for
+  analytics, not transactional workloads
+- **Caching**: ElastiCache sits in front of databases
+  to reduce read load and improve response times
+- **Migration**: DMS enables migrating existing databases
+  to AWS with minimal downtime
