@@ -770,3 +770,371 @@ expertise.
 - Services follow the shared responsibility model:
   AWS manages the ML infrastructure, customers manage
   their data and access controls
+
+### AWS Hybrid and On-Premises Connectivity Services
+
+AWS provides services to securely connect on-premises
+data centers, offices, and remote locations to the AWS
+cloud, enabling hybrid architectures and data migration.
+
+**Network Connectivity:**
+
+1. **AWS Direct Connect**
+   - Dedicated, private network connection from an
+     on-premises data center to AWS
+   - Features: Consistent network performance, reduced
+     bandwidth costs, private connectivity bypassing the
+     public internet, supports 1 Gbps, 10 Gbps, and
+     100 Gbps dedicated connections, plus hosted
+     connections from 50 Mbps to 10 Gbps
+   - Use case: Large-scale data transfers, real-time
+     data feeds, hybrid environments requiring low
+     latency and high throughput
+   - Note: Takes weeks to establish as physical
+     infrastructure must be provisioned
+
+2. **AWS Site-to-Site VPN**
+   - Encrypted IPsec VPN connection between an
+     on-premises network and an AWS VPC over the
+     public internet
+   - Features: Encrypted tunnel, supports static and
+     dynamic routing (BGP), redundant tunnels for high
+     availability, quick to set up compared to Direct
+     Connect
+   - Use case: Secure connectivity to AWS when Direct
+     Connect is not needed or as a backup for Direct
+     Connect, extending corporate networks to the cloud
+
+3. **AWS Client VPN**
+   - Managed VPN service that enables individual users
+     to securely access AWS resources and on-premises
+     networks from any location
+   - Features: OpenVPN-based, scales automatically,
+     integrates with AWS Directory Service and SAML-based
+     identity providers, split-tunnel support
+   - Use case: Remote workforce access to AWS and
+     on-premises resources, secure remote administration
+
+4. **AWS Transit Gateway**
+   - Network transit hub that connects VPCs, on-premises
+     networks, and other AWS accounts through a central
+     gateway
+   - Features: Hub-and-spoke model, simplifies network
+     topology, supports thousands of VPC connections,
+     inter-region peering, multicast support, route
+     tables for network segmentation
+   - Use case: Connecting multiple VPCs and on-premises
+     networks at scale, centralizing network management,
+     multi-account architectures
+
+**Hybrid Infrastructure:**
+
+1. **AWS Outposts**
+   - Fully managed service that extends AWS
+     infrastructure, services, APIs, and tools to
+     on-premises facilities
+   - Features: Same AWS hardware and software as in
+     AWS Regions, supports EC2, EBS, S3, ECS, EKS,
+     RDS, and other services locally, managed and
+     maintained by AWS
+   - Use case: Low-latency workloads that must remain
+     on-premises, local data processing, data residency
+     requirements, migration transition
+
+2. **AWS Wavelength**
+   - Embeds AWS compute and storage at the edge of
+     5G networks within telecommunication providers'
+     data centers
+   - Features: Ultra-low latency access to AWS services
+     from 5G devices, deployed within carrier networks,
+     supports EC2, EBS, and VPC
+   - Use case: Real-time gaming, live video streaming,
+     AR/VR, IoT at the edge, machine learning inference
+     at the edge
+
+3. **AWS Local Zones**
+   - Extension of an AWS Region that places compute,
+     storage, database, and other services closer to
+     end users in specific geographic areas
+   - Features: Single-digit millisecond latency to
+     local users, extension of the parent Region's VPC,
+     supports EC2, EBS, FSx, ELB, and other services
+   - Use case: Media and entertainment content creation,
+     real-time gaming, live streaming, latency-sensitive
+     applications in specific metros
+
+**Data Transfer and Migration:**
+
+1. **AWS DataSync**
+   - Online data transfer service for automating and
+     accelerating data movement between on-premises
+     storage and AWS
+   - Features: Transfers up to 10x faster than
+     open-source tools, automatic encryption and data
+     integrity validation, supports NFS, SMB, HDFS,
+     S3, EFS, and FSx, scheduling and filtering
+   - Use case: Data migration, ongoing data replication,
+     cold data archival, data processing workflows
+
+2. **AWS Snow Family**
+   - Physical devices for offline data transfer and
+     edge computing when network transfer is impractical
+   - Devices:
+     - AWS Snowcone: Smallest device, 8-14 TB storage,
+       portable, rugged, can run edge computing
+       workloads with EC2 instances
+     - AWS Snowball Edge: Storage Optimized (80 TB) or
+       Compute Optimized (42 TB with GPU), runs EC2
+       and Lambda at the edge
+     - AWS Snowmobile: Exabyte-scale transfer using a
+       45-foot shipping container, up to 100 PB per
+       Snowmobile
+   - Use case: Large-scale data migration (terabytes to
+     exabytes), edge computing in remote or disconnected
+     locations, disaster recovery
+
+3. **AWS Transfer Family**
+   - Fully managed service for file transfers to and
+     from Amazon S3 or EFS using SFTP, FTPS, FTP, and
+     AS2 protocols
+   - Features: Managed infrastructure, integrates with
+     existing authentication systems (AD, LDAP, custom),
+     scales automatically, DNS routing with Route 53
+   - Use case: Migrating file transfer workflows to AWS,
+     B2B file exchanges, data distribution to partners
+
+4. **AWS Storage Gateway**
+   - Hybrid cloud storage service that connects
+     on-premises environments to AWS cloud storage
+   - Types:
+     - S3 File Gateway: NFS/SMB access to S3 objects
+     - FSx File Gateway: SMB access to Amazon FSx for
+       Windows File Server
+     - Volume Gateway: iSCSI block storage backed by S3
+       snapshots (cached or stored volumes)
+     - Tape Gateway: Virtual tape library backed by S3
+       and Glacier for backup applications
+   - Use case: Extending on-premises storage to the
+     cloud, backup and archiving, disaster recovery,
+     tiered storage
+
+**Key Concepts for the Cloud Practitioner Exam:**
+
+- **Direct Connect vs. VPN**: Direct Connect provides
+  dedicated private connectivity with consistent
+  performance; VPN is encrypted over the public internet
+  and faster to set up
+- **Snow Family**: Used when network transfer would take
+  too long or bandwidth is limited; rule of thumb is
+  consider Snow devices when transfer would take more
+  than a week over the network
+- **Hybrid strategies**: Outposts for running AWS
+  services on-premises, Storage Gateway for bridging
+  on-premises storage with AWS, Local Zones for
+  latency-sensitive applications near users
+- **Data migration path**: DataSync for online
+  transfers, Snow Family for offline transfers, DMS
+  for database migrations, Transfer Family for
+  protocol-based file transfers
+
+### AWS Network Security: Security Groups and NACLs
+
+AWS provides two layers of network security for
+controlling traffic to and from resources within a VPC:
+Security Groups and Network Access Control Lists (NACLs).
+
+**Security Groups (Stateful):**
+
+- Virtual firewall that controls inbound and outbound
+  traffic at the **instance level** (ENI - Elastic
+  Network Interface)
+- **Stateful**: If inbound traffic is allowed, the
+  return outbound traffic is automatically allowed
+  regardless of outbound rules (and vice versa)
+- Rules:
+  - Support **allow rules only** (no deny rules)
+  - Evaluated as a whole: all rules are checked before
+    deciding whether to allow traffic
+  - Default inbound: All traffic denied
+  - Default outbound: All traffic allowed
+- Can reference other security groups as sources or
+  destinations (e.g., allow traffic from instances in
+  security group A)
+- Applied at the instance level; an instance can have
+  multiple security groups
+- Changes take effect immediately
+
+**Network Access Control Lists - NACLs (Stateless):**
+
+- Optional layer of security that controls inbound and
+  outbound traffic at the **subnet level**
+- **Stateless**: Return traffic must be explicitly
+  allowed by rules regardless of inbound rules; both
+  inbound and outbound rules are evaluated independently
+- Rules:
+  - Support both **allow and deny rules**
+  - Evaluated in **order by rule number** (lowest first);
+    first matching rule is applied and the rest are
+    ignored
+  - Default NACL: Allows all inbound and outbound traffic
+  - Custom NACL: Denies all inbound and outbound traffic
+    by default
+- One NACL per subnet; one subnet can only be associated
+  with one NACL at a time
+- Includes an explicit deny rule (*) at the end that
+  denies all traffic not matched by any numbered rule
+- Useful for blocking specific IP addresses or ranges
+
+**Security Groups vs. NACLs Comparison:**
+
+| Feature | Security Groups | NACLs |
+| --- | --- | --- |
+| Level | Instance (ENI) | Subnet |
+| State | Stateful | Stateless |
+| Rules | Allow only | Allow and Deny |
+| Evaluation | All rules evaluated | Rules in order by number |
+| Default inbound | Deny all | Allow all (default NACL) |
+| Default outbound | Allow all | Allow all (default NACL) |
+| Return traffic | Automatic | Must be explicitly allowed |
+
+**Key Concepts for the Cloud Practitioner Exam:**
+
+- **Stateful vs. Stateless**: Security Groups are
+  stateful (track connections, return traffic is
+  automatic); NACLs are stateless (each request is
+  evaluated independently, return traffic needs
+  explicit rules)
+- **Defense in depth**: Use both Security Groups and
+  NACLs together for layered security within a VPC
+- **Security Groups** are the first line of defense for
+  most workloads; **NACLs** add subnet-level protection
+  and are useful for explicitly denying specific traffic
+- **Ephemeral ports**: Because NACLs are stateless,
+  outbound rules must allow ephemeral ports
+  (1024-65535) for return traffic from clients
+- Security Groups are required for every instance;
+  NACLs are optional but applied at the subnet level
+  by default
+
+### AWS Storage Services
+
+AWS offers a range of storage services beyond S3,
+designed for different workload types including block
+storage, file storage, and backup solutions.
+
+**Block Storage:**
+
+1. **Amazon EBS (Elastic Block Store)**
+   - Persistent block-level storage volumes for use
+     with EC2 instances
+   - Features: Snapshots for backup (stored in S3),
+     encryption at rest and in transit, resizable
+     volumes, Multi-Attach for io1/io2 volumes
+   - Volume types:
+     - General Purpose SSD (gp2/gp3): Balanced price
+       and performance, up to 16,000 IOPS, suitable
+       for most workloads
+     - Provisioned IOPS SSD (io1/io2): High-performance,
+       up to 64,000 IOPS, for I/O-intensive workloads
+       like databases
+     - Throughput Optimized HDD (st1): Low-cost HDD for
+       frequently accessed, throughput-intensive
+       workloads like big data and data warehouses
+     - Cold HDD (sc1): Lowest cost HDD for infrequently
+       accessed data
+   - Availability: Replicated within a single
+     Availability Zone
+   - Use case: Boot volumes, databases, enterprise
+     applications, throughput-intensive workloads
+
+2. **EC2 Instance Store**
+   - Temporary block-level storage physically attached
+     to the host machine
+   - Features: Very high I/O performance, included in
+     the instance cost, ideal for temporary data
+   - **Ephemeral**: Data is lost when the instance is
+     stopped, terminated, or the underlying hardware
+     fails
+   - Use case: Buffers, caches, scratch data, temporary
+     content, data that is replicated across a fleet
+
+**File Storage:**
+
+1. **Amazon EFS (Elastic File System)**
+   - Fully managed, elastic, serverless NFS file system
+     for Linux-based workloads
+   - Features: Automatically scales up and down as files
+     are added or removed, supports thousands of
+     concurrent connections, Multi-AZ by default,
+     encryption at rest and in transit
+   - Storage classes:
+     - Standard: Frequently accessed data
+     - Infrequent Access (IA): Lower cost for
+       infrequently accessed files
+     - Archive: Lowest cost for rarely accessed data
+   - Performance modes: General Purpose (latency
+     sensitive) and Max I/O (high throughput)
+   - Use case: Content management, web serving, home
+     directories, shared file systems for containers
+     and serverless, big data analytics
+
+2. **Amazon FSx**
+   - Fully managed file systems built on popular
+     commercial and open-source technologies
+   - Variants:
+     - **Amazon FSx for Windows File Server**: Fully
+       managed Windows-native file system with SMB
+       protocol, Active Directory integration, and
+       Windows NTFS; supports DFS namespaces and
+       replication
+     - **Amazon FSx for Lustre**: High-performance file
+       system for compute-intensive workloads;
+       integrates natively with S3; delivers hundreds
+       of gigabytes per second of throughput and
+       millions of IOPS
+     - **Amazon FSx for NetApp ONTAP**: Fully managed
+       shared storage with NetApp ONTAP features;
+       supports NFS, SMB, and iSCSI protocols; data
+       deduplication and compression
+     - **Amazon FSx for OpenZFS**: Fully managed file
+       storage on OpenZFS; supports NFS protocol;
+       snapshots, cloning, and data compression
+   - Use case: Windows-based applications (FSx for
+     Windows), machine learning and HPC (FSx for
+     Lustre), enterprise applications requiring
+     multi-protocol access (FSx for ONTAP), Linux
+     workloads requiring ZFS features (FSx for OpenZFS)
+
+**Backup and Recovery:**
+
+1. **AWS Backup**
+   - Centralized, fully managed backup service for
+     automating and managing backups across AWS services
+   - Supported services: EC2, EBS, RDS, DynamoDB, EFS,
+     FSx, S3, Aurora, DocumentDB, Neptune, Storage
+     Gateway, and more
+   - Features: Backup policies (backup plans), automated
+     scheduling, retention management, cross-region and
+     cross-account backup, compliance reporting,
+     encryption, vault lock for immutable backups
+   - Use case: Centralized backup management, compliance
+     and audit requirements, disaster recovery,
+     automated backup lifecycle
+
+**Key Concepts for the Cloud Practitioner Exam:**
+
+- **Block vs. File vs. Object storage**: EBS provides
+  block storage (attached to one EC2 instance), EFS and
+  FSx provide file storage (shared across instances), S3
+  provides object storage (accessed via API)
+- **EBS scope**: Volumes are tied to a single AZ; use
+  snapshots to move data across AZs or Regions
+- **Instance Store vs. EBS**: Instance Store is
+  ephemeral (data lost on stop/terminate); EBS is
+  persistent (data survives instance stop)
+- **EFS vs. FSx**: EFS is for Linux (NFS); FSx for
+  Windows File Server is for Windows (SMB); FSx for
+  Lustre is for high-performance computing
+- **AWS Backup**: Single service to manage backups
+  across multiple AWS services with policy-based
+  automation
