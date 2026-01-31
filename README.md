@@ -879,19 +879,8 @@ cloud, enabling hybrid architectures and data migration.
 2. **AWS Snow Family**
    - Physical devices for offline data transfer and
      edge computing when network transfer is impractical
-   - Devices:
-     - AWS Snowcone: Smallest device, 8-14 TB storage,
-       portable, rugged, can run edge computing
-       workloads with EC2 instances
-     - AWS Snowball Edge: Storage Optimized (80 TB) or
-       Compute Optimized (42 TB with GPU), runs EC2
-       and Lambda at the edge
-     - AWS Snowmobile: Exabyte-scale transfer using a
-       45-foot shipping container, up to 100 PB per
-       Snowmobile
-   - Use case: Large-scale data migration (terabytes to
-     exabytes), edge computing in remote or disconnected
-     locations, disaster recovery
+   - See the dedicated **AWS Snow Family** section below
+     for detailed information on each device
 
 3. **AWS Transfer Family**
    - Fully managed service for file transfers to and
@@ -1138,3 +1127,254 @@ storage, file storage, and backup solutions.
 - **AWS Backup**: Single service to manage backups
   across multiple AWS services with policy-based
   automation
+
+### AWS Snow Family
+
+The AWS Snow Family is a collection of physical devices
+designed for data transfer between on-premises data
+centers and AWS, as well as edge computing in
+environments with limited or no network connectivity.
+These devices are useful when transferring data over
+the network would be too slow, too expensive, or not
+feasible.
+
+**How It Works:**
+
+1. Request a Snow device from the AWS Management Console
+2. AWS ships the device to your location
+3. Connect the device to your local network and transfer
+   data using the AWS OpsHub GUI or CLI
+4. Ship the device back to AWS
+5. AWS uploads your data to S3 (or your chosen service)
+
+**Devices:**
+
+1. **AWS Snowcone**
+   - Smallest and most portable member of the Snow Family
+   - Specifications:
+     - Snowcone: 8 TB HDD storage
+     - Snowcone SSD: 14 TB SSD storage
+     - Weight: 4.5 lbs (2.1 kg), 8 inches long
+     - 2 vCPUs, 4 GB memory
+   - Features: Rugged, portable, withstands harsh
+     environments (dust, water, vibration), battery
+     operated (optional), can run EC2 instances and
+     AWS IoT Greengrass at the edge
+   - Data transfer: Offline shipping to AWS or online
+     transfer using AWS DataSync (pre-installed)
+   - Use case: Edge computing and data collection in
+     remote or austere environments (military, disaster
+     response), IoT data collection, content
+     distribution, healthcare data capture
+
+2. **AWS Snowball Edge**
+   - Mid-range device for large-scale data transfer and
+     edge computing
+   - Variants:
+     - **Storage Optimized**: 80 TB usable HDD storage,
+       1 TB SSD (for block volumes), 40 vCPUs, 80 GB
+       memory; best for large-scale data migration and
+       local storage workloads
+     - **Compute Optimized**: 42 TB usable HDD storage,
+       7.68 TB SSD, 52 vCPUs, 208 GB memory, optional
+       NVIDIA V100 GPU; best for machine learning,
+       video processing, and advanced edge computing
+   - Features: Runs EC2 instances and Lambda functions
+     locally, supports S3-compatible storage, can
+     cluster up to 5-10 devices for increased storage
+     and compute, encryption (256-bit), tamper-resistant
+     and tamper-evident enclosure, AWS OpsHub management
+   - Use case: Large data center migrations, disaster
+     recovery, manufacturing and industrial IoT, media
+     and entertainment content processing, military
+     and tactical edge computing
+
+3. **AWS Snowmobile**
+   - Exabyte-scale data transfer service using a
+     45-foot ruggedized shipping container pulled by
+     a semi-trailer truck
+   - Specifications:
+     - Up to 100 PB per Snowmobile
+     - Multiple layers of security: GPS tracking, alarm
+       monitoring, 24/7 video surveillance, dedicated
+       security personnel, optional escort security
+       vehicle
+   - Features: Connected directly to your data center
+     network (high-speed), AWS personnel assist with
+     setup, data encrypted with 256-bit keys managed
+     through AWS KMS
+   - Use case: Migrating entire data centers to AWS,
+     moving massive datasets (video libraries, genomic
+     data, seismic data), scenarios where even
+     Snowball Edge would require too many devices
+
+**Choosing the Right Snow Device:**
+
+| Feature | Snowcone | Snowball Edge | Snowmobile |
+| --- | --- | --- | --- |
+| Storage | 8-14 TB | 42-80 TB | Up to 100 PB |
+| Data scale | GBs to TBs | TBs to PBs | PBs to EBs |
+| Edge compute | Basic | Advanced | None |
+| Form factor | Handheld | Suitcase-sized | Shipping container |
+| Use case | Remote/portable | Data center migration | Exabyte migration |
+
+**Key Concepts for the Cloud Practitioner Exam:**
+
+- **When to use Snow devices**: When data transfer over
+  the network would take more than one week, when there
+  is limited or no internet connectivity, or when
+  network costs would be prohibitive
+- **Data flow**: Data is always encrypted on the device
+  before shipping; AWS never sees unencrypted data
+  during transit
+- **Snowcone vs. Snowball Edge**: Snowcone for small,
+  portable, rugged use cases; Snowball Edge for larger
+  migrations and more powerful edge computing
+- **Snowmobile**: Only for extreme-scale migrations
+  (typically 10 PB or more); for anything less, multiple
+  Snowball Edge devices are more practical
+- **Edge computing**: Both Snowcone and Snowball Edge
+  can run EC2 instances and process data locally before
+  shipping to AWS
+- **AWS OpsHub**: Graphical user interface for managing
+  Snow Family devices (transferring data, launching
+  instances, monitoring devices)
+
+### AWS ETL and Data Integration Services
+
+AWS provides services for extracting, transforming, and
+loading (ETL) data, enabling customers to prepare and
+move data between data stores for analytics, reporting,
+and machine learning.
+
+1. **AWS Glue**
+   - Fully managed, serverless ETL service for
+     discovering, preparing, and combining data
+   - Features:
+     - Glue Data Catalog: Central metadata repository
+       that stores table definitions, schemas, and
+       partitions; acts as a persistent Hive-compatible
+       metastore for Athena, Redshift Spectrum, and EMR
+     - Glue Crawlers: Automatically scan data sources
+       (S3, RDS, DynamoDB, JDBC), infer schemas, and
+       populate the Data Catalog
+     - Glue ETL Jobs: Auto-generated Python or Scala
+       code for data transformations, runs on a managed
+       Apache Spark environment
+     - Glue Studio: Visual interface for creating,
+       running, and monitoring ETL workflows without
+       writing code
+     - Glue DataBrew: Visual data preparation tool for
+       cleaning and normalizing data using 250+
+       built-in transformations without writing code
+     - Job bookmarks to track processed data and avoid
+       reprocessing
+   - Use case: Building data lakes, preparing data for
+     analytics, cataloging data across multiple sources,
+     migrating data between databases
+
+2. **Amazon EMR (Elastic MapReduce)**
+   - Managed big data platform for processing vast
+     amounts of data using open-source frameworks
+   - Supported frameworks: Apache Spark, Apache Hive,
+     Apache HBase, Apache Flink, Presto, Trino
+   - Features: Auto-scaling, runs on EC2, EKS, or
+     serverless (EMR Serverless), integrates with S3
+     for storage, notebook support for interactive
+     analysis
+   - Use case: Large-scale data transformations, log
+     analysis, clickstream analysis, genomics, financial
+     analysis, ETL at petabyte scale
+
+3. **Amazon Kinesis**
+   - Platform for collecting, processing, and analyzing
+     real-time streaming data
+   - Services:
+     - **Kinesis Data Streams**: Capture and store
+       streaming data in real time for custom
+       processing; data retained for 24 hours to
+       365 days
+     - **Kinesis Data Firehose**: Load streaming data
+       into destinations (S3, Redshift, OpenSearch,
+       Splunk) with optional transformation using
+       Lambda; fully managed, near real-time delivery
+     - **Kinesis Data Analytics**: Analyze streaming
+       data in real time using SQL or Apache Flink;
+       detect anomalies, generate alerts, create
+       real-time dashboards
+     - **Kinesis Video Streams**: Capture, process, and
+       store video streams for analytics and machine
+       learning
+   - Use case: Real-time analytics, log and event
+     processing, IoT data ingestion, clickstream
+     capture, video analytics
+
+4. **Amazon Athena**
+   - Serverless, interactive query service for analyzing
+     data directly in Amazon S3 using standard SQL
+   - Features: No infrastructure to manage, pay per
+     query (per TB scanned), supports CSV, JSON, Parquet,
+     ORC, and Avro formats, integrates with AWS Glue
+     Data Catalog for schema management, federated
+     queries to other data sources
+   - Use case: Ad-hoc querying of S3 data lakes, log
+     analysis, business intelligence reporting, data
+     exploration without loading into a database
+
+5. **Amazon QuickSight**
+   - Serverless, cloud-native business intelligence
+     service for creating interactive dashboards and
+     visualizations
+   - Features: Machine learning-powered insights
+     (anomaly detection, forecasting, narratives),
+     SPICE in-memory engine for fast performance,
+     embedded analytics for applications, pay-per-session
+     pricing, integrates with RDS, Redshift, Athena, S3,
+     and many other data sources
+   - Use case: Business dashboards and reporting,
+     embedded analytics in applications, data
+     exploration and visualization
+
+6. **AWS Data Pipeline**
+   - Managed orchestration service for moving and
+     transforming data between AWS services and
+     on-premises data sources on a schedule
+   - Features: Scheduled data movement, fault-tolerant
+     execution, supports S3, RDS, DynamoDB, Redshift,
+     and on-premises sources, precondition checks,
+     retry logic
+   - Use case: Periodic data movement between services,
+     scheduled ETL jobs, importing/exporting data
+     from DynamoDB
+   - Note: AWS recommends AWS Glue or Step Functions
+     for new ETL workloads
+
+7. **AWS Step Functions**
+   - Serverless orchestration service for coordinating
+     multiple AWS services into workflows
+   - Features: Visual workflow designer, state machines
+     with branching and error handling, supports Lambda,
+     ECS, Glue, EMR, Athena, and 200+ AWS services,
+     Standard (long-running) and Express (high-volume)
+     workflows
+   - Use case: Orchestrating complex ETL pipelines,
+     coordinating microservices, automating data
+     processing workflows, ML model training pipelines
+
+**Key Concepts for the Cloud Practitioner Exam:**
+
+- **AWS Glue**: The primary serverless ETL service; know
+  the Data Catalog (metadata), Crawlers (auto-discover
+  schemas), and ETL Jobs (transform data)
+- **Batch vs. streaming**: Glue and EMR for batch ETL;
+  Kinesis for real-time streaming data
+- **Serverless analytics stack**: Glue (ETL) + Athena
+  (query) + S3 (storage) + QuickSight (visualization)
+  form a fully serverless analytics pipeline
+- **Kinesis vs. Glue**: Kinesis is for real-time data
+  streams; Glue is for batch ETL and data cataloging
+- **EMR**: For large-scale processing with open-source
+  frameworks (Spark, Hive); more control but more
+  management than Glue
+- **Athena**: Query S3 directly with SQL without loading
+  data into a database; pay only for data scanned
