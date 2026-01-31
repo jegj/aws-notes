@@ -2,6 +2,24 @@
 
 Notes about the AWS certifications
 
+## Table of Contents
+
+- [General Concepts](#aws-cloud-practitioner---general-concepts)
+  - [AWS Shared Responsibility Model](#aws-shared-responsibility-model)
+  - [AWS Well-Architected Framework](#aws-well-architected-framework)
+  - [AWS Support Plans](#aws-support-plans)
+- [AWS Services](#aws-cloud-practitioner---aws-services)
+  - [Amazon S3 Storage Classes](#amazon-s3-storage-classes)
+  - [EC2 Pricing Options](#ec2-pricing-options)
+  - [AWS Database Services](#aws-database-services)
+  - [AWS Machine Learning and AI Services](#aws-machine-learning-and-ai-services)
+  - [AWS Hybrid and On-Premises Connectivity Services](#aws-hybrid-and-on-premises-connectivity-services)
+  - [AWS Network Security: Security Groups and NACLs](#aws-network-security-security-groups-and-nacls)
+  - [AWS Storage Services](#aws-storage-services)
+  - [AWS Snow Family](#aws-snow-family)
+  - [AWS ETL and Data Integration Services](#aws-etl-and-data-integration-services)
+- [References](#references)
+
 ## AWS Cloud Practitioner - General Concepts
 
 ### AWS Shared Responsibility Model
@@ -1378,3 +1396,7 @@ and machine learning.
   management than Glue
 - **Athena**: Query S3 directly with SQL without loading
   data into a database; pay only for data scanned
+
+## References
+
+- [AWS Cloud Practitioner - YouTube Playlist](https://www.youtube.com/playlist?list=PL7Jj8Ba9Yr6AlmnfXo_UwoLF_CG5SP_mH)
