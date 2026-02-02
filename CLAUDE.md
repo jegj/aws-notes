@@ -13,9 +13,31 @@ application code, build system, tests, or CI/CD pipeline.
 
 All content lives in `README.md` as structured Markdown,
 organized by AWS certification topic (currently focused on
-AWS Cloud Practitioner). Topics covered include the
-Well-Architected Framework, S3 Storage Classes, EC2 Pricing,
-and AWS Support Plans.
+AWS Cloud Practitioner CLF-C02). Topics covered include:
+
+- **Domain 1 - Cloud Concepts**: Cloud value proposition,
+  deployment models (IaaS/PaaS/SaaS), Global Infrastructure
+  (Regions, AZs, Edge Locations), Well-Architected Framework,
+  Cloud Adoption Framework (CAF)
+- **Domain 2 - Security and Compliance**: Shared
+  Responsibility Model, IAM, Security Services (WAF, Shield,
+  GuardDuty, Inspector, Macie, Detective, Security Hub),
+  Encryption and Key Management (KMS, CloudHSM, ACM),
+  Compliance and Audit (Artifact, CloudTrail, Config, Cognito),
+  Security Groups and NACLs
+- **Domain 3 - Cloud Technology and Services**: Compute (EC2,
+  Lambda, ECS/EKS/Fargate, Beanstalk, Lightsail, Batch),
+  Storage (S3, EBS, EFS, FSx, Snow Family), Databases (RDS,
+  Aurora, DynamoDB, Redshift, and more), Networking (VPC,
+  Route 53, CloudFront, ELB, API Gateway, Global Accelerator),
+  Application Integration (SQS, SNS, EventBridge), Management
+  (CloudWatch, CloudFormation, Systems Manager, Auto Scaling,
+  Organizations, Trusted Advisor), ML/AI Services, ETL/Data
+  Integration, Hybrid Connectivity
+- **Domain 4 - Billing, Pricing, and Support**: Pricing
+  models, Free Tier, Cost Explorer, Budgets, Cost and Usage
+  Report, Pricing Calculator, Consolidated Billing, Support
+  Plans
 
 ## Conventions
 
