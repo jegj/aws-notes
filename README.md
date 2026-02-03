@@ -14,6 +14,7 @@ Notes about the AWS certifications
   - [AWS Database Services](#aws-database-services)
   - [AWS Machine Learning and AI Services](#aws-machine-learning-and-ai-services)
   - [AWS Hybrid and On-Premises Connectivity Services](#aws-hybrid-and-on-premises-connectivity-services)
+  - [AWS Migration Services](#aws-migration-services)
   - [AWS Network Security: Security Groups and NACLs](#aws-network-security-security-groups-and-nacls)
   - [AWS IAM](#aws-iam-identity-and-access-management)
   - [AWS Security Services](#aws-security-services)
@@ -955,6 +956,83 @@ cloud, enabling hybrid architectures and data migration.
   transfers, Snow Family for offline transfers, DMS
   for database migrations, Transfer Family for
   protocol-based file transfers
+
+### AWS Migration Services
+
+AWS provides a suite of services to help plan, execute,
+and track migrations of applications, servers, and
+databases from on-premises or other cloud environments
+to AWS.
+
+**Migration Planning and Tracking:**
+
+1. **AWS Migration Hub**
+   - Central location for planning, tracking, and
+     managing migrations to AWS across multiple tools
+     and services
+   - Features: Single dashboard to monitor migration
+     progress from multiple AWS services (Application
+     Migration Service, Database Migration Service) and
+     partner tools; Migration Hub Orchestrator for
+     pre-built migration templates (SAP, Microsoft SQL
+     Server); grouping of servers and applications for
+     coordinated migration tracking
+   - Integrates with: AWS Application Discovery Service,
+     AWS Application Migration Service (MGN), AWS DMS,
+     and third-party migration tools
+   - Use case: Coordinating enterprise-wide migrations,
+     tracking migration status across multiple teams and
+     tools, managing complex multi-application migrations
+
+2. **AWS Application Discovery Service**
+   - Service for discovering and collecting data about
+     on-premises servers and applications to plan
+     migrations
+   - Features: Agentless discovery (via VMware vCenter)
+     or agent-based discovery for detailed data;
+     collects server hostnames, IP/MAC addresses,
+     resource allocation, CPU/memory/disk utilization;
+     maps server dependencies by analyzing network
+     connections; data stored encrypted in AWS and
+     available in Migration Hub
+   - Use case: Building an inventory of on-premises
+     infrastructure, identifying application
+     dependencies before migration, assessing migration
+     readiness
+
+**Server Migration:**
+
+1. **AWS Application Migration Service (MGN)**
+   - Primary AWS service for lift-and-shift migrations
+     of physical, virtual, or cloud servers to run
+     natively on AWS
+   - Features: Automated server replication to AWS,
+     continuous data replication (minimizes cutover
+     window to minutes), non-disruptive testing before
+     cutover, supports Windows and Linux, converts
+     servers to run on EC2 instances
+   - Replaces: AWS Server Migration Service (SMS) and
+     CloudEndure Migration
+   - Use case: Migrating on-premises servers to EC2,
+     rehosting applications without modification,
+     disaster recovery with minimal downtime
+
+**Key Concepts for the Cloud Practitioner Exam:**
+
+- **Migration Hub** is for tracking and coordinating
+  migrations; it does not perform the migration itself
+- **Application Discovery Service** is for discovering
+  on-premises infrastructure; **Migration Hub** is for
+  tracking migration progress; **MGN** performs the
+  actual lift-and-shift migration
+- **MGN (Application Migration Service)** is the
+  recommended service for lift-and-shift server
+  migrations to AWS
+- **DMS** is for database migrations; **MGN** is for
+  server/application migrations
+- Migration workflow: Discover (Application Discovery
+  Service) → Plan (Migration Hub) → Migrate (MGN/DMS)
+  → Track (Migration Hub)
 
 ### AWS Network Security: Security Groups and NACLs
 
