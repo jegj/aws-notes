@@ -1199,24 +1199,82 @@ maintaining compliance.
    - Use case: Protecting internet-facing applications
      from DDoS attacks
 
+3. **AWS Firewall Manager**
+   - Central management service for configuring and
+     managing firewall rules across multiple accounts
+     and resources in AWS Organizations
+   - Manages: AWS WAF rules, AWS Shield Advanced
+     protections, VPC security groups, AWS Network
+     Firewall rules, and Route 53 Resolver DNS
+     Firewall rules
+   - Features: Automatic enforcement of security
+     policies on new resources as they are created,
+     centralized compliance reporting, delegated
+     administrator support
+   - Use case: Enforcing consistent WAF rules across
+     all ALBs and CloudFront distributions in an
+     organization, ensuring all accounts have Shield
+     Advanced enabled
+
+4. **AWS Network Firewall**
+   - Managed network firewall service for filtering
+     traffic at the VPC level (Layer 3 to Layer 7)
+   - Features: Stateful and stateless packet
+     inspection, intrusion prevention system (IPS),
+     web filtering, custom rule groups using Suricata-
+     compatible rules, integration with AWS Firewall
+     Manager for centralized management
+   - Deployed in a dedicated firewall subnet within
+     your VPC
+   - Use case: Filtering inbound and outbound VPC
+     traffic, blocking known malicious domains,
+     deep packet inspection for network threats
+
 **Threat Detection and Investigation:**
 
 1. **Amazon GuardDuty**
    - Intelligent threat detection service that
      continuously monitors AWS accounts and workloads
-     for malicious activity
-   - Data sources analyzed: VPC Flow Logs, DNS logs,
-     CloudTrail events, S3 data events, EKS audit
-     logs, Lambda network activity
-   - Features: Machine learning-based anomaly
-     detection, threat intelligence feeds,
-     automated findings with severity levels,
-     multi-account support via AWS Organizations
-   - No software or infrastructure to manage; one
-     click to enable
+     for malicious activity using AI, machine learning,
+     anomaly detection, and integrated threat
+     intelligence
+   - One-click deployment; no additional software or
+     infrastructure to manage
+   - **Foundational Data Sources** (always active):
+     AWS CloudTrail management events, VPC Flow Logs,
+     and DNS logs
+   - **Protection Plans** (optional, individually
+     enabled):
+     - **S3 Protection**: Monitors CloudTrail S3 data
+       events for suspicious bucket activity
+     - **EKS Protection**: Monitors EKS cluster control
+       plane via Kubernetes audit logs
+     - **Runtime Monitoring**: OS-level visibility for
+       EC2, ECS, and EKS using a lightweight agent
+     - **Lambda Protection**: Monitors VPC Flow Logs
+       from Lambda functions for threats
+     - **RDS Protection**: ML-based detection of brute
+       force attacks and suspicious logins on Aurora
+     - **Malware Protection**: Scans EBS volumes (EC2),
+       S3 objects, and AWS Backup resources for malware
+   - **Extended Threat Detection**: Automatically
+     correlates signals across network, runtime, and
+     API activity to detect multi-stage attacks
+     (enabled at no additional cost)
+   - **Finding Severity Levels**: Critical (active
+     attack sequence), High (resource actively
+     compromised), Medium (suspicious deviation),
+     Low (attempted activity, no compromise)
+   - Integration: EventBridge for automated response,
+     Security Hub for aggregation, Detective for
+     investigation
+   - Multi-account support via AWS Organizations
+   - Pricing: Based on volume of events and logs
+     analyzed; 30-day free trial
    - Use case: Detecting unauthorized access,
      compromised instances, cryptocurrency mining,
-     data exfiltration
+     data exfiltration, malware on workloads,
+     multi-stage attack sequences
 
 2. **Amazon Inspector**
    - Automated vulnerability management service that
@@ -1257,6 +1315,25 @@ maintaining compliance.
      discovering sensitive data in S3 buckets,
      monitoring data security posture
 
+2. **AWS Secrets Manager**
+   - Service for managing, retrieving, and rotating
+     secrets such as database credentials, API keys,
+     and tokens throughout their lifecycle
+   - Features: Automatic rotation of secrets (built-in
+     support for RDS, Redshift, DocumentDB),
+     fine-grained IAM policies to control access,
+     encryption using KMS, cross-account access,
+     versioning of secrets
+   - Difference from Systems Manager Parameter Store:
+     Secrets Manager has built-in automatic rotation
+     and is designed specifically for secrets;
+     Parameter Store is a general-purpose configuration
+     store with a free tier for standard parameters
+   - Use case: Storing and rotating database
+     credentials, managing API keys for third-party
+     services, eliminating hardcoded secrets in
+     application code
+
 **Centralized Security Management:**
 
 1. **AWS Security Hub**
@@ -1274,21 +1351,73 @@ maintaining compliance.
      multiple accounts, compliance monitoring,
      prioritizing security issues
 
+2. **IAM Access Analyzer**
+   - Service that identifies resources in your account
+     that are shared with external entities (other
+     accounts, organizations, or public access)
+   - Analyzes: S3 buckets, IAM roles, KMS keys,
+     Lambda functions, SQS queues, and Secrets Manager
+     secrets
+   - Features: Continuously monitors for new or
+     updated resource policies, generates findings
+     for unintended access, policy validation to
+     check policies against best practices before
+     deployment
+   - Use case: Identifying S3 buckets or IAM roles
+     accidentally shared publicly, validating
+     resource policies comply with security standards
+
+3. **Amazon Security Lake**
+   - Centralized security data lake that automatically
+     collects, normalizes, and stores security data
+     from AWS services, third-party sources, and
+     custom sources
+   - Uses the Open Cybersecurity Schema Framework
+     (OCSF) for data normalization
+   - Sources: CloudTrail, VPC Flow Logs, Route 53
+     resolver logs, Security Hub findings, S3 data
+     events, Lambda execution logs, EKS audit logs
+   - Features: Automatic data collection and
+     normalization, subscriber management for
+     analytics tools, multi-account and multi-Region
+     support, data stored in S3 with Apache Parquet
+     format
+   - Use case: Centralizing security data for SIEM
+     tools and analytics, long-term security data
+     retention, cross-source security investigation
+
 **Key Concepts for the Cloud Practitioner Exam:**
 
 - **Shield Standard** is free and automatic; **Shield
   Advanced** is paid and provides enhanced DDoS
   protection with response team access
 - **WAF** operates at Layer 7 (application); **Shield**
-  operates at Layer 3/4 (network/transport)
+  operates at Layer 3/4 (network/transport);
+  **Network Firewall** operates at Layer 3-7 for VPC
+  traffic
+- **Firewall Manager** centrally manages WAF, Shield,
+  Network Firewall, and security group rules across
+  accounts in AWS Organizations
 - **GuardDuty** is for threat detection (what is
   happening); **Inspector** is for vulnerability
   scanning (what could be exploited); **Detective**
   is for investigation (understanding what happened)
+- **GuardDuty** foundational detection is always on;
+  protection plans (S3, EKS, Runtime Monitoring,
+  Lambda, RDS, Malware Protection) are optional
+- **GuardDuty** finding severity: Critical > High >
+  Medium > Low
 - **Macie** is specifically for discovering sensitive
   data in S3
+- **Secrets Manager** is for secrets with automatic
+  rotation; **Parameter Store** is for general
+  configuration data
 - **Security Hub** is the single pane of glass for
   security findings across multiple services
+- **IAM Access Analyzer** identifies resources
+  unintentionally shared with external entities
+- **Security Lake** centralizes security data using
+  the OCSF standard for analytics and investigation
 
 ### AWS Encryption and Key Management
 
