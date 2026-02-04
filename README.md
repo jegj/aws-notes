@@ -31,6 +31,7 @@ Notes about the AWS certifications
   - [AWS Global Infrastructure](#aws-global-infrastructure)
   - [AWS Cloud Adoption Framework](#aws-cloud-adoption-framework-aws-caf)
   - [AWS Billing, Pricing, and Cost Management](#aws-billing-pricing-and-cost-management)
+  - [Tricky Exam Questions](#tricky-exam-questions)
 - [References](#references)
 
 ## AWS Cloud Practitioner - General Concepts
@@ -3006,6 +3007,792 @@ tools is essential for the Cloud Practitioner exam.
   across multiple accounts
 - **Data transfer in** is free; **data transfer out**
   is charged
+
+### Tricky Exam Questions
+
+This section covers commonly confused scenarios and
+tricky questions that appear on the CLF-C02 exam.
+
+1. **Server Migration with Database**
+
+   > A company has an on-premises Linux-based server with
+   > an Oracle database that runs on it. The company wants
+   > to migrate the database server to run on an Amazon EC2
+   > instance in AWS.
+   >
+   > Which service should the company use to complete the
+   > migration?
+
+   **Answer**: AWS Application Migration Service (MGN)
+
+   Why not DMS? This is a common trap. The question asks
+   to migrate the *server* (Linux server with Oracle on it)
+   to EC2, not just the database. AWS DMS is for migrating
+   *database data* between database engines. MGN is for
+   lift-and-shift migration of entire servers (including
+   the OS, applications, and databases running on them)
+   to EC2 instances.
+
+   - Use **MGN** when: Migrating entire servers/VMs to EC2
+     (lift-and-shift)
+   - Use **DMS** when: Migrating database data from one
+     database to another (e.g., on-premises Oracle to
+     Amazon RDS, or Oracle to Aurora)
+
+2. **Encryption in Transit**
+
+   > Which AWS service should be used to implement
+   > encryption in transit?
+
+   **Answer**: AWS Certificate Manager (ACM)
+
+   Why not KMS? This is a common trap. KMS is for
+   **encryption at rest** (encrypting data stored on disk).
+   ACM provides SSL/TLS certificates for **encryption in
+   transit** (encrypting data as it moves between systems).
+
+   - Use **ACM** when: Enabling HTTPS on websites, securing
+     API endpoints, encrypting data moving between clients
+     and servers (in transit)
+   - Use **KMS** when: Encrypting data stored in S3, EBS,
+     RDS, or other storage services (at rest)
+
+3. **Sensitive Data Discovery in S3**
+
+   > A user needs to automatically discover, classify, and
+   > protect sensitive data stored in Amazon S3.
+   >
+   > Which AWS service should be used?
+
+   **Answer**: Amazon Macie
+
+   Why not GuardDuty or Inspector? This is a common trap.
+   The key words are "discover, classify, and protect
+   *sensitive data* in S3." Macie uses machine learning
+   specifically to find sensitive data (PII, financial
+   data, credentials) in S3 buckets.
+
+   - Use **Macie** when: Discovering sensitive data (PII,
+     credit cards, etc.) in S3, data privacy compliance
+     (GDPR, HIPAA)
+   - Use **GuardDuty** when: Detecting threats and malicious
+     activity across your AWS account (compromised
+     instances, unauthorized access)
+   - Use **Inspector** when: Scanning for software
+     vulnerabilities in EC2, ECR images, and Lambda
+
+4. **Large Data Transfer with Limited Bandwidth**
+
+   > A company needs to perform a one-time migration of
+   > 40 TB of data from its on-premises storage servers
+   > to Amazon S3. The transfer must happen as quickly as
+   > possible while keeping costs to a minimum. The company
+   > has 100 Mbps internet connectivity.
+   >
+   > Which AWS service should be used?
+
+   **Answer**: AWS Snowball Edge
+
+   Why not DataSync or Direct Connect? Do the math:
+   40 TB over 100 Mbps = ~37 days of continuous transfer.
+   The question says "as quickly as possible" — shipping
+   a physical Snowball device is much faster. Direct
+   Connect requires setup time and ongoing costs, making
+   it unsuitable for a one-time migration.
+
+   Rule of thumb: If network transfer would take more than
+   1 week, consider Snow Family devices.
+
+   - Use **Snowball Edge** when: Large one-time transfers
+     (TBs to PBs), limited bandwidth, transfer would take
+     weeks over the network
+   - Use **DataSync** when: Online transfers where network
+     bandwidth is sufficient, ongoing/repeated transfers
+   - Use **Direct Connect** when: Ongoing private
+     connectivity needs, not one-time migrations
+
+5. **AWS CAF Perspective for Risk Management**
+
+   > A company that is migrating to the AWS Cloud wants
+   > guidance about operational risk management. The company
+   > wants to lower its overall risk profile.
+   >
+   > Which perspective of the AWS Cloud Adoption Framework
+   > (AWS CAF) provides guidance on risk management?
+
+   **Answer**: Governance Perspective
+
+   Why not Security or Operations? This is tricky because
+   "risk" appears in multiple contexts. The Governance
+   perspective specifically addresses *organizational risk
+   management*, compliance, and ensuring cloud investments
+   align with business objectives. Security focuses on
+   protecting data and workloads; Operations focuses on
+   running services effectively.
+
+   AWS CAF has 6 perspectives (memorize these):
+
+   - **Business**: Strategy, benefits realization, business
+     outcomes
+   - **People**: Culture, organizational change, skills
+   - **Governance**: Risk management, compliance, portfolio
+     management, budget/cost
+   - **Platform**: Infrastructure, architecture, CI/CD
+   - **Security**: Identity management, data protection,
+     incident response
+   - **Operations**: Observability, event management,
+     incident management
+
+6. **Analyzing AWS Costs Over Time**
+
+   > Which AWS service or feature gives a company the
+   > ability to analyze AWS costs and usage over time?
+
+   **Answer**: AWS Cost Explorer
+
+   Why not Budgets or Cost and Usage Report? The key phrase
+   is "analyze costs *over time*." Cost Explorer provides
+   visualizations and graphs to analyze historical spending
+   patterns and forecast future costs. Budgets is for
+   setting alerts, not analyzing. CUR provides raw data
+   but no built-in analysis interface.
+
+   - Use **Cost Explorer** when: Analyzing past costs,
+     visualizing spending trends, forecasting future costs,
+     getting RI/Savings Plans recommendations
+   - Use **Budgets** when: Setting spending thresholds and
+     receiving alerts when exceeded
+   - Use **Cost and Usage Report (CUR)** when: Needing
+     detailed raw data for custom analysis in Athena,
+     Redshift, or QuickSight
+   - Use **Pricing Calculator** when: Estimating costs
+     *before* deploying (not analyzing existing usage)
+
+7. **Hybrid Storage for On-Premises Applications**
+
+   > Which AWS hybrid storage service enables a user's
+   > on-premises applications to seamlessly use AWS Cloud
+   > storage?
+
+   **Answer**: AWS Storage Gateway
+
+   Why not DataSync or Snow Family? The key words are
+   "hybrid storage" and "seamlessly use." Storage Gateway
+   provides on-premises applications with transparent
+   access to cloud storage via standard protocols (NFS,
+   SMB, iSCSI). DataSync is for *transferring* data, not
+   providing seamless ongoing access. Snow Family is for
+   offline/edge scenarios.
+
+   - Use **Storage Gateway** when: On-premises apps need
+     seamless, ongoing access to cloud storage (hybrid
+     storage); backup to cloud; tiered storage
+   - Use **DataSync** when: Migrating or replicating data
+     between on-premises and AWS (one-time or scheduled
+     transfers)
+   - Use **Snow Family** when: Offline data transfer,
+     edge computing, limited/no network connectivity
+
+8. **Finding Third-Party Assistance for Deployment**
+
+   > A company wants assistance in creating a cloud
+   > environment for its business.
+   >
+   > Which AWS service or feature can the company use to
+   > find a third party to assist with the deployment?
+
+   **Answer**: AWS Partner Network (APN) / AWS Marketplace
+
+   Why not Professional Services or Support? The key phrase
+   is "find a *third party*." AWS Professional Services is
+   AWS's own team, not third-party. AWS Support provides
+   technical assistance, not deployment partners. The APN
+   and Marketplace help you find certified consulting
+   partners and software vendors.
+
+   - Use **AWS Partner Network (APN)** when: Finding
+     certified consulting partners, system integrators,
+     or technology partners for deployment assistance
+   - Use **AWS Marketplace** when: Finding third-party
+     software, services, and consulting offerings
+   - Use **AWS Professional Services** when: Engaging
+     AWS's own experts (not third-party)
+   - Use **AWS Support** when: Getting technical help
+     with AWS services (not deployment assistance)
+
+9. **Isolating Costs by Workload Type**
+
+   > How can a company isolate the costs of production and
+   > non-production workloads on AWS?
+
+   **Answer**: Cost allocation tags
+
+   Why not separate accounts or Cost Explorer? While
+   separate accounts *can* isolate costs, the simplest and
+   most common answer for this question is cost allocation
+   tags. Tags let you categorize resources (e.g.,
+   Environment: Production vs. Environment: Development)
+   and then filter costs in Cost Explorer or CUR reports.
+
+   - Use **Cost allocation tags** when: Categorizing and
+     tracking costs by project, team, environment, or any
+     custom dimension within an account
+   - Use **Separate AWS accounts** when: Needing complete
+     isolation (security, billing, resource limits) — more
+     complex but stronger separation
+   - Use **Cost Explorer** when: Analyzing and visualizing
+     costs (works with tags to filter by category)
+
+10. **Guidance for Cloud Migration Process**
+
+    > A company is planning to move to the AWS Cloud. The
+    > company wants guidance and best practices to guide
+    > key stakeholders on the cloud migration process.
+    >
+    > Which AWS service or guidance will meet this
+    > requirement?
+
+    **Answer**: AWS Cloud Adoption Framework (AWS CAF)
+
+    Why not Well-Architected Framework or Migration Hub?
+    The key phrases are "guide key stakeholders" and
+    "migration process." AWS CAF is specifically designed
+    to help organizations plan and execute cloud adoption
+    across 6 perspectives (Business, People, Governance,
+    Platform, Security, Operations). Well-Architected is
+    for designing workloads *after* you're in the cloud.
+    Migration Hub is a tool for tracking migrations, not
+    guidance.
+
+    - Use **AWS CAF** when: Planning cloud adoption,
+      guiding stakeholders through migration strategy,
+      organizational transformation
+    - Use **Well-Architected Framework** when: Designing
+      and reviewing workloads already in the cloud (best
+      practices for architecture)
+    - Use **Migration Hub** when: Tracking the progress
+      of actual migrations (a tool, not guidance)
+
+11. **Sharing Reserved Instances Across Accounts**
+
+    > How should Reserved Instances be shared across
+    > multiple AWS accounts?
+
+    **Answer**: AWS Organizations with consolidated billing
+
+    Why not IAM or Resource Access Manager? Reserved
+    Instances and Savings Plans are automatically shared
+    across all accounts in an AWS Organization when
+    consolidated billing is enabled. This is a billing
+    feature, not a resource sharing feature. RAM is for
+    sharing resources like subnets or Transit Gateways,
+    not billing discounts.
+
+    - Use **AWS Organizations (consolidated billing)**
+      when: Sharing Reserved Instances and Savings Plans
+      discounts across multiple accounts, getting volume
+      discounts
+    - Use **Resource Access Manager (RAM)** when: Sharing
+      AWS resources (subnets, Transit Gateways, License
+      Manager configs) across accounts — not for billing
+    - Use **IAM** when: Managing access permissions within
+      or across accounts — not for sharing RI discounts
+
+12. **CAF Perspective Connecting Technology and Business**
+
+    > Which perspective of the AWS Cloud Adoption Framework
+    > (AWS CAF) connects technology and business?
+
+    **Answer**: Platform Perspective
+
+    Why not Business or Governance? The Platform perspective
+    is the bridge between business capabilities and
+    technical implementation. It focuses on building an
+    enterprise-grade, scalable, hybrid cloud platform,
+    modernizing workloads, and implementing new solutions.
+    Business perspective focuses on business outcomes;
+    Governance focuses on risk and compliance.
+
+    CAF perspectives grouped by focus:
+
+    - **Business capabilities** (business-focused):
+      - Business: Aligns IT with business outcomes
+      - People: Culture, training, organizational change
+      - Governance: Risk, compliance, budget management
+    - **Technical capabilities** (technology-focused):
+      - Platform: Connects business to technology,
+        architecture, CI/CD — *the bridge*
+      - Security: Protects data, workloads, accounts
+      - Operations: Runs and monitors cloud services
+
+13. **Short-Term EC2 Without Interruptions**
+
+    > A cloud practitioner needs an Amazon EC2 instance to
+    > launch and run for 7 hours without interruptions.
+    >
+    > What is the MOST cost-effective option for this task?
+
+    **Answer**: On-Demand Instance
+
+    Why not Spot Instance? The key phrase is "without
+    interruptions." Spot Instances can be terminated by
+    AWS with 2 minutes notice when capacity is needed,
+    so they don't guarantee uninterrupted execution.
+    Reserved Instances require 1-3 year commitments —
+    overkill for 7 hours. On-Demand is pay-per-hour with
+    no commitment and no interruption risk.
+
+    - Use **On-Demand** when: Short-term workloads,
+      unpredictable usage, no interruptions allowed,
+      no upfront commitment
+    - Use **Spot Instances** when: Flexible, fault-tolerant
+      workloads that can handle interruptions (batch
+      processing, CI/CD, stateless apps) — up to 90% off
+    - Use **Reserved Instances** when: Steady-state,
+      predictable workloads running 24/7 for 1-3 years
+    - Use **Savings Plans** when: Flexible commitment
+      across instance families or compute services
+
+14. **Dedicated Hardware for Compliance Requirements**
+
+    > Which AWS service helps users meet contractual and
+    > regulatory compliance requirements for data security
+    > by using dedicated hardware appliances within the
+    > AWS Cloud?
+
+    **Answer**: AWS CloudHSM
+
+    Why not KMS or Dedicated Hosts? The key phrases are
+    "dedicated hardware appliances" and "compliance
+    requirements." CloudHSM provides single-tenant,
+    dedicated Hardware Security Modules (HSMs) that are
+    FIPS 140-2 Level 3 validated. KMS is multi-tenant
+    (shared infrastructure). Dedicated Hosts are for
+    running EC2 instances on dedicated physical servers,
+    not for key management or encryption compliance.
+
+    - Use **CloudHSM** when: Regulatory compliance requires
+      dedicated hardware for key management (FIPS 140-2
+      Level 3), you need full control over encryption keys,
+      SSL/TLS offloading, certificate authority
+    - Use **KMS** when: Standard encryption needs, no
+      dedicated hardware requirement, managed key rotation,
+      integration with AWS services
+    - Use **Dedicated Hosts** when: Licensing compliance
+      (per-socket, per-core software licenses), not for
+      encryption hardware
+
+15. **AWS Trusted Advisor Checks**
+
+    > Which recommendations are included in the AWS Trusted
+    > Advisor checks? (Select TWO)
+    >
+    > A. Amazon S3 bucket permissions
+    > B. AWS service outages for services
+    > C. MFA use on the root account
+    > D. Available software patches for EC2 instances
+    > E. Number of users in the account
+
+    **Answer**: A and C
+
+    - **A. S3 bucket permissions** ✓ — Trusted Advisor
+      checks for S3 buckets with open access permissions
+      (Security category)
+    - **B. Service outages** ✗ — This is AWS Health
+      Dashboard / Personal Health Dashboard, not Trusted
+      Advisor
+    - **C. MFA on root account** ✓ — Trusted Advisor checks
+      if MFA is enabled on root account (Security category)
+    - **D. Software patches for EC2** ✗ — This is AWS
+      Systems Manager Patch Manager or Amazon Inspector,
+      not Trusted Advisor
+    - **E. Number of users** ✗ — Trusted Advisor doesn't
+      count users; use IAM Credential Report for this
+
+    Trusted Advisor has 5 categories:
+
+    - **Cost Optimization**: Idle resources, underutilized
+      instances, Reserved Instance optimization
+    - **Performance**: Over-utilized instances, CloudFront
+      optimization
+    - **Security**: S3 permissions, security groups, MFA,
+      IAM access keys, exposed access keys
+    - **Fault Tolerance**: EBS snapshots, RDS backups,
+      Multi-AZ, Auto Scaling
+    - **Service Limits**: Approaching service quotas
+
+16. **Well-Architected Framework Pillars**
+
+    > Which of the following are pillars of the AWS
+    > Well-Architected Framework? (Select TWO)
+    >
+    > A. Multiple Availability Zones
+    > B. Performance Efficiency
+    > C. Sustainability
+    > D. Encryption usage
+    > E. High availability
+
+    **Answer**: B and C
+
+    - **A. Multiple Availability Zones** ✗ — This is a
+      best practice/design pattern, not a pillar
+    - **B. Performance Efficiency** ✓ — One of the 6
+      pillars
+    - **C. Sustainability** ✓ — One of the 6 pillars
+      (added in 2021)
+    - **D. Encryption usage** ✗ — This falls under the
+      Security pillar, but is not a pillar itself
+    - **E. High availability** ✗ — This is a concept
+      covered under Reliability pillar, not a pillar itself
+
+    The 6 Well-Architected Framework Pillars (memorize):
+
+    1. **Operational Excellence**: Run and monitor systems,
+       continually improve processes
+    2. **Security**: Protect data, systems, and assets
+    3. **Reliability**: Recover from failures, meet demand
+    4. **Performance Efficiency**: Use resources efficiently
+    5. **Cost Optimization**: Avoid unnecessary costs
+    6. **Sustainability**: Minimize environmental impact
+
+    Memory trick: **O-S-R-P-C-S** or "Oscar Sells Real
+    Purple Colored Socks"
+
+17. **Comparing On-Premises Costs to AWS**
+
+    > A company is reviewing the current costs of running
+    > its own infrastructure on premises. The company wants
+    > to compare these on-premises costs to the costs of
+    > running infrastructure in the AWS Cloud.
+    >
+    > How should the company make this comparison?
+
+    **Answer**: AWS Pricing Calculator (or Migration
+    Evaluator for detailed TCO analysis)
+
+    Why not Cost Explorer or Budgets? The key phrase is
+    "compare on-premises costs to AWS costs" — this is a
+    *pre-migration* estimate, not analyzing existing AWS
+    usage. Cost Explorer analyzes costs you've already
+    incurred in AWS. Budgets sets alerts for current
+    spending. Pricing Calculator estimates future AWS
+    costs before you deploy.
+
+    Note: AWS previously had a "TCO Calculator" which was
+    retired. Migration Evaluator provides detailed TCO
+    analysis for migrations, while Pricing Calculator
+    provides general AWS cost estimates.
+
+    - Use **Pricing Calculator** when: Estimating AWS costs
+      before deployment, comparing pricing options,
+      building cost proposals
+    - Use **Migration Evaluator** when: Detailed Total Cost
+      of Ownership (TCO) analysis for migration planning,
+      comparing on-premises vs. AWS costs
+    - Use **Cost Explorer** when: Analyzing costs *after*
+      you're already using AWS
+    - Use **Budgets** when: Setting spending alerts for
+      current AWS usage
+
+18. **VPC Security Mechanisms**
+
+    > Which AWS security mechanisms can be used to restrict
+    > or permit access to resources within a VPC?
+    > (Select TWO)
+    >
+    > A. Security Groups
+    > B. Network ACLs
+    > C. IAM policies
+    > D. AWS WAF
+    > E. AWS Shield
+    > F. Route Tables
+
+    **Answer**: A and B
+
+    - **A. Security Groups** ✓ — Virtual firewalls at the
+      instance/ENI level; control inbound/outbound traffic
+    - **B. Network ACLs** ✓ — Firewalls at the subnet level;
+      control traffic in/out of subnets
+    - **C. IAM policies** ✗ — Control access to AWS APIs
+      and services, not network traffic within a VPC
+    - **D. AWS WAF** ✗ — Protects web applications at
+      Layer 7 (CloudFront, ALB, API Gateway), not VPC
+      network traffic
+    - **E. AWS Shield** ✗ — DDoS protection service, not
+      a VPC access control mechanism
+    - **F. Route Tables** ✗ — Route tables determine *where*
+      traffic is directed (routing), not whether traffic
+      is *allowed or denied* (security). They control
+      network paths, not access permissions
+
+    Security Groups vs. Network ACLs:
+
+    | Feature | Security Groups | Network ACLs |
+    | --- | --- | --- |
+    | Level | Instance/ENI | Subnet |
+    | State | Stateful | Stateless |
+    | Rules | Allow only | Allow and Deny |
+    | Default | Deny all inbound | Allow all |
+    | Evaluation | All rules | Rules in order |
+
+19. **Support Plan for 15-Minute Response Time**
+
+    > A company is running a production workload on AWS.
+    >
+    > Which AWS Support plan will provide the company with
+    > technical support within 15 minutes of a user opening
+    > a case concerning a critical service interruption?
+
+    **Answer**: Enterprise Support (or Enterprise On-Ramp)
+
+    Why not Business Support? The key is "15 minutes" for
+    critical issues. Business Support offers 1-hour
+    response for production system down. Only Enterprise
+    plans offer 15-minute response for business-critical
+    system down.
+
+    Support Plan Response Times (critical/production down):
+
+    | Plan | Critical Response | Production Down |
+    | --- | --- | --- |
+    | Basic | N/A | N/A |
+    | Developer | N/A | N/A |
+    | Business | N/A | < 1 hour |
+    | Enterprise On-Ramp | < 30 min | < 1 hour |
+    | Enterprise | < 15 min | < 1 hour |
+
+    Key differences to memorize:
+
+    - **Basic**: Free, no technical support cases
+    - **Developer**: $29+/month, business hours email,
+      < 24 hr general, < 12 hr system impaired
+    - **Business**: $100+/month, 24/7 phone/chat,
+      < 1 hr production down, Trusted Advisor full
+    - **Enterprise On-Ramp**: $5,500/month, < 30 min
+      critical, pool of TAMs
+    - **Enterprise**: $15,000+/month, < 15 min critical,
+      dedicated TAM, Concierge Support
+
+20. **Shared Controls in Shared Responsibility Model**
+
+    > Which controls or features are shared controls
+    > according to the AWS shared responsibility model?
+    > (Select TWO)
+    >
+    > A. Physical security controls
+    > B. Environmental controls
+    > C. Patch management
+    > D. Zone security
+    > E. Configuration management
+
+    **Answer**: C and E
+
+    - **A. Physical security controls** ✗ — AWS
+      responsibility only (data centers, hardware)
+    - **B. Environmental controls** ✗ — AWS responsibility
+      only (power, cooling, fire suppression)
+    - **C. Patch management** ✓ — Shared: AWS patches
+      infrastructure/managed services; customer patches
+      guest OS, applications, and EC2 instances
+    - **D. Zone security** ✗ — Not a standard term in the
+      shared responsibility model
+    - **E. Configuration management** ✓ — Shared: AWS
+      configures infrastructure; customer configures
+      guest OS, databases, applications, security groups
+
+    Shared Responsibility Model categories:
+
+    - **AWS responsibility** ("Security OF the cloud"):
+      Physical security, environmental controls, hardware,
+      network infrastructure, virtualization layer
+    - **Customer responsibility** ("Security IN the cloud"):
+      Customer data, IAM, application security, OS/network
+      configuration, encryption
+    - **Shared controls** (both AWS and customer):
+      Patch management, configuration management,
+      awareness & training
+
+21. **Encrypting CloudTrail Data**
+
+    > A user must encrypt data that is received, stored,
+    > and managed by AWS CloudTrail.
+    >
+    > Which AWS service will provide this capability?
+
+    **Answer**: AWS KMS (Key Management Service)
+
+    Why not CloudHSM or ACM? CloudTrail logs are stored in
+    S3. To encrypt CloudTrail data, you configure the
+    trail to use a KMS key (SSE-KMS encryption). CloudHSM
+    is for dedicated hardware requirements and doesn't
+    directly integrate with CloudTrail. ACM is for SSL/TLS
+    certificates (encryption in transit), not encrypting
+    stored log files.
+
+    Note: CloudTrail encrypts log files by default using
+    S3 server-side encryption (SSE-S3). For additional
+    control, you can use SSE-KMS with your own KMS key.
+
+    - Use **KMS** when: Encrypting data at rest in AWS
+      services (S3, EBS, RDS, CloudTrail logs), need
+      centralized key management and audit trail
+    - Use **CloudHSM** when: Regulatory compliance requires
+      dedicated hardware, full control over HSM
+    - Use **ACM** when: SSL/TLS certificates for encryption
+      in transit (HTTPS)
+
+22. **Improving Availability and Performance**
+
+    > A company wants to improve the overall availability
+    > and performance of its applications that are hosted
+    > on AWS.
+    >
+    > Which AWS service should the company use?
+
+    **Answer**: AWS Global Accelerator
+
+    Why not CloudFront or Route 53? This is tricky because
+    multiple services improve performance. The key is
+    "availability AND performance" for *applications*.
+    Global Accelerator uses AWS's global network to route
+    traffic to optimal endpoints, improving both
+    availability (automatic failover) and performance
+    (reduced latency). CloudFront is for caching content
+    (CDN). Route 53 provides DNS-based routing but doesn't
+    accelerate the actual network path.
+
+    - Use **Global Accelerator** when: Improving
+      availability and performance for TCP/UDP
+      applications (gaming, IoT, VoIP), need static
+      anycast IPs, automatic failover across regions
+    - Use **CloudFront** when: Caching static/dynamic
+      content closer to users (CDN), streaming media,
+      reducing origin load
+    - Use **Route 53** when: DNS management, domain
+      registration, DNS-based routing (latency, failover,
+      geolocation)
+    - Use **Elastic Load Balancing** when: Distributing
+      traffic across targets within a region
+
+23. **Data Visualization for Business Intelligence**
+
+    > A Cloud Practitioner needs to recommend a data
+    > visualization tool for analysts to use to create
+    > user-friendly business intelligence insights.
+    >
+    > Which AWS service should the Cloud Practitioner
+    > recommend?
+
+    **Answer**: Amazon QuickSight
+
+    Why not Athena or Redshift? The key phrases are "data
+    visualization" and "business intelligence insights."
+    QuickSight is AWS's serverless BI service for creating
+    dashboards and visualizations. Athena is for querying
+    data (SQL), not visualizing it. Redshift is a data
+    warehouse for storing and analyzing data, not a
+    visualization tool.
+
+    - Use **QuickSight** when: Creating dashboards,
+      visualizations, business intelligence reports,
+      sharing insights with stakeholders, ML-powered
+      insights (QuickSight Q)
+    - Use **Athena** when: Running SQL queries on data
+      in S3 (serverless query engine)
+    - Use **Redshift** when: Data warehousing, complex
+      analytical queries on petabytes of data
+    - Use **Glue** when: ETL jobs, data cataloging,
+      preparing data for analytics
+
+24. **Auditing and Monitoring Changes to Resources**
+
+    > Which service gives customers the ability to audit
+    > and monitor changes in AWS resources?
+
+    **Answer**: AWS Config
+
+    Why not CloudTrail or CloudWatch? This is a common
+    trap. The key phrase is "changes in AWS resources"
+    (configuration changes). AWS Config tracks resource
+    configurations and changes over time. CloudTrail
+    records API calls (who did what), not the state of
+    resources. CloudWatch monitors performance metrics
+    and logs, not configuration changes.
+
+    - Use **AWS Config** when: Tracking resource
+      configuration changes, compliance auditing,
+      configuration history, evaluating resources against
+      rules
+    - Use **CloudTrail** when: Auditing API activity (who
+      made what API call, when, from where), security
+      investigation
+    - Use **CloudWatch** when: Monitoring metrics (CPU,
+      memory), logs, setting alarms, dashboards for
+      operational health
+
+25. **Checking Infrastructure Against Best Practices**
+
+    > After a merger, a company inherits an AWS account
+    > with an existing infrastructure. The company needs
+    > to ensure that the infrastructure follows AWS best
+    > practices for cost optimization, security, and
+    > performance efficiency.
+    >
+    > Which AWS service or tool should the company use to
+    > meet these requirements?
+
+    **Answer**: AWS Trusted Advisor
+
+    Why not Well-Architected Tool or AWS Config? The key
+    is checking *existing infrastructure* against *best
+    practices* across multiple categories. Trusted Advisor
+    provides automated checks across 5 categories: cost
+    optimization, security, fault tolerance, performance,
+    and service limits. Well-Architected Tool is for
+    reviewing workload architecture against the framework
+    (more manual, design-focused). AWS Config tracks
+    configuration compliance, not best practice
+    recommendations.
+
+    - Use **Trusted Advisor** when: Automated best practice
+      checks for existing infrastructure, quick assessment
+      across cost/security/performance/fault tolerance
+    - Use **Well-Architected Tool** when: In-depth
+      architectural review of specific workloads against
+      the 6 pillars, generating improvement plans
+    - Use **AWS Config** when: Compliance rules for
+      specific configurations, tracking resource changes
+
+26. **Gateway for Site-to-Site VPN**
+
+    > A company needs to establish an AWS Site-to-Site VPN
+    > tunnel.
+    >
+    > Which type of gateway should the company use?
+
+    **Answer**: Virtual Private Gateway (VGW)
+
+    Why not Internet Gateway or NAT Gateway? The key is
+    "Site-to-Site VPN" which connects on-premises networks
+    to AWS. A Virtual Private Gateway is the VPN
+    concentrator on the AWS side of the Site-to-Site VPN
+    connection. Internet Gateway is for internet access
+    (public traffic). NAT Gateway is for outbound internet
+    access from private subnets.
+
+    Note: Transit Gateway can also terminate Site-to-Site
+    VPN connections and is preferred for multiple VPCs.
+
+    - Use **Virtual Private Gateway (VGW)** when:
+      Site-to-Site VPN connection to a single VPC,
+      Direct Connect termination
+    - Use **Transit Gateway** when: Site-to-Site VPN to
+      multiple VPCs, hub-and-spoke network architecture,
+      connecting many VPCs and on-premises networks
+    - Use **Internet Gateway** when: Enabling internet
+      access for resources in public subnets
+    - Use **NAT Gateway** when: Enabling outbound internet
+      access for resources in private subnets
 
 ## References
 
