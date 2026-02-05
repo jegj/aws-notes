@@ -3794,6 +3794,221 @@ tricky questions that appear on the CLF-C02 exam.
     - Use **NAT Gateway** when: Enabling outbound internet
       access for resources in private subnets
 
+27. **Guidance for Migration Preparation**
+
+    > A company wants to move to the AWS Cloud. The company
+    > wants guidance based on best practices to help them
+    > prepare for the migration.
+    >
+    > Which AWS resource should the company use that will
+    > meet this requirement?
+
+    **Answer**: AWS Cloud Adoption Framework (AWS CAF)
+
+    Why not Well-Architected Framework? This is a common
+    trap. The key phrase is "prepare for the migration."
+    AWS CAF provides guidance for *planning and preparing*
+    cloud adoption across 6 perspectives (Business, People,
+    Governance, Platform, Security, Operations). The
+    Well-Architected Framework is for *designing and
+    reviewing workloads* that are already in the cloud —
+    it's about architecture best practices, not migration
+    preparation.
+
+    Why not AWS Application Migration Service (MGN)? MGN is
+    a tool for *executing* lift-and-shift migrations (moving
+    servers), not guidance for preparing the migration
+    strategy.
+
+    - Use **AWS CAF** when: Planning cloud adoption,
+      preparing migration strategy, guiding stakeholders,
+      organizational transformation
+    - Use **Well-Architected Framework** when: Designing
+      workloads in the cloud, reviewing existing architectures
+      against the 6 pillars (after migration)
+    - Use **AWS MGN** when: Actually migrating servers to EC2
+      (lift-and-shift execution)
+    - Use **AWS Support** when: Getting technical help with
+      AWS services, not strategic migration guidance
+
+28. **Operational Excellence - Planning for Failure**
+
+    > Which design principle in the operational excellence
+    > pillar of the AWS Well-Architected Framework describes
+    > the need to plan for potential issues and ensure system
+    > resilience?
+
+    **Answer**: Anticipate failure
+
+    Why not the other options? All four options are valid
+    design principles of Operational Excellence, but only
+    "Anticipate failure" specifically addresses planning for
+    potential issues and system resilience. The key phrases
+    are "plan for potential issues" and "ensure resilience."
+
+    Operational Excellence design principles:
+
+    - **Anticipate failure** — Plan for failures, test
+      failure scenarios, understand impact of failures,
+      design for resilience (matches the question)
+    - **Perform operations as code** — Define infrastructure
+      and operations as code (IaC), automate procedures
+    - **Make frequent, small, reversible changes** — Design
+      workloads to allow incremental changes that can be
+      rolled back if needed
+    - **Refine operations procedures frequently** —
+      Continuously improve operational procedures, conduct
+      game days, learn from failures
+    - **Learn from all operational failures** — Share
+      lessons learned across teams
+
+29. **Well-Architected Pillar for Data Protection**
+
+    > Which pillar of the AWS Well-Architected Framework
+    > focuses on the design principle of providing protection
+    > to safeguard data, systems, and applications?
+
+    **Answer**: Security pillar
+
+    Why not Reliability? This can be confusing because
+    Reliability also involves protecting systems — but from
+    *failures*, not from *threats*. The key phrase is
+    "safeguard data, systems, and applications" which
+    implies protection from unauthorized access, breaches,
+    and security threats. That's Security.
+
+    The 6 Well-Architected Framework pillars:
+
+    - **Security** — Protecting data, systems, and assets
+      through confidentiality, integrity, and availability;
+      identity management, detection, infrastructure
+      protection, data protection, incident response
+    - **Reliability** — Ability to recover from failures,
+      meet demand, mitigate disruptions; focuses on
+      fault tolerance and disaster recovery
+    - **Performance Efficiency** — Using compute resources
+      efficiently, maintaining efficiency as demand changes
+    - **Operational Excellence** — Running and monitoring
+      systems, continuously improving processes
+    - **Cost Optimization** — Avoiding unnecessary costs,
+      understanding spending, selecting appropriate resources
+    - **Sustainability** — Minimizing environmental impact,
+      reducing energy consumption
+
+30. **Full Trusted Advisor Access - Cost Effective**
+
+    > A company wants access to the full set of AWS Trusted
+    > Advisor checks. Which AWS Support plan is the MOST
+    > cost-effective option to meet the requirement?
+
+    **Answer**: AWS Business Support plan
+
+    Why not Enterprise? Enterprise also provides full
+    Trusted Advisor access, but the question asks for the
+    "MOST cost-effective" option. Business Support is
+    cheaper than Enterprise and still provides full access
+    to all Trusted Advisor checks.
+
+    Why not Developer or Basic? These plans only provide
+    access to a limited set of core Trusted Advisor checks
+    (7 checks), not the full set (50+ checks).
+
+    Trusted Advisor access by Support plan:
+
+    - **Basic & Developer** — Limited to 7 core checks:
+      - S3 bucket permissions
+      - Security groups (specific ports unrestricted)
+      - IAM use
+      - MFA on root account
+      - EBS public snapshots
+      - RDS public snapshots
+      - Service limits
+    - **Business & Enterprise** — Full access to all 50+
+      checks across all 5 categories (Cost Optimization,
+      Performance, Security, Fault Tolerance, Service Limits)
+
+    Support plan pricing (approximate):
+
+    - **Basic**: Free
+    - **Developer**: $29/month or 3% of monthly usage
+    - **Business**: $100/month or 3-10% of monthly usage
+    - **Enterprise On-Ramp**: $5,500/month
+    - **Enterprise**: $15,000/month or 3-10% of monthly usage
+
+31. **Consolidated Billing Cost Savings**
+
+    > How does consolidated billing within AWS Organizations
+    > help lower overall monthly expenses?
+
+    **Answer**: By pooling usage across multiple accounts to
+    achieve a pricing tier discount
+
+    Why not the other options?
+
+    - **SCPs for centralized service management** — SCPs
+      control what services/actions accounts can use, but
+      don't directly reduce costs. This is about governance,
+      not billing savings.
+    - **Automating account creation through APIs** — This is
+      a convenience feature, not a cost-saving mechanism.
+    - **Consolidated view of monthly billing** — This helps
+      you *see* costs but doesn't *reduce* them. Visibility
+      is not the same as savings.
+
+    How usage pooling saves money:
+
+    - AWS services like S3, EC2, and data transfer have
+      **volume-based pricing tiers** — the more you use,
+      the lower the per-unit price
+    - Consolidated billing **aggregates usage** across all
+      accounts in the organization
+    - Combined usage reaches higher discount tiers faster
+      than individual accounts would alone
+    - Example: If 5 accounts each use 20 TB of S3, they're
+      billed as 100 TB total, reaching a lower price tier
+
+    Other consolidated billing benefits:
+
+    - Single payment method for all accounts
+    - Shared Reserved Instances and Savings Plans across
+      accounts
+    - Combined Free Tier usage (watch out — this can also
+      mean hitting limits faster)
+
+32. **AWS Incident Detection and Response Access**
+
+    > Which AWS Support plan offers access to AWS Incident
+    > Detection and Response for an additional fee?
+
+    **Answer**: AWS Enterprise Support plan
+
+    Why not Enterprise On-Ramp? This is tricky because
+    Enterprise On-Ramp is also a premium support tier.
+    However, AWS Incident Detection and Response is an
+    add-on service available *only* to full Enterprise
+    Support customers, not Enterprise On-Ramp.
+
+    AWS Incident Detection and Response:
+
+    - Proactive monitoring and incident management service
+    - AWS experts monitor your critical workloads 24/7
+    - Automated incident detection and rapid response
+    - Available as an add-on for an additional fee
+    - Requires Enterprise Support plan (not On-Ramp)
+
+    Support plan feature comparison:
+
+    - **Basic**: Free, limited to documentation and forums
+    - **Developer**: $29+/month, business hours email support
+    - **Business**: $100+/month, 24/7 phone/chat, full
+      Trusted Advisor, Infrastructure Event Management
+      (additional fee)
+    - **Enterprise On-Ramp**: $5,500+/month, TAM pool,
+      Concierge Support team
+    - **Enterprise**: $15,000+/month, designated TAM,
+      Infrastructure Event Management (included), access
+      to Incident Detection and Response (additional fee)
+
 ## References
 
 - [AWS Cloud Practitioner - YouTube Playlist](https://www.youtube.com/playlist?list=PL7Jj8Ba9Yr6AlmnfXo_UwoLF_CG5SP_mH)
