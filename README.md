@@ -4009,6 +4009,123 @@ tricky questions that appear on the CLF-C02 exam.
       Infrastructure Event Management (included), access
       to Incident Detection and Response (additional fee)
 
+33. **Managing and Rotating Credentials**
+
+    > Which AWS service provides the ability to manage,
+    > rotate, and retrieve credentials, such as API keys
+    > and database credentials?
+
+    **Answer**: AWS Secrets Manager
+
+    Why not KMS or IAM? The key phrases are "manage,
+    rotate, and retrieve credentials" like API keys and
+    database passwords. Secrets Manager is purpose-built
+    for storing and rotating secrets.
+
+    - **AWS Config** ✗ — Tracks resource configuration
+      changes and compliance, has nothing to do with
+      credential management
+    - **IAM** ✗ — Manages *access permissions* (users,
+      roles, policies), not credential storage/rotation.
+      IAM can create access keys but doesn't manage
+      application secrets like database passwords
+    - **KMS** ✗ — Manages *encryption keys* for encrypting
+      data, not credentials. KMS creates and controls
+      cryptographic keys, not application secrets
+    - **Secrets Manager** ✓ — Stores, rotates, and
+      retrieves credentials and secrets; integrates with
+      RDS for automatic password rotation
+
+    Secrets Manager vs Systems Manager Parameter Store:
+
+    - **Secrets Manager**: Built-in automatic rotation,
+      designed for secrets, higher cost, native RDS
+      integration
+    - **Parameter Store**: Free tier available, stores
+      config values and secrets, no built-in rotation
+      (requires custom Lambda), simpler and cheaper
+
+34. **Automated Security Assessment for EC2**
+
+    > A user needs an automated security assessment report
+    > that identifies unintended network access to Amazon
+    > EC2 instances and vulnerabilities on those instances.
+    > Which AWS service or feature will provide this
+    > assessment report?
+
+    **Answer**: Amazon Inspector
+
+    Why not the other options? The key phrases are
+    "automated security assessment," "unintended network
+    access," and "vulnerabilities." Inspector is the only
+    service that scans for both network exposure and
+    software vulnerabilities on EC2 instances.
+
+    - **EC2 security groups** ✗ — Security groups *control*
+      network access (firewall rules), but don't generate
+      assessment reports or scan for vulnerabilities
+    - **AWS Config** ✗ — Tracks resource configuration
+      changes and compliance rules, but doesn't perform
+      vulnerability scanning or network access analysis
+    - **Amazon Macie** ✗ — Discovers sensitive data in S3
+      (PII, financial data), has nothing to do with EC2
+      vulnerabilities or network access
+    - **Amazon Inspector** ✓ — Automated vulnerability
+      management that scans EC2 instances, container
+      images (ECR), and Lambda functions for software
+      vulnerabilities and unintended network exposure
+
+    Inspector vs GuardDuty:
+
+    - **Inspector**: Proactive scanning — finds
+      vulnerabilities *before* they're exploited (software
+      CVEs, network exposure)
+    - **GuardDuty**: Reactive detection — identifies
+      threats and malicious activity *as they happen*
+      (compromised instances, unusual API calls)
+
+35. **Protecting Web Apps from Common Exploits**
+
+    > Which AWS service protects web applications from
+    > common web exploits and vulnerabilities by filtering
+    > and monitoring HTTP(S) traffic?
+
+    **Answer**: AWS WAF
+
+    Why not GuardDuty? The key phrases are "web
+    applications," "web exploits," and "filtering and
+    monitoring HTTP(S) traffic." AWS WAF (Web Application
+    Firewall) operates at the application layer (Layer 7)
+    and inspects HTTP/HTTPS requests to block common
+    attacks like SQL injection, XSS, and other OWASP
+    top 10 vulnerabilities.
+
+    - **AWS Artifact** ✗ — Provides access to AWS
+      compliance reports and agreements (SOC, PCI, ISO),
+      not a security filtering service
+    - **Amazon GuardDuty** ✗ — Threat detection service
+      that monitors for malicious activity across your
+      account (API calls, network flows), but doesn't
+      filter HTTP traffic or protect web applications
+    - **AWS Config** ✗ — Tracks resource configuration
+      changes and compliance, unrelated to web traffic
+      filtering
+    - **AWS WAF** ✓ — Filters and monitors HTTP(S)
+      requests, protects against SQL injection, XSS,
+      and other web exploits
+
+    WAF vs Shield vs GuardDuty:
+
+    - **WAF**: Layer 7 protection — filters HTTP(S)
+      traffic, blocks web exploits (SQL injection, XSS),
+      custom rules, rate limiting
+    - **Shield**: DDoS protection — Standard (free,
+      automatic) and Advanced (paid, enhanced DDoS
+      protection with 24/7 response team)
+    - **GuardDuty**: Threat detection — analyzes CloudTrail
+      logs, VPC flow logs, and DNS logs to detect
+      malicious activity
+
 ## References
 
 - [AWS Cloud Practitioner - YouTube Playlist](https://www.youtube.com/playlist?list=PL7Jj8Ba9Yr6AlmnfXo_UwoLF_CG5SP_mH)
