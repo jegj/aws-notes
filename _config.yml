@@ -4,6 +4,7 @@ title: AWS Certification Notes
 description: Study notes for AWS Cloud Practitioner CLF-C02
 baseurl: /aws-notes
 
+color_scheme: dark
 search_enabled: true
 heading_anchors: true
 
