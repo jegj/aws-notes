@@ -1,0 +1,14 @@
+remote_theme: just-the-docs/just-the-docs
+
+title: AWS Certification Notes
+description: Study notes for AWS Cloud Practitioner CLF-C02
+baseurl: /aws-notes
+
+search_enabled: true
+heading_anchors: true
+
+exclude:
+  - node_modules/
+  - package.json
+  - package-lock.json
+  - CLAUDE.md
