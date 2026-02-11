@@ -4126,6 +4126,630 @@ tricky questions that appear on the CLF-C02 exam.
       logs, VPC flow logs, and DNS logs to detect
       malicious activity
 
+36. **Multi-Account Environment Setup**
+
+    > Which AWS service provides a simple way to set up a
+    > new multi-account AWS environment and govern it at
+    > scale?
+
+    **Answer**: AWS Control Tower
+
+    Why not AWS Organizations? This is tricky because
+    Organizations *does* manage multiple accounts, but the
+    key phrase is "set up a new multi-account environment
+    and govern it at scale." Control Tower is the
+    higher-level service that automates the setup of a
+    well-architected multi-account environment using best
+    practices.
+
+    - **AWS Organizations** ✗ — Manages accounts,
+      consolidated billing, and SCPs, but doesn't automate
+      the *setup* of a landing zone or provide governance
+      guardrails out of the box
+    - **AWS CloudFormation** ✗ — Infrastructure as code
+      for provisioning resources, not designed for
+      multi-account governance
+    - **AWS Trusted Advisor** ✗ — Provides best practice
+      recommendations, but doesn't set up or govern
+      multi-account environments
+    - **AWS Control Tower** ✓ — Automates setup of a
+      secure, well-architected multi-account landing zone
+      with pre-configured guardrails
+
+    Control Tower vs Organizations:
+
+    - **Control Tower**: Built *on top of* Organizations;
+      automates landing zone setup, provides guardrails
+      (preventive and detective), Account Factory for
+      provisioning new accounts, dashboard for governance
+    - **Organizations**: Foundation layer; manages account
+      hierarchy (OUs), consolidated billing, and Service
+      Control Policies (SCPs)
+
+37. **Remote EC2 Access Without SSH**
+
+    > A company wants to improve its security and audit
+    > posture by limiting Amazon EC2 inbound access. What
+    > should the company use to access instances remotely
+    > instead of opening inbound SSH ports and managing
+    > SSH keys?
+
+    **Answer**: AWS Systems Manager Session Manager
+
+    Why not a bastion host or EC2 Instance Connect? The
+    key phrases are "limiting inbound access," "instead of
+    opening inbound SSH ports," and "managing SSH keys."
+    Session Manager provides secure shell access *without*
+    opening any inbound ports or managing SSH keys.
+
+    - **Amazon EC2 Instance Connect** ✗ — Simplifies SSH
+      key management by pushing temporary keys, but still
+      requires inbound SSH port 22 to be open in the
+      security group
+    - **Bastion host (jump box)** ✗ — Still requires an
+      open inbound SSH port on the bastion, adds another
+      instance to manage and secure, and still uses SSH
+      keys
+    - **Direct Connect** ✗ — Dedicated network connection
+      from on-premises to AWS, unrelated to instance
+      access management
+    - **Systems Manager Session Manager** ✓ — Browser or
+      CLI-based shell access with no open inbound ports,
+      no SSH keys, full audit logging via CloudTrail
+
+    Session Manager benefits:
+
+    - No inbound security group rules needed (uses the
+      SSM agent's outbound HTTPS connection)
+    - No SSH keys to create, distribute, or rotate
+    - Full session logging to S3 and CloudWatch
+    - IAM-based access control (who can start sessions)
+    - Audit trail in CloudTrail (who accessed what, when)
+    - Port forwarding support without exposing ports
+
+38. **24/7 Cloud Support Engineer Access**
+
+    > A company needs access to cloud support engineers
+    > 24 hours a day, 7 days a week. What is the LEAST
+    > expensive AWS Support plan that meets this
+    > requirement?
+
+    **Answer**: AWS Business Support
+
+    Why not Developer or Enterprise? The key phrases are
+    "cloud support engineers," "24/7," and "LEAST
+    expensive." Developer Support only provides business
+    hours email access. Business Support is the *first*
+    tier that offers 24/7 phone, chat, and email access
+    to cloud support engineers.
+
+    - **Basic** ✗ — Free, but no access to cloud support
+      engineers at all; limited to documentation, forums,
+      and service health dashboard
+    - **Developer** ✗ — $29+/month, provides access to
+      cloud support *associates* (not engineers) via
+      email only during business hours
+    - **Business** ✓ — $100+/month, first tier with 24/7
+      access to cloud support engineers via phone, chat,
+      and email
+    - **Enterprise On-Ramp** ✗ — $5,500+/month, also
+      offers 24/7 engineer access but is far more
+      expensive than Business
+    - **Enterprise** ✗ — $15,000+/month, also offers
+      24/7 engineer access but is the most expensive plan
+
+    Support plan 24/7 access comparison:
+
+    - **Basic**: No technical support
+    - **Developer**: Business hours email only (cloud
+      support associates)
+    - **Business**: 24/7 phone, chat, email (cloud
+      support engineers)
+    - **Enterprise On-Ramp**: 24/7 phone, chat, email +
+      TAM pool
+    - **Enterprise**: 24/7 phone, chat, email + designated
+      TAM
+
+39. **Rightsizing and Architecture Principles**
+
+    > Which architecture design principle applies to the
+    > concept of rightsizing the AWS Cloud infrastructure?
+
+    **Answer**: Optimize cost
+
+    Why not "scale horizontally"? This is tricky because
+    scaling and rightsizing both deal with resource
+    capacity. However, rightsizing means selecting the
+    most appropriate instance type and size for your
+    workload to avoid over-provisioning — that's a *cost
+    optimization* practice, not a scaling strategy.
+
+    - **Scale horizontally for increased workload** ✗ —
+      Reliability/performance principle; adds more
+      instances to handle load, but doesn't address
+      whether each instance is the right size or type
+    - **Optimize cost** ✓ — Rightsizing is a core cost
+      optimization practice; it ensures you're not paying
+      for resources you don't need by matching instance
+      types and sizes to actual workload requirements
+    - **Make frequent, small, reversible changes** ✗ —
+      Operational Excellence principle; about deploying
+      changes safely, unrelated to infrastructure sizing
+    - **Perform operations as code** ✗ — Operational
+      Excellence principle; about automating
+      infrastructure with IaC (CloudFormation, Terraform),
+      not about choosing the right resource size
+
+    Rightsizing examples:
+
+    - Downgrading from m5.xlarge to m5.large when CPU
+      usage averages 20%
+    - Switching from general-purpose to compute-optimized
+      instances for CPU-bound workloads
+    - Using AWS Cost Explorer rightsizing recommendations
+    - Using AWS Compute Optimizer for data-driven
+      suggestions
+
+40. **Cost-Effective Instance Types for Base and Peak Traffic**
+
+    > A company has a stateless application that can handle
+    > interruptions. The application must be available all
+    > day and night. Traffic increases heavily during
+    > business hours. Which instance types for base and
+    > peak traffic are MOST cost-efficient to meet these
+    > requirements?
+
+    **Answer**: Reserved Instances for base traffic and
+    Spot Instances for peak traffic using an Amazon EC2
+    Fleet
+
+    Why not On-Demand or Reserved for everything? The key
+    is matching each traffic pattern to the right pricing
+    model. Base traffic is predictable and constant (24/7)
+    — perfect for Reserved Instances. Peak traffic is
+    variable and the app handles interruptions — perfect
+    for Spot Instances.
+
+    - **Reserved Instances for both base and peak** ✗ —
+      Reserved Instances have a one-year or three-year
+      commitment; not cost-effective for a workload that
+      only peaks during business hours
+    - **Reserved Instances for base + Spot Instances for
+      peak using EC2 Fleet** ✓ — Reserved Instances are
+      cost-effective for the steady 24/7 base load; Spot
+      Instances give up to 90% discount for the
+      interruptible peak traffic; EC2 Fleet manages the
+      mix automatically
+    - **On-Demand for base + On-Demand with auto scaling
+      for peak** ✗ — On-Demand is more expensive than
+      both Reserved and Spot; not the most cost-efficient
+      option for either base or peak
+    - **On-Demand for base + Spot for peak using EC2
+      Fleet** ✗ — On-Demand is not cost-effective for
+      base traffic that runs 24/7; Reserved Instances
+      would be significantly cheaper for that steady load
+
+    EC2 pricing model cheat sheet:
+
+    - **On-Demand**: Pay by the hour/second, no commitment,
+      highest price
+    - **Reserved**: 1 or 3-year commitment, up to 72%
+      discount, best for steady-state workloads
+    - **Spot**: Up to 90% discount, can be interrupted,
+      best for fault-tolerant/flexible workloads
+    - **EC2 Fleet**: Manages a mix of On-Demand, Reserved,
+      and Spot instances to meet capacity targets
+
+41. **Security Principles in the Well-Architected Framework**
+
+    > Which of the following are security principles in the
+    > AWS Well-Architected Framework? (Select TWO.)
+
+    **Answer**: Monitor, alert, and audit actions and
+    changes to AWS resources **AND** Protect data in
+    transit and at rest
+
+    Why is this tricky? Each option is a valid
+    Well-Architected principle, but they belong to
+    *different pillars*. You need to know which principles
+    map to the Security pillar specifically.
+
+    - **Analyze and attribute expenditures** ✗ — Cost
+      Optimization pillar principle; about tracking and
+      understanding where money is spent
+    - **Monitor, alert, and audit actions and changes to
+      AWS resources** ✓ — Security pillar principle;
+      traceability includes monitoring and alerting on
+      actions and changes
+    - **Deploy globally in minutes** ✗ — Performance
+      Efficiency pillar principle; about leveraging
+      global infrastructure for low-latency deployments
+    - **Protect data in transit and at rest** ✓ — Security
+      pillar principle; ensuring encryption and protection
+      of data at all stages
+    - **Perform operations as code** ✗ — Operational
+      Excellence pillar principle; about automating
+      infrastructure and operations with IaC
+
+    Security pillar design principles:
+
+    - Implement a strong identity foundation
+    - Enable traceability (monitor, alert, audit)
+    - Apply security at all layers
+    - Automate security best practices
+    - Protect data in transit and at rest
+    - Keep people away from data
+    - Prepare for security events
+
+42. **VPC Service Limit Checks**
+
+    > Which of the following will help a user determine if
+    > they need to request a VPC service limit increase?
+
+    **Answer**: AWS Trusted Advisor
+
+    Why not Health Dashboard? This is tricky because
+    Health Dashboard monitors AWS service *status and
+    health*, not your account's service limits. Trusted
+    Advisor is the service that checks your usage against
+    service limits and recommends increases.
+
+    - **AWS Health Dashboard** ✗ — Shows the status and
+      health of AWS services and reported service-related
+      events across Regions; doesn't check your account's
+      service limits
+    - **AWS Trusted Advisor** ✓ — Performs checks across
+      your environment including service limit checks;
+      flags when you're approaching VPC limits (and other
+      service limits) so you can request an increase
+    - **AWS Cost and Usage Report** ✗ — Tracks AWS usage
+      and estimated charges; a billing tool, not a service
+      limits tool
+    - **AWS Service Catalog** ✗ — Lets IT admins create,
+      manage, and distribute portfolios of approved
+      products to end users; unrelated to service limits
+
+    Trusted Advisor service limit checks include:
+
+    - VPC limits (VPCs per Region, subnets per VPC, etc.)
+    - EC2 limits (On-Demand instances, Elastic IPs)
+    - EBS limits (volume count, snapshot count)
+    - IAM limits (users, groups, roles)
+    - RDS limits (DB instances, snapshots)
+
+43. **Shared Responsibility Between User and AWS**
+
+    > Which responsibility is shared between the user and
+    > AWS?
+
+    **Answer**: Provide awareness and training
+
+    Why is this tricky? Most Shared Responsibility Model
+    questions have clear-cut answers (customer or AWS),
+    but this one asks about a *shared* control. AWS trains
+    its own employees, and the customer must train their
+    own employees — making awareness and training a shared
+    responsibility.
+
+    - **Provide a key for Amazon S3 client-side
+      encryption** ✗ — Customer responsibility; users
+      must provide and maintain their own client-side
+      encryption keys, often due to regulatory
+      requirements
+    - **Configure an Amazon EC2 instance** ✗ — Customer
+      responsibility; EC2 is IaaS, so the user handles
+      OS patching, security configuration, and management
+      of the instance
+    - **Control the environment of physical AWS data
+      centers** ✗ — AWS responsibility; AWS is responsible
+      for the protection of the physical infrastructure
+      that runs all cloud services
+    - **Provide awareness and training** ✓ — Shared
+      control; AWS trains its employees, customers must
+      train their own employees
+
+    Shared Responsibility Model categories:
+
+    - **AWS responsibility** ("security *of* the cloud"):
+      Physical infrastructure, hardware, networking,
+      managed services, data center environment
+    - **Customer responsibility** ("security *in* the
+      cloud"): Data, IAM, OS/network/firewall config,
+      client-side encryption, application security
+    - **Shared controls**: Awareness and training, patch
+      management (AWS patches infrastructure, customer
+      patches guest OS), configuration management
+
+44. **Auto Deployment for Java Web Applications**
+
+    > A company has a Java web application. The company
+    > wants to use auto deployment to create the AWS
+    > environment and deploy new versions of its
+    > application. Which AWS service will meet these
+    > requirements?
+
+    **Answer**: AWS Elastic Beanstalk
+
+    Why not Auto Scaling or EC2? The key phrases are
+    "auto deployment," "create the AWS environment," and
+    "deploy new versions." Elastic Beanstalk is the only
+    option that handles both environment creation *and*
+    application deployment automatically.
+
+    - **AWS Auto Scaling** ✗ — Adjusts resource capacity
+      to meet demand, but doesn't create environments or
+      deploy applications; it scales resources that
+      already exist
+    - **AWS Elastic Beanstalk** ✓ — Upload your code and
+      Beanstalk automatically handles deployment,
+      capacity provisioning, load balancing, auto scaling,
+      and application health monitoring
+    - **AWS Control Tower** ✗ — Creates and manages
+      multi-account environments following best practices;
+      doesn't deploy applications
+    - **Amazon EC2** ✗ — Provides scalable compute
+      servers, but customers must manually manage
+      instances; no automatic deployment functionality
+
+    Elastic Beanstalk key points:
+
+    - Supports Java, .NET, PHP, Node.js, Python, Ruby,
+      Go, and Docker
+    - PaaS — you manage the code, AWS manages the
+      infrastructure
+    - Creates and configures EC2, ELB, Auto Scaling, RDS
+      under the hood
+    - Supports rolling deployments, blue/green deployments
+    - No additional charge — you only pay for the
+      underlying resources
+
+45. **AWS CAF Operations Perspective Capability**
+
+    > Which option is an AWS Cloud Adoption Framework
+    > (AWS CAF) foundational capability for the operations
+    > perspective?
+
+    **Answer**: Performance and capacity management
+
+    Why is this tricky? Each option is a valid CAF
+    capability, but they belong to *different
+    perspectives*. You need to know which capabilities
+    map to the Operations perspective specifically.
+
+    - **Performance and capacity management** ✓ —
+      Operations perspective capability; focuses on
+      monitoring and managing workload performance and
+      resource capacity
+    - **Application portfolio management** ✗ — Governance
+      perspective capability; about managing and
+      rationalizing the application portfolio
+    - **Identity and access management** ✗ — Security
+      perspective capability; about controlling who can
+      access what resources
+    - **Product management** ✗ — Business perspective
+      capability; about managing products and services
+      as business offerings
+
+    AWS CAF perspectives and example capabilities:
+
+    - **Business**: Product management, strategic
+      partnership, data monetization
+    - **People**: Culture evolution, organizational design,
+      cloud fluency
+    - **Governance**: Application portfolio management,
+      program/project management, data governance
+    - **Platform**: Platform architecture, data
+      architecture, provisioning and orchestration
+    - **Security**: Identity and access management,
+      vulnerability management, incident response
+    - **Operations**: Performance and capacity management,
+      event management, incident and problem management
+
+46. **Protecting S3 from Accidental Overwrites or Deletions**
+
+    > Which feature can be used to protect Amazon S3
+    > buckets from accidental overwrites or deletions?
+
+    **Answer**: Bucket versioning
+
+    Why not server-side encryption? This is tricky
+    because encryption sounds like "protection," but it
+    protects data from *unauthorized access*, not from
+    accidental overwrites or deletions. Versioning is the
+    feature that preserves previous versions so you can
+    recover from accidental changes.
+
+    - **Lifecycle policies** ✗ — Sets rules to transition
+      objects to different storage classes (e.g., move to
+      Glacier after 90 days); does not prevent overwrites
+      or deletions
+    - **Bucket versioning** ✓ — Maintains multiple
+      versions of an object; if you accidentally delete
+      or overwrite, S3 inserts a delete marker instead of
+      permanently removing the object, allowing you to
+      restore previous versions
+    - **Server-side encryption** ✗ — Protects data at
+      rest by encrypting it, but does not prevent
+      overwrites or deletions
+    - **S3 access points** ✗ — Simplifies access
+      management to a subset of objects in a bucket; does
+      not prevent overwrites or deletions
+
+    S3 data protection features:
+
+    - **Versioning**: Recover from accidental deletes and
+      overwrites by keeping all object versions
+    - **MFA Delete**: Requires MFA to permanently delete
+      object versions (extra layer on top of versioning)
+    - **Object Lock**: Prevents objects from being deleted
+      or overwritten for a fixed period or indefinitely
+      (WORM model)
+    - **Server-side encryption**: Protects data at rest
+      (SSE-S3, SSE-KMS, SSE-C)
+
+47. **Detecting Outages and Redirecting to Alternate Servers**
+
+    > Which AWS service can help a company detect an outage
+    > of its website servers and redirect users to
+    > alternate servers?
+
+    **Answer**: Amazon Route 53
+
+    Why not CloudFront? This is tricky because CloudFront
+    also sits in front of your servers, but it's a CDN
+    that caches content at edge locations — it doesn't
+    detect outages and redirect to alternate servers.
+    Route 53 uses health checks and failover routing
+    policies to do exactly that.
+
+    - **Amazon CloudFront** ✗ — CDN that caches static
+      and dynamic data at edge locations; reduces latency
+      but doesn't redirect users to alternate servers
+      during an outage
+    - **Amazon GuardDuty** ✗ — Security service that
+      monitors for unusual activity and unauthorized
+      access; doesn't handle traffic routing or outage
+      detection
+    - **Amazon Route 53** ✓ — DNS service that resolves
+      domain names to IP addresses; supports health
+      checks to detect outages and failover routing
+      policies to redirect traffic to alternate servers
+    - **AWS Trusted Advisor** ✗ — Provides best practice
+      recommendations on cost, performance, security, and
+      fault tolerance; doesn't redirect traffic
+
+    Route 53 routing policies:
+
+    - **Simple**: Single resource, no health checks
+    - **Weighted**: Distribute traffic by percentage
+    - **Latency-based**: Route to lowest-latency Region
+    - **Failover**: Active-passive setup, redirects to
+      standby when primary health check fails
+    - **Geolocation**: Route based on user's location
+    - **Multivalue answer**: Return multiple healthy IPs
+
+48. **Customer Responsibilities in the Shared Responsibility Model**
+
+    > Which tasks are the customer's responsibility,
+    > according to the AWS shared responsibility model?
+    > (Select TWO.)
+
+    **Answer**: Patch the guest operating system **AND**
+    Configure firewalls
+
+    Why is this tricky? The question mixes physical
+    infrastructure tasks (AWS responsibility) with
+    logical/software tasks (customer responsibility). The
+    rule of thumb: if it involves physical hardware, it's
+    AWS; if it involves software configuration on your
+    instances, it's you.
+
+    - **Patch the guest operating system** ✓ — Customer
+      responsibility; the customer has full responsibility
+      to patch operating systems and applications running
+      on EC2 instances
+    - **Physically secure the data center hardware** ✗ —
+      AWS responsibility; customers cannot access data
+      centers, so physical security is entirely on AWS
+    - **Patch the network hardware** ✗ — AWS
+      responsibility; customers have no physical access
+      to network hardware, so AWS handles all network
+      infrastructure patching
+    - **Configure firewalls** ✓ — Customer responsibility;
+      customers must configure all firewall rules
+      (security groups, NACLs) for their OS and
+      applications
+    - **Decommission deprecated storage devices** ✗ —
+      AWS responsibility; AWS handles all physical
+      hardware lifecycle including decommissioning old
+      storage devices
+
+    Quick rule for Shared Responsibility questions:
+
+    - **Physical** = AWS (hardware, data centers, network
+      infrastructure, storage devices)
+    - **Logical/Software** = Customer (OS patching,
+      firewall config, IAM, encryption, application code)
+
+49. **Cost Estimation for Future AWS Usage**
+
+    > A company wants to build a data analytics application
+    > that uses Amazon Redshift. The company needs a cost
+    > estimate for its future Amazon Redshift usage. Which
+    > AWS tool will provide a high-level cost estimation?
+
+    **Answer**: AWS Pricing Calculator
+
+    Why not Cost Explorer? This is tricky because both
+    deal with costs, but they serve different purposes.
+    Cost Explorer analyzes *past and current* usage, while
+    Pricing Calculator estimates costs for *future*
+    services you haven't deployed yet.
+
+    - **AWS Budgets** ✗ — Sets custom cost and usage
+      budgets with alerts when thresholds are exceeded;
+      monitors spending, doesn't estimate future costs
+    - **AWS Pricing Calculator** ✓ — Creates cost
+      estimates for AWS use cases *before* you build;
+      lets you model your architecture and get projected
+      monthly costs
+    - **AWS Cost Explorer** ✗ — Visualizes and analyzes
+      *historical* costs and usage over time; great for
+      understanding past spending, not for estimating
+      future services
+    - **Savings Plans** ✗ — Flexible pricing model for
+      cost savings on compute usage (EC2, Lambda, Fargate)
+      through commitment; not a cost estimation tool
+
+    AWS cost tools cheat sheet:
+
+    - **Pricing Calculator**: Estimate *future* costs
+      before deploying
+    - **Cost Explorer**: Analyze *past* costs and usage
+      trends
+    - **Budgets**: Set spending *limits* and get alerts
+    - **Cost and Usage Report**: Most *detailed* billing
+      data (line-item level)
+
+50. **Visualizing AWS Spending and Usage Over Time**
+
+    > Which AWS service or tool can a company use to
+    > visualize, understand, and manage AWS spending and
+    > usage over time?
+
+    **Answer**: AWS Cost Explorer
+
+    Why not Budgets? This is tricky because both are cost
+    management tools, but they do different things.
+    Budgets sets *thresholds and alerts*, while Cost
+    Explorer *visualizes and analyzes* spending trends
+    over time. The key phrase is "visualize, understand,
+    and manage."
+
+    - **AWS Trusted Advisor** ✗ — Analyzes your
+      environment and provides best practice
+      recommendations (cost, performance, security); not
+      a spending visualization tool
+    - **Amazon CloudWatch** ✗ — Monitors *performance*
+      of AWS workloads (CPU, memory, latency); not
+      designed for spending and usage analysis
+    - **AWS Cost Explorer** ✓ — Visualizes, understands,
+      and manages AWS spending and usage over time with
+      graphs, filters, and forecasting
+    - **AWS Budgets** ✗ — Sets custom cost and usage
+      budgets with alerts when thresholds are exceeded;
+      doesn't provide visualization of spending trends
+
+    Cost Explorer vs Budgets:
+
+    - **Cost Explorer**: "Where did my money go?" —
+      visualize past spending, filter by service/Region/
+      tag, forecast future costs, identify trends
+    - **Budgets**: "Tell me when I spend too much" — set
+      spending limits, get alerts via email/SNS when
+      thresholds are breached, track against planned
+      budget
+
 ## References
 
 - [AWS Cloud Practitioner - YouTube Playlist](https://www.youtube.com/playlist?list=PL7Jj8Ba9Yr6AlmnfXo_UwoLF_CG5SP_mH)
