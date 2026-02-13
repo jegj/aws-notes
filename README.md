@@ -4750,6 +4750,84 @@ tricky questions that appear on the CLF-C02 exam.
       thresholds are breached, track against planned
       budget
 
+51. **Storing Petabytes of Unstructured Data in a Data Lake**
+
+    > Which storage service provides users with the ability
+    > to store petabytes of unstructured data in a data
+    > lake on AWS?
+
+    **Answer**: Amazon S3
+
+    Why not Redshift? This is tricky because Redshift is
+    commonly associated with big data, but it's a data
+    *warehouse* for structured/analytical queries, not a
+    data *lake* for unstructured data storage. S3 is the
+    foundation of AWS data lakes.
+
+    - **Amazon Elastic Block Store (Amazon EBS)** ✗ —
+      Block storage attached to EC2 instances; designed
+      for single-instance volumes (like a hard drive),
+      not for petabyte-scale data lakes
+    - **Amazon Athena** ✗ — Serverless query service that
+      *analyzes* data in S3 using SQL; it's a query
+      engine, not a storage service
+    - **Amazon Redshift** ✗ — Data warehouse for
+      structured data and analytical queries (OLAP); not
+      designed for storing unstructured data in a data
+      lake
+    - **Amazon S3** ✓ — Object storage with virtually
+      unlimited capacity; stores any type of data
+      (structured, semi-structured, unstructured) at
+      petabyte scale and is the standard foundation for
+      AWS data lakes
+
+    Data lake vs Data warehouse:
+
+    - **Data lake (S3)**: Stores raw data in any format
+      (JSON, CSV, Parquet, images, video, logs);
+      schema-on-read; petabyte scale; cheap storage
+    - **Data warehouse (Redshift)**: Stores processed,
+      structured data; schema-on-write; optimized for
+      complex analytical SQL queries
+
+52. **Linking AWS to On-Premises Without the Internet**
+
+    > Which AWS service or feature helps link a company's
+    > AWS environment directly to the company's internal
+    > network without using the internet?
+
+    **Answer**: AWS Direct Connect
+
+    Why not Amazon Connect? This is a classic naming trap.
+    Amazon Connect is a cloud *contact center* service
+    (phone/chat support), not a networking service. AWS
+    *Direct* Connect is the dedicated network connection.
+
+    - **AWS Direct Connect** ✓ — Establishes a dedicated,
+      private network connection from on-premises to AWS;
+      bypasses the public internet for more consistent
+      performance, lower latency, and increased security
+    - **Amazon Connect** ✗ — Cloud-based contact center
+      service for customer support (voice, chat); has
+      nothing to do with network connectivity
+    - **VPC peering** ✗ — Connects two VPCs together
+      within AWS (same or cross-account/Region); doesn't
+      connect on-premises networks to AWS
+    - **An egress-only internet gateway** ✗ — Allows
+      outbound IPv6 traffic from a VPC to the internet
+      while preventing inbound connections; still uses the
+      internet
+
+    On-premises to AWS connectivity options:
+
+    - **AWS Direct Connect**: Dedicated private connection,
+      consistent bandwidth, lowest latency, higher cost
+    - **AWS Site-to-Site VPN**: Encrypted tunnel over the
+      public internet, quick to set up, lower cost than
+      Direct Connect
+    - **Direct Connect + VPN**: Combines both for an
+      encrypted connection over a dedicated link
+
 ## References
 
 - [AWS Cloud Practitioner - YouTube Playlist](https://www.youtube.com/playlist?list=PL7Jj8Ba9Yr6AlmnfXo_UwoLF_CG5SP_mH)
