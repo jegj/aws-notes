@@ -4828,6 +4828,44 @@ tricky questions that appear on the CLF-C02 exam.
     - **Direct Connect + VPN**: Combines both for an
       encrypted connection over a dedicated link
 
+53. **SQL Queries Directly on S3 Data**
+
+    > Which AWS service lets you run SQL queries directly
+    > on data stored in Amazon S3 without loading it into
+    > a database?
+
+    **Answer**: Amazon Athena
+
+    Why not Redshift or Glue? The key phrases are "SQL
+    queries directly on S3" and "without loading it into
+    a database." Athena is serverless and queries data
+    in-place in S3 — no ETL, no loading, no infrastructure
+    to manage.
+
+    - **Amazon Redshift** ✗ — A data warehouse that
+      *requires* loading data into it before querying;
+      designed for complex analytics on structured data
+      at petabyte scale
+    - **AWS Glue** ✗ — An ETL service that prepares and
+      transforms data for analytics; it moves/transforms
+      data, doesn't query it directly
+    - **Amazon QuickSight** ✗ — A BI visualization tool
+      for creating dashboards and charts; it doesn't run
+      SQL queries on S3 directly
+    - **Amazon Athena** ✓ — Serverless, interactive query
+      service that uses standard SQL to query data directly
+      in S3; pay per query scanned
+
+    Athena key facts:
+
+    - Serverless — no infrastructure to manage
+    - Supports CSV, JSON, ORC, Avro, Parquet formats
+    - Uses Presto under the hood
+    - Integrates with AWS Glue Data Catalog for schema
+    - Pay per TB of data scanned (~$5/TB)
+    - Often used together: Glue (ETL) → S3 → Athena (query)
+      → QuickSight (visualize)
+
 ## References
 
 - [AWS Cloud Practitioner - YouTube Playlist](https://www.youtube.com/playlist?list=PL7Jj8Ba9Yr6AlmnfXo_UwoLF_CG5SP_mH)
