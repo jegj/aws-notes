@@ -4866,6 +4866,774 @@ tricky questions that appear on the CLF-C02 exam.
     - Often used together: Glue (ETL) → S3 → Athena (query)
       → QuickSight (visualize)
 
+54. **Migrating IBM Db2 to Amazon Aurora**
+
+    > A company needs to move an on-premises IBM Db2 database
+    > to the AWS Cloud. The company wants to convert the
+    > database to a fully managed Amazon Aurora database.
+    > Which AWS services or features can the company use to
+    > analyze, synchronize, deploy, and monitor the conversion
+    > of the database? (Select TWO.)
+
+    **Answer**: AWS Database Migration Service (AWS DMS) and
+    AWS Schema Conversion Tool (AWS SCT)
+
+    Why not DataSync or Direct Connect? This is tricky because
+    both can move data, but neither handles database schema
+    management. The key requirement is *converting* the
+    database schema (Db2 → Aurora) and *migrating* the data
+    — which requires SCT + DMS together.
+
+    - **AWS Database Migration Service (AWS DMS)** ✓ —
+      Migrates databases between sources, including between
+      on-premises and the cloud; handles data synchronization
+      during migration
+    - **Amazon S3 File Gateway** ✗ — Connects on-premises
+      software appliances to AWS Cloud storage for storing and
+      retrieving objects in S3; not a database migration tool
+    - **AWS DataSync** ✗ — Moves data (files/objects) between
+      storage systems; does not provide the database schema
+      management required for this scenario
+    - **AWS Schema Conversion Tool (AWS SCT)** ✓ — Converts
+      an existing database schema from one database engine to
+      another (e.g., IBM Db2 → Aurora); handles schema
+      analysis and transformation
+    - **AWS Direct Connect** ✗ — Dedicated private network
+      connection from on-premises to AWS; moves network
+      traffic but does not handle database schema management
+
+    DMS vs SCT — how they work together:
+
+    - **AWS SCT**: Converts the *schema* (tables, views,
+      stored procedures) from source to target DB engine
+    - **AWS DMS**: Migrates and continuously replicates
+      the *data* from source to target database
+    - Typical flow: SCT (schema conversion) → DMS (data
+      migration) → Aurora (target)
+
+55. **Benefits of AWS Cloud vs On-Premises (Select TWO)**
+
+    > What are the benefits of developing and running a new
+    > application in the AWS Cloud compared to on-premises?
+    > (Select TWO.)
+
+    **Answer**: AWS provides options to architect for high
+    availability AND AWS can scale resources of changing
+    application demands.
+
+    Why not A, B, or E? This is tricky because options A, B,
+    and E sound plausible but violate the Shared Responsibility
+    Model. AWS does *not* automatically distribute your data
+    globally, operate your application, or patch your
+    application — those are customer responsibilities.
+
+    - **AWS automatically distributes the data globally for
+      higher durability** ✗ — AWS does not automatically move
+      data out of the Region where you placed it; data
+      distribution is the user's responsibility
+    - **AWS operates the application** ✗ — User applications
+      are the customer's responsibility per the Shared
+      Responsibility Model
+    - **AWS provides options to architect for high
+      availability** ✓ — Multiple Availability Zones within
+      a Region provide a highly available infrastructure
+      platform for new applications
+    - **AWS can scale resources of changing application
+      demands** ✓ — AWS provides an elastic method to
+      provision the right amount of compute resources on
+      demand, so you focus on the app, not capacity
+    - **AWS patches user applications** ✗ — Application
+      patching is the customer's responsibility per the
+      Shared Responsibility Model
+
+    Key cloud benefits to remember (actual AWS responsibilities):
+
+    - **High availability**: Multiple AZs and Regions
+    - **Elasticity/Scalability**: Scale up/down on demand
+    - **No upfront hardware cost**: Pay-as-you-go
+    - **Global reach**: Deploy worldwide quickly
+
+    What AWS does NOT do (customer responsibilities):
+    - Operate or manage your application
+    - Automatically replicate your data globally
+    - Patch your OS (for EC2) or your application code
+
+56. **AWS Security-Related Services or Features (Select TWO)**
+
+    > Which security-related services or features does AWS
+    > offer? (Select TWO.)
+
+    **Answer**: AWS Trusted Advisor security checks AND
+    Data encryption.
+
+    Why not A, D, or E? This is tricky because PCI compliance,
+    penetration testing, and copyrighted content detection all
+    *sound* like AWS security offerings, but they are either
+    customer responsibilities or simply don't exist as AWS
+    features.
+
+    - **Complete PCI compliance for customer applications
+      that run on AWS** ✗ — Customers are responsible for
+      the certification of PCI compliance of their own
+      applications; some AWS services are PCI-certified but
+      AWS does not complete PCI compliance for you
+    - **AWS Trusted Advisor security checks** ✓ — Draws upon
+      best practices learned from hundreds of thousands of
+      AWS customers; includes security checks for open
+      permissions, exposed credentials, and more
+    - **Data encryption** ✓ — Many AWS services support
+      data encryption (e.g., EBS, S3); encryption adds
+      another layer of security to your data
+    - **Automated penetration testing** ✗ — AWS does not
+      provide automated penetration testing; customers can
+      carry out security assessments or penetration tests on
+      their own AWS infrastructure without prior approval for
+      some services
+    - **Amazon S3 copyrighted content detection** ✗ —
+      Amazon S3 does not provide copyrighted content
+      detection
+
+    Security responsibility reminders:
+
+    - **AWS provides**: Encryption tools, Trusted Advisor
+      checks, IAM, security services (GuardDuty, Shield, WAF)
+    - **Customer responsible for**: PCI compliance of their
+      apps, penetration testing their own workloads, managing
+      what content they store
+
+57. **Customer Responsible for Patching — Shared Responsibility Model**
+
+    > Which of the following is the customer responsible for
+    > updating and patching, according to the AWS shared
+    > responsibility model?
+
+    **Answer**: Amazon WorkSpaces virtual Windows desktop
+
+    Why not FSx, Managed AD, or RDS? This is tricky because
+    all four options are "managed" AWS services, so it's easy
+    to assume AWS handles patching for all of them. The key
+    distinction is that WorkSpaces is a Desktop-as-a-Service —
+    the *OS and software the customer installs* inside the
+    desktop are the customer's responsibility, just like a
+    physical PC.
+
+    - **Amazon FSx for Windows File Server** ✗ — Fully managed
+      shared storage built on Windows Server; AWS is
+      responsible for updates and patches of the server
+    - **Amazon WorkSpaces virtual Windows desktop** ✓ —
+      Managed DaaS offering; the customer is responsible for
+      updating and patching the OS and any software installed
+      inside the WorkSpace; customer can schedule maintenance
+      windows or update manually
+    - **AWS Directory Service for Microsoft Active Directory**
+      ✗ — AWS Managed Microsoft AD is a managed service; AWS
+      is responsible for updates and patches for the managed
+      AD infrastructure
+    - **Amazon RDS for Microsoft SQL Server** ✗ — Managed
+      database service; AWS handles updates and patches; no
+      need to self-manage the database
+
+    Patching responsibility quick reference:
+
+    | Service | Who patches? |
+    |---|---|
+    | EC2 (guest OS) | Customer |
+    | WorkSpaces (OS + installed software) | Customer |
+    | RDS | AWS |
+    | FSx | AWS |
+    | AWS Managed Microsoft AD | AWS |
+    | Lambda runtime | AWS |
+
+58. **Analyzing Documents to Generate Insights from Text**
+
+    > Which AWS service can analyze a set of documents to
+    > generate valuable insights from text?
+
+    **Answer**: Amazon Comprehend
+
+    Why not Textract? This is tricky because Textract also
+    deals with documents and text. The key difference is that
+    Textract *extracts* text from scanned documents (OCR),
+    while Comprehend *analyzes* text to generate insights
+    (sentiment, entities, topics, language).
+
+    - **Amazon Textract** ✗ — Uses ML to extract text,
+      handwriting, and data from scanned documents; it
+      extracts data *from* documents but does not analyze
+      or generate insights from the text
+    - **Amazon Comprehend** ✓ — Uses a pre-trained model to
+      gain insights about the content of documents; analyzes
+      documents and generates valuable insights from text
+      (sentiment analysis, entity recognition, topic modeling,
+      language detection)
+    - **Amazon Polly** ✗ — Converts text into lifelike speech
+      (text-to-speech); does not analyze documents or
+      generate insights
+    - **Amazon Transcribe** ✗ — Speech recognition service
+      that converts audio to text; does not analyze documents
+      or generate insights from text
+
+    AWS AI/ML text services — quick distinction:
+
+    | Service | What it does |
+    |---|---|
+    | Textract | Extracts text/data from scanned docs (OCR) |
+    | Comprehend | Analyzes text for insights (NLP) |
+    | Polly | Text → speech |
+    | Transcribe | Audio/speech → text |
+    | Translate | Translates text between languages |
+
+59. **On-Demand Cloud-Based Contact Center**
+
+    > Which AWS service can be used to provide an on-demand,
+    > cloud-based contact center?
+
+    **Answer**: Amazon Connect
+
+    Why not AWS Direct Connect? This is a classic naming trap.
+    "Direct Connect" sounds like it could relate to connecting
+    customers, but it's a *network* service. "Amazon Connect"
+    (no "Direct") is the contact center service.
+
+    - **AWS Direct Connect** ✗ — Provides direct network
+      connectivity from an internal network to AWS public
+      services; allows data centers to connect to AWS without
+      going over the public internet; nothing to do with
+      customer contact centers
+    - **Amazon Connect** ✓ — Cloud-based contact center
+      service used to set up an on-demand contact center
+      (voice, chat)
+    - **AWS Support** ✗ — The hub for users to request and
+      manage support requests from AWS; not a contact center
+      product you deploy
+    - **AWS Managed Services (AMS)** ✗ — Provides operational
+      services to manage a customer's AWS infrastructure and
+      services on their behalf; not a contact center service
+
+    Name confusion to watch for:
+
+    - **AWS Direct Connect** → dedicated *network* link
+      (on-premises ↔ AWS)
+    - **Amazon Connect** → cloud *contact center*
+      (phone/chat support for your customers)
+
+60. **Benefits of Amazon RDS vs On-Premises Database (Select TWO)**
+
+    > What are benefits of running a database on Amazon RDS
+    > compared to an on-premises database? (Select TWO.)
+
+    **Answer**: RDS provides backups by default AND RDS
+    database compute capacity can be easily scaled.
+
+    Why not B, C, or E? Each wrong answer contains a subtle
+    inaccuracy — RDS doesn't support *all* relational DBs,
+    pricing varies by engine, and security groups are
+    managed by the *user* not AWS.
+
+    - **RDS provides backups by default** ✓ — AWS manages
+      the backing up and storing of data; backups are
+      automated based on the frequency you define
+    - **RDS supports any relational database** ✗ — RDS
+      supports a *variety* of popular engines (Aurora,
+      PostgreSQL, MySQL, MariaDB, Oracle, SQL Server) but
+      not all relational databases
+    - **RDS costs the same regardless of the database engine
+      that is used** ✗ — Some third-party engines (e.g.,
+      Oracle, SQL Server) have additional license fees;
+      cost varies by engine
+    - **RDS database compute capacity can be easily scaled**
+      ✓ — Instances can be scaled up or down on demand with
+      little to no downtime; can also scale vertically for
+      more memory or compute
+    - **RDS security groups are managed by AWS** ✗ —
+      Security groups control inbound/outbound traffic for
+      a DB instance but are managed by the *user*, not AWS
+
+    RDS key benefits over on-premises:
+
+    - Automated backups and snapshots
+    - Easy vertical and horizontal scaling
+    - Multi-AZ for high availability
+    - Automated patching (OS and DB engine)
+    - No hardware provisioning or management
+
+61. **Virtually Unlimited Throughput and Scale**
+
+    > Which AWS service provides virtually unlimited
+    > throughput and scale?
+
+    **Answer**: Amazon DynamoDB
+
+    Why not Redshift? This is tricky because Redshift is
+    marketed as a petabyte-scale data warehouse, so it sounds
+    like it offers unlimited scale. However, Redshift clusters
+    have throughput and scale limits. DynamoDB is the only
+    option here that scales *automatically* with no practical
+    throughput ceiling.
+
+    - **Amazon DynamoDB** ✓ — Serverless, non-relational
+      database that automatically scales tables for both
+      storage and throughput while maintaining performance;
+      designed for virtually unlimited scale
+    - **Amazon RDS for Oracle** ✗ — Has limitations on both
+      throughput and storage tied to the instance size of
+      the DB instance
+    - **Amazon Redshift** ✗ — Very scalable data warehouse
+      but has limits on throughput and scale achievable with
+      a Redshift cluster
+    - **Amazon OpenSearch Service** ✗ — Has limitations on
+      both throughput and storage based on the size of the
+      cluster
+
+    DynamoDB scaling key facts:
+
+    - **Serverless**: no instances to manage or size
+    - **On-demand mode**: scales instantly to any traffic
+      level with no capacity planning
+    - **Provisioned mode**: set read/write capacity units
+      with optional auto scaling
+    - Single-digit millisecond latency at any scale
+
+62. **Data Replication Across AWS Regions (Select TWO)**
+
+    > Which AWS services or features support data replication
+    > across AWS Regions? (Select TWO.)
+
+    **Answer**: Amazon S3 AND Amazon RDS
+
+    Why not EBS or Storage Gateway? This is tricky because
+    EBS replicates data automatically but only *within* an
+    AZ, not across Regions. Storage Gateway integrates with
+    S3 but does not directly support Cross-Region Replication
+    itself.
+
+    - **Amazon S3** ✓ — Supports Cross-Region Replication
+      (CRR); designate a destination S3 bucket in another
+      Region and any new object uploaded is automatically
+      replicated there
+    - **Amazon EBS** ✗ — Automatically replicates data
+      within an Availability Zone; does not support
+      Cross-Region Replication
+    - **Amazon EC2 instance store** ✗ — Block storage
+      physically attached to the host computer; ideal for
+      temporary data only; no built-in mechanism to
+      replicate data across Regions
+    - **AWS Storage Gateway** ✗ — Connects on-premises
+      software appliances with cloud-based storage and
+      integrates with S3; does not directly support
+      Cross-Region Replication
+    - **Amazon RDS** ✓ — Can create read replicas across
+      Regions; RDS replicates data from the primary DB
+      instance to read replicas across Regions
+
+    Cross-Region replication quick reference:
+
+    | Service | Cross-Region replication? |
+    |---|---|
+    | S3 | Yes (Cross-Region Replication / CRR) |
+    | RDS | Yes (cross-Region read replicas) |
+    | DynamoDB | Yes (Global Tables) |
+    | EBS | No (AZ-scoped only) |
+    | EC2 instance store | No (ephemeral, host-scoped) |
+
+63. **Shared Storage Across EC2 Instances in Multiple AZs**
+
+    > A company is running an application replicated on six
+    > Linux-based Amazon EC2 instances across two Availability
+    > Zones in an AWS Region. The application needs shared
+    > access to data. The data is going to be frequently
+    > changed by the application within existing data files.
+    > Which AWS storage solution would meet the company's
+    > needs with the LEAST operational overhead?
+
+    **Answer**: Amazon Elastic File System (Amazon EFS)
+
+    Why not EBS Multi-Attach? This is tricky because EBS
+    Multi-Attach does allow multiple EC2 instances to share
+    the same EBS volume — but only within a *single*
+    Availability Zone. Since the instances span *two* AZs,
+    EBS Multi-Attach cannot be used here.
+
+    - **Amazon EBS Multi-Attach** ✗ — Allows multiple EC2
+      instances to share the same EBS volume, but all
+      instances must be in the *same* Availability Zone;
+      this scenario has instances across two AZs
+    - **Amazon EFS** ✓ — Shared file system that gives EC2
+      instances the ability to share access to data in
+      *different* Availability Zones in the same AWS Region;
+      fully managed with least operational overhead
+    - **Amazon S3** ✗ — Object storage; you would need to
+      upload an entire file for each data change, making it
+      unsuitable for frequently modified files and adds more
+      operational overhead
+    - **Amazon FSx for Lustre** ✗ — Shared storage for
+      high-performance compute workloads; requires
+      additional services, managing configurations, and
+      installing a client application on each server —
+      more operational overhead
+
+    Shared storage options comparison:
+
+    | Service | Scope | Use case |
+    |---|---|---|
+    | EBS Multi-Attach | Single AZ only | Shared block storage, same AZ |
+    | EFS | Multi-AZ (same Region) | Shared file system, Linux |
+    | FSx for Windows | Multi-AZ | Shared file system, Windows |
+    | FSx for Lustre | Single AZ | HPC / high-performance workloads |
+    | S3 | Global | Object storage, not for frequent in-place edits |
+
+64. **What AWS Billing and Cost Management Tools Can Do (Select TWO)**
+
+    > Which of the following can a company do by using AWS
+    > Billing and Cost Management tools? (Select TWO.)
+
+    **Answer**: Break down AWS costs by day, service, and
+    linked AWS account AND Create budgets and receive
+    notifications if current or forecasted usage exceeds
+    those budgets.
+
+    Why not A, D, or E? This is tricky because options A, D,
+    and E describe legitimate AWS capabilities — but they are
+    performed by *other* services, not Billing and Cost
+    Management tools. Billing tools *report and alert*; they
+    do not take automated infrastructure actions.
+
+    - **Terminate all AWS resources automatically if budget
+      thresholds are exceeded** ✗ — You can combine Lambda
+      and CloudWatch to achieve this, but these are not
+      Billing and Cost Management tools; Billing tools will
+      not terminate resources
+    - **Break down AWS costs by day, service, and the linked
+      AWS account** ✓ — Cost Explorer visualizes,
+      understands, and manages AWS costs and usage over
+      time; can break down costs by day, service, and linked
+      accounts
+    - **Create budgets and receive notifications if current
+      or forecasted usage exceeds those budgets** ✓ — AWS
+      Budgets notifies you when current or forecasted usage
+      exceeds your defined budget
+    - **Switch to Reserved Instances or Spot Instances
+      automatically based on which is most cost-effective**
+      ✗ — Billing and Cost Management tools will not change
+      your EC2 instance purchasing selection automatically
+    - **Move data stored in S3 to a more cost-effective
+      storage class** ✗ — Billing tools will not change
+      your S3 storage class; this is done via S3 Lifecycle
+      rules in the S3 console
+
+    Billing and Cost Management tools — what they do:
+
+    - **Cost Explorer**: Visualize and analyze past/current
+      costs and usage; break down by service, account, day
+    - **AWS Budgets**: Set cost/usage thresholds and receive
+      alerts when exceeded (actual or forecasted)
+    - **Cost and Usage Report (CUR)**: Detailed raw billing
+      data for custom analysis
+    - **Pricing Calculator**: Estimate costs before deploying
+
+    What Billing tools do NOT do:
+    - Terminate or modify resources
+    - Change instance purchasing options
+    - Move S3 objects between storage classes
+
+65. **Support Plan with Phone/Email/Chat 24x7 and <1hr Response — Lowest Cost**
+
+    > A company needs phone, email, and chat access 24 hours
+    > a day, 7 days a week. The response time must be less
+    > than 1 hour if a production system has a service
+    > interruption. Which AWS Support plan meets these
+    > requirements at the LOWEST cost?
+
+    **Answer**: AWS Business Support
+
+    Why not Enterprise? This is tricky because Enterprise
+    also meets all the requirements — but the question asks
+    for the *lowest cost* plan that qualifies. Business
+    Support already provides <1 hour response for production
+    system interruptions, making Enterprise unnecessary and
+    more expensive.
+
+    - **AWS Basic Support** ✗ — Does not include chat access
+      or phone calls
+    - **AWS Developer Support** ✗ — Does not include chat
+      access or phone calls; provides email support during
+      business hours only
+    - **AWS Business Support** ✓ — Provides phone, email,
+      and chat access 24/7; response time of less than 1
+      hour if a production system has a service interruption;
+      lowest cost plan that meets all requirements
+    - **AWS Enterprise Support** ✗ — Also provides phone,
+      email, and chat 24/7 with a response time of less than
+      15 minutes for production interruptions; meets the
+      requirements but is more expensive than Business
+
+    AWS Support plan comparison:
+
+    | Feature | Basic | Developer | Business | Enterprise On-Ramp | Enterprise |
+    |---|---|---|---|---|---|
+    | Phone/chat 24/7 | No | No | Yes | Yes | Yes |
+    | Production SLA | — | — | <1 hr | <1 hr | <15 min |
+    | Trusted Advisor checks | Limited | Limited | Full | Full | Full |
+    | TAM | No | No | No | Pool | Dedicated |
+
+66. **Hands-On Help for Cloud Migration Project (Select TWO)**
+
+    > A company is migrating to the AWS Cloud from on-premises
+    > data centers and wants hands-on help with the project.
+    > How can the company get this support? (Select TWO.)
+
+    **Answer**: Use AWS Professional Services AND Select a
+    partner from the AWS Partner Network (APN) to assist
+    with the migration.
+
+    Why not Marketplace, Training, or Amazon Connect? Each
+    wrong option sounds plausible but serves a completely
+    different purpose — Marketplace is a software catalog,
+    Training builds skills, and Amazon Connect is a contact
+    center tool.
+
+    - **Ask for a quote from the AWS Marketplace team to
+      perform a migration** ✗ — AWS Marketplace is a catalog
+      of listings from independent software vendors that
+      work with AWS; it is not a migration service
+    - **Contact AWS Training and open a case for assistance**
+      ✗ — AWS Training focuses on building individual skills
+      and corporate competency; it does not provide hands-on
+      assistance for a project
+    - **Use AWS Professional Services** ✓ — AWS Professional
+      Services can help with migrations to the AWS Cloud;
+      provides expert hands-on project assistance
+    - **Select a partner from the AWS Partner Network (APN)**
+      ✓ — APN partners can help customers with cloud
+      migrations; certified third-party experts with
+      hands-on migration experience
+    - **Use Amazon Connect to create an RFP for expert
+      assistance** ✗ — Amazon Connect is a call center and
+      workforce management software, not an RFP tool
+
+    Who to contact for migration help:
+
+    - **AWS Professional Services**: AWS's own expert team;
+      engages directly on your project
+    - **AWS Partner Network (APN)**: Certified third-party
+      consulting and technology partners
+    - **AWS Migration Hub**: Tool to track migration progress
+      (not people/services that help you migrate)
+    - **AWS Training**: Learn skills yourself; not hands-on
+      project help
+
+67. **What AWS Marketplace Allows Users to Do (Select TWO)**
+
+    > What does AWS Marketplace allow users to do?
+    > (Select TWO.)
+
+    **Answer**: Sell solutions to other AWS users AND Buy
+    third-party software that runs on AWS.
+
+    Why not A? This is tricky because AWS Marketplace *does*
+    allow selling unused Standard Reserved Instances — but
+    not Spot Instances. Option A specifically says "Spot
+    Instances," which cannot be resold, making it incorrect.
+
+    - **Sell unused Amazon EC2 Spot Instances** ✗ —
+      Marketplace allows selling unused *Standard* Reserved
+      Instances; Spot Instances cannot be resold
+    - **Sell solutions to other AWS users** ✓ — AWS
+      Marketplace provides a sales channel to sell software
+      and solutions to other AWS customers
+    - **Buy third-party software that runs on AWS** ✓ —
+      You can use AWS Marketplace to deploy third-party
+      software that runs in the AWS environment
+    - **Purchase AWS security and compliance documents** ✗
+      — AWS security and compliance documents can be
+      requested from the AWS Artifact/Compliance site and
+      are free of charge; not purchased via Marketplace
+    - **Order AWS Snowball Edge** ✗ — Snow Family devices
+      are ordered through the AWS Management Console, not
+      AWS Marketplace
+
+    AWS Marketplace key facts:
+
+    - Digital catalog with thousands of software listings
+    - Categories: security, networking, storage, ML, DevOps
+    - Can sell: software, SaaS, AMIs, and unused Standard
+      Reserved Instances
+    - Cannot sell: Spot Instances, on-demand capacity
+    - Compliance docs → AWS Artifact (free, not Marketplace)
+    - Snow devices → AWS Management Console
+
+68. **Reducing the Cost of Running EC2 Instances (Select TWO)**
+
+    > What can be used to reduce the cost of running Amazon
+    > EC2 instances? (Select TWO.)
+
+    **Answer**: Spot Instances for stateless and flexible
+    workloads AND Reserved Instances for sustained workloads.
+
+    Why not B or E? This is tricky because Memory optimized
+    instances sound like a cost-saving choice, and AWS Budgets
+    sounds like a cost management tool — but neither actually
+    *reduces* EC2 costs. Memory optimized instances are a
+    performance choice, and Budgets only alerts you, it doesn't
+    lower your bill.
+
+    - **Spot Instances for stateless and flexible workloads**
+      ✓ — Use spare EC2 capacity at up to 90% discount
+      compared to On-Demand; ideal for stateless,
+      fault-tolerant, or flexible applications
+    - **Memory optimized instances for high-compute
+      workloads** ✗ — Deliver fast performance for workloads
+      that process large datasets in memory; do not reduce
+      cost for compute-intensive workloads — they are a
+      performance choice, not a cost-saving mechanism
+    - **On-Demand Instances for high-cost and sustained
+      workloads** ✗ — With On-Demand you pay by the second
+      with no commitment; for sustained workloads, Reserved
+      Instances or Savings Plans are less expensive options
+    - **Reserved Instances for sustained workloads** ✓ —
+      Provide significant savings vs On-Demand when you
+      commit to 1-year or 3-year terms; 3-year commitment
+      offers the largest discount
+    - **Spend limits set using AWS Budgets** ✗ — Helps
+      create custom budgets and alerts when costs exceed
+      the budget; does not directly reduce costs
+
+    EC2 cost reduction options summary:
+
+    | Option | Discount vs On-Demand | Commitment |
+    |---|---|---|
+    | Spot Instances | Up to 90% | None (can be interrupted) |
+    | Reserved Instances | Up to 72% | 1 or 3 years |
+    | Savings Plans | Up to 66% | 1 or 3 years |
+    | On-Demand | — | None |
+
+69. **EC2 Pricing Model Based on Supply and Demand**
+
+    > Which Amazon EC2 pricing model adjusts the cost based
+    > on supply and demand of EC2 instances?
+
+    **Answer**: Spot Instances
+
+    Why not On-Demand? This is tricky because On-Demand
+    sounds like it would fluctuate with demand, but it is
+    actually offered at a *fixed* set price per AWS Region.
+    Spot Instances are the only model where price fluctuates
+    based on available spare capacity (supply and demand).
+
+    - **On-Demand Instances** ✗ — Offered at a fixed set
+      price by AWS Region; price does not fluctuate with
+      supply and demand
+    - **Reserved Instances** ✗ — Reserve capacity at a
+      discounted rate by committing to a certain amount of
+      compute for 1 or 3 years; fixed discounted price,
+      not supply-and-demand based
+    - **Spot Instances** ✓ — Discounted more heavily when
+      there is more capacity available in the Availability
+      Zones; price adjusts based on supply and demand of
+      spare EC2 capacity
+    - **Convertible Reserved Instances** ✗ — A type of
+      Reserved Instance where you can change instance
+      family, OS, and tenancy; still a committed fixed
+      discounted rate, not supply-and-demand based
+
+    EC2 pricing model mechanics:
+
+    | Model | Price type | How price is set |
+    |---|---|---|
+    | On-Demand | Fixed | Set by AWS per Region |
+    | Reserved | Fixed (discounted) | Commit to 1 or 3 years |
+    | Convertible Reserved | Fixed (discounted) | Commit + flexibility to change attributes |
+    | Spot | Variable | Supply & demand of spare capacity |
+    | Savings Plans | Fixed (discounted) | Commit to $/hr spend for 1 or 3 years |
+
+70. **Sharing Reserved Instances Across AWS Accounts**
+
+    > How should one AWS account use Reserved Instances from
+    > another AWS account?
+
+    **Answer**: By using consolidated billing
+
+    Why not Cost Explorer or Budgets? This is tricky because
+    Cost Explorer and Budgets are billing *visibility* tools —
+    they help you see and manage costs but cannot share
+    Reserved Instance discounts across accounts. Consolidated
+    billing within AWS Organizations is the mechanism that
+    enables cross-account Reserved Instance sharing.
+
+    - **By using Dedicated Instances** ✗ — Dedicated
+      Instances run on hardware dedicated to a single
+      customer for isolation; unrelated to sharing Reserved
+      Instance discounts between accounts
+    - **By using consolidated billing** ✓ — AWS Organizations
+      consolidated billing allows Reserved Instance discounts
+      to be shared across all linked accounts in the
+      organization; if one account has unused Reserved
+      Instances, other accounts automatically benefit from
+      the discount
+    - **By using the AWS Cost Explorer tool** ✗ — Cost
+      Explorer visualizes and analyzes costs and usage; it
+      cannot share or transfer Reserved Instance discounts
+      between accounts
+    - **By using AWS Budgets** ✗ — AWS Budgets sets cost
+      thresholds and sends alerts; it has no mechanism to
+      share Reserved Instances across accounts
+
+    Consolidated billing and Reserved Instance sharing:
+
+    - Reserved Instance (RI) discounts are shared
+      automatically across all accounts in an AWS
+      Organization when consolidated billing is enabled
+    - If account A has unused RIs, account B's On-Demand
+      usage that matches the RI attributes will
+      automatically get the discounted rate
+    - RI sharing can be disabled per account if needed
+    - Same applies to Savings Plans
+
+71. **Flexible Timing, Hundreds of Instances, Minimize Cost**
+
+    > A company is building a system that will collect large
+    > amounts of data during the day and analyze the data at
+    > night. If necessary, the analysis can occur at any time
+    > of day. The analysis requires hundreds of Amazon EC2
+    > instances to process the data and deliver the results.
+    > The company needs a solution that will minimize costs.
+    > Which Amazon EC2 purchase option will meet these
+    > requirements?
+
+    **Answer**: Spot Instances
+
+    Why not Reserved Instances? This is tricky because
+    Reserved Instances offer significant discounts, making
+    them sound like the cost-minimizing choice. However,
+    Reserved Instances are best for *consistent, well-defined*
+    workloads. The key signals here are "flexible timing" and
+    "hundreds of instances" — both point to Spot, which
+    provides the deepest discounts for interruptible,
+    large-scale workloads.
+
+    - **Reserved Instances** ✗ — Due to the flexible timing
+      and large number of instances, Reserved Instances are
+      not the best choice; they are for well-defined and
+      consistent processing needs
+    - **Spot Instances** ✓ — The flexible timing and large
+      number of instances make Spot the best choice;
+      provides up to 90% discount on spare EC2 capacity;
+      analysis that can run at any time tolerates potential
+      interruptions
+    - **On-Demand Instances** ✗ — Not the least expensive
+      choice; pay full price with no commitment discount
+    - **Dedicated Instances** ✗ — Best suited for security
+      compliance or licensing requirements; do not reduce
+      costs
+
+    Spot Instance use case signals to watch for:
+
+    - "Flexible timing" or "can run at any time"
+    - "Hundreds/thousands of instances"
+    - "Minimize cost" or "lowest cost"
+    - "Fault-tolerant" or "stateless" workloads
+    - Batch processing, big data analysis, rendering
+
 ## References
 
 - [AWS Cloud Practitioner - YouTube Playlist](https://www.youtube.com/playlist?list=PL7Jj8Ba9Yr6AlmnfXo_UwoLF_CG5SP_mH)
