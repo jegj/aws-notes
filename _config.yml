@@ -1,12 +1,18 @@
 remote_theme: just-the-docs/just-the-docs
 
 title: AWS Certification Notes
-description: Study notes for AWS Cloud Practitioner CLF-C02
+description: Study notes for AWS Cloud Practitioner CLF-C02 and Solutions Architect Associate SAA-C03
 baseurl: /aws-notes
 
 color_scheme: dark
 search_enabled: true
 heading_anchors: true
+
+defaults:
+  - scope:
+      path: "docs"
+    values:
+      layout: default
 
 exclude:
   - node_modules/
