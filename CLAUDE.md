@@ -66,4 +66,6 @@ Work in progress.
 
 ## Adding new questions
 
-- Whenever a picture is shared to get the conent of the question, always include the options and mark the valid answer
+- Whenever a picture is shared to get the content for the question, always include the options and mark the valid answer
+- Provide an small description about why the selected answer is valid and why the other answer are wrong.
+- Keep everything simple unless is mentioned the opossite
