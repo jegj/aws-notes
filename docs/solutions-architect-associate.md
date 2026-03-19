@@ -9,8 +9,51 @@ Notes for the AWS Solutions Architect Associate certification exam.
 
 ## Table of Contents
 
+- [General Concepts](#aws-solutions-architect-associate---general-concepts)
+  - [AWS Infrastructure](#aws-infrastructure)
 - [Questions](#questions)
 - [References](#references)
+
+## AWS Solutions Architect Associate - General Concepts
+
+### AWS Infrastructure
+
+AWS infrastructure is organized to help you build effective applications
+with high availability, low latency, and consistent performance globally.
+
+**AWS Local Zones:**
+
+- Extend AWS infrastructure closer to specific geographic areas
+- **Low latency**: Places compute, storage, and database services near
+  end users in metropolitan areas
+- **Local data processing**: Run latency-sensitive applications with
+  data processed close to the source
+- **Consistent AWS experience**: Use the same AWS APIs, tools, and
+  infrastructure as in standard Regions
+- Use case: Media and entertainment, real-time gaming, live streaming,
+  and latency-sensitive applications near specific cities
+
+**Edge Locations:**
+
+- Points of presence distributed globally used by services like
+  Amazon CloudFront and Route 53
+- **Caching of data**: Store copies of content closer to end users
+  to reduce origin requests
+- **Fast delivery of content**: Serve static and dynamic content
+  with minimal latency via CloudFront CDN
+- **Better user experience**: Reduce round-trip time for users
+  regardless of their geographic location
+- Use case: Content distribution, DNS resolution, DDoS mitigation
+  via AWS Shield
+
+**Key Differences:**
+
+| Feature | Local Zones | Edge Locations |
+| --- | --- | --- |
+| Purpose | Run full compute/storage workloads near users | Cache and deliver content near users |
+| Services | EC2, EBS, RDS, ECS, and more | CloudFront, Route 53, AWS Shield |
+| Connectivity | Extension of parent Region VPC | Distributed globally, not tied to a Region |
+| Use case | Low-latency app processing | Content delivery and DNS |
 
 ## Questions
 
