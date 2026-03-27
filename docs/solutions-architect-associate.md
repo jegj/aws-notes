@@ -55,6 +55,45 @@ with high availability, low latency, and consistent performance globally.
 | Connectivity | Extension of parent Region VPC | Distributed globally, not tied to a Region |
 | Use case | Low-latency app processing | Content delivery and DNS |
 
+### AWS Data Migration Tools
+
+Two categories: **Online** (network-based) and **Offline** (physical device).
+
+**Online:**
+
+- **AWS Storage Gateway** — Sync files with SMB, NFS, and iSCSI from on-premises to AWS
+- **AWS DataSync** — Sync files from on-premises file storage to AWS (automated, scheduled transfers)
+- **AWS Transfer Family** — Transfer files into/out of Amazon S3 or EFS using SFTP, FTP, or FTPS
+
+**Offline:**
+
+- **AWS Snow Family** — Move terabytes to petabytes of data physically to AWS using secure, rugged devices (Snowcone, Snowball, Snowmobile)
+
+| Tool | Type | Use Case |
+| --- | --- | --- |
+| Storage Gateway | Online | Hybrid on-premises to AWS file sync |
+| DataSync | Online | Automated bulk data transfer to AWS |
+| Transfer Family | Online | SFTP/FTP file transfers to S3 or EFS |
+| Snow Family | Offline | Large-scale physical data migration |
+
+### Amazon S3 Storage Classes
+
+S3 offers multiple storage classes ranging from high-cost frequent-access to low-cost infrequent-access:
+
+| Storage Class | Use Case | Retrieval |
+| --- | --- | --- |
+| **S3 Standard** | Frequently accessed data | Milliseconds |
+| **S3 Standard-IA** | Infrequently accessed, requires rapid access | Milliseconds |
+| **S3 Intelligent-Tiering** | Unknown or changing access patterns — auto-moves objects between tiers | Milliseconds |
+| **S3 One Zone-IA** | Infrequent access, single AZ, lower cost | Milliseconds |
+| **S3 Glacier Instant Retrieval** | Archival data accessed once per quarter | Milliseconds |
+| **S3 Glacier Flexible Retrieval** | Archival data accessed 1-2 times per year | Minutes to hours |
+| **S3 Glacier Deep Archive** | Long-term retention, accessed rarely | Up to 12 hours |
+
+- Cost decreases from Standard → Deep Archive
+- Retrieval time increases from Standard → Deep Archive
+- S3 Intelligent-Tiering automatically moves data between access tiers based on usage patterns with no retrieval fees
+
 ## Questions
 
 ### Q1: Most cost-effective way to transfer 60 TB monthly to on-premises
@@ -356,6 +395,23 @@ Which approach should a solutions architect recommend to meet these requirements
 **Answer: D**
 
 AWS WAF can detect and block SQL injection and cross-site scripting (XSS) attacks using managed rules and custom conditions. Attaching it to the CloudFront distribution inspects traffic at the edge before it reaches the origin. Shield Advanced (A, B) protects against DDoS attacks but does not protect against XSS or SQL injection. Firewall Manager (C) is a managed service for centrally configuring WAF and Shield policies — it is not deployed on EC2 instances.
+
+### Q21: Modes available in the Storage Gateway appliance (Select THREE)
+
+Which of the following are modes available in the Storage Gateway appliance?
+
+(Select THREE.)
+
+- A. Internet Gateway
+- B. Tape Gateway
+- C. Volume Gateway
+- D. Virtual Gateway
+- E. Amazon S3 File Gateway
+- F. NAT Gateway
+
+**Answer: B, C, E**
+
+AWS Storage Gateway has three modes: **Tape Gateway** (virtual tape library backed by S3/Glacier for backup workflows), **Volume Gateway** (iSCSI block storage volumes backed by S3, in cached or stored mode), and **Amazon S3 File Gateway** (stores files as objects in S3 via NFS/SMB). Internet Gateway (A) and NAT Gateway (F) are VPC networking components, not Storage Gateway modes. Virtual Gateway (D) does not exist as an AWS service.
 
 ## References
 
