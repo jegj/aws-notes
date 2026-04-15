@@ -413,6 +413,46 @@ Which of the following are modes available in the Storage Gateway appliance?
 
 AWS Storage Gateway has three modes: **Tape Gateway** (virtual tape library backed by S3/Glacier for backup workflows), **Volume Gateway** (iSCSI block storage volumes backed by S3, in cached or stored mode), and **Amazon S3 File Gateway** (stores files as objects in S3 via NFS/SMB). Internet Gateway (A) and NAT Gateway (F) are VPC networking components, not Storage Gateway modes. Virtual Gateway (D) does not exist as an AWS service.
 
+### Q22: AWS service to run SQL queries directly on data in S3
+
+Which AWS service lets you run SQL queries directly on data stored in Amazon S3 without loading it into a database?
+
+- A. Amazon Redshift
+- B. Amazon Athena
+- C. AWS Glue
+- D. Amazon QuickSight
+
+**Answer: B**
+
+Amazon Athena is a serverless interactive query service that lets you run SQL queries directly on data in S3 with no data loading or ETL required — you pay only per query. Redshift (A) is a data warehouse that requires data to be loaded into it. AWS Glue (C) is an ETL service for data preparation and transformation, not query execution. Amazon QuickSight (D) is a business intelligence and visualization tool, not a query engine for raw S3 data.
+
+### Q23: Auto Scaling strategy to maintain 75% CPU with unpredictable traffic
+
+You have an application with unpredictable traffic patterns that runs on at least two instances. You want the CPU utilization to stay at about 75 percent. Which Amazon EC2 Auto Scaling strategy should you choose?
+
+- A. Scheduled
+- B. Predictive
+- C. Dynamic
+- D. Manual
+
+**Answer: C**
+
+Dynamic scaling adjusts capacity in real time based on current demand using a target tracking policy — you simply set the desired metric (e.g., CPU at 75%) and Auto Scaling continuously adds or removes instances to maintain that target. It is the right choice for unpredictable traffic. Scheduled scaling (A) triggers at predefined times and requires knowing when traffic spikes occur. Predictive scaling (B) uses ML to forecast traffic but requires historical patterns — not suitable for truly unpredictable workloads. Manual scaling (D) requires human intervention and cannot react automatically to traffic changes.
+
+### Q24: Use cases for AWS CloudTrail data (Select TWO)
+
+Which of the following are use cases for AWS CloudTrail data? (Select TWO.)
+
+- A. Provide real-time observability of AWS resources.
+- B. Store log data as a record of account usage.
+- C. Log events for a particular service or application.
+- D. Capture root login failures.
+- E. Collect metric data measuring CPU utilization.
+
+**Answer: B, D**
+
+CloudTrail records API calls and account activity across AWS services, providing a history of actions taken — making it the right tool for audit trails (B) and detecting security events like root login failures (D). Real-time observability (A) is provided by Amazon CloudWatch. Application-level event logging (C) is handled by CloudWatch Logs. CPU utilization metrics (E) are collected by CloudWatch Metrics, not CloudTrail.
+
 ## References
 
 - [AWS Solutions Architect Associate - Official Exam Guide](https://aws.amazon.com/certification/certified-solutions-architect-associate/)
