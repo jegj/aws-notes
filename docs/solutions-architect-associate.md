@@ -453,6 +453,293 @@ Which of the following are use cases for AWS CloudTrail data? (Select TWO.)
 
 CloudTrail records API calls and account activity across AWS services, providing a history of actions taken — making it the right tool for audit trails (B) and detecting security events like root login failures (D). Real-time observability (A) is provided by Amazon CloudWatch. Application-level event logging (C) is handled by CloudWatch Logs. CPU utilization metrics (E) are collected by CloudWatch Metrics, not CloudTrail.
 
+### Q25: Make long-running report generation more responsive behind ALB
+
+A web application runs on Amazon EC2 instances behind an Application Load Balancer (ALB). The application allows users to create custom reports of historical weather data. Generating a report can take up to 5 minutes. These long-running requests use many of the available incoming connections, making the system unresponsive to other users.
+
+How can a solutions architect make the system more responsive?
+
+- A. Use Amazon SQS with AWS Lambda to generate reports.
+- B. Increase the idle timeout on the ALB to 5 minutes.
+- C. Update the client-side application code to increase its request timeout to 5 minutes.
+- D. Publish the reports to Amazon S3 and use Amazon CloudFront for downloading to the user.
+
+**Answer: A**
+
+Offloading report generation to SQS + Lambda decouples the long-running work from the web tier, freeing EC2 connections for other users. Increasing the ALB idle timeout (B) prevents premature disconnects but doesn't reduce connection consumption. Updating client-side timeouts (C) prevents client-side failures but does nothing to free server resources. Publishing to S3 + CloudFront (D) helps with delivery but doesn't solve the problem of long-running requests consuming connections during generation.
+
+### Q26: Shared storage for 10–50 EC2 instances reading and writing to the same 50 GB folder
+
+A solutions architect is designing an elastic application that will have between 10 and 50 Amazon EC2 concurrent instances running, depending on the load. Each instance must mount storage that will read and write to the same 50 GB folder.
+
+Which storage type meets the requirements?
+
+- A. Amazon S3
+- B. Amazon Elastic File System (Amazon EFS)
+- C. Amazon Elastic Block Store (Amazon EBS) volumes
+- D. Amazon EC2 instance store
+
+**Answer: B**
+
+EFS is a fully managed, shared file system that can be mounted simultaneously by thousands of EC2 instances across multiple AZs using NFS. S3 (A) is object storage and cannot be natively mounted as a file system. EBS (C) volumes attach to a single EC2 instance (Multi-Attach is limited to io1/io2 and up to 16 instances with a cluster-aware file system). Instance store (D) is ephemeral local storage tied to a single instance.
+
+### Q27: Most secure method for ECS task on EC2 to publish messages to SQS
+
+A company has an application running as a service in Amazon Elastic Container Service (Amazon ECS) using the Amazon EC2 launch type. The application code makes AWS API calls to publish messages to Amazon Simple Queue Service (Amazon SQS).
+
+What is the MOST secure method of giving the application permission to publish messages to Amazon SQS?
+
+- A. Use AWS Identity and Access Management (IAM) to grant SQS permissions to the role used by the launch configuration for the Auto Scaling group of the ECS cluster.
+- B. Create a new IAM user with SQS permissions. Then update the task definition to declare the access key ID and secret access key as environment variables.
+- C. Create a new IAM role with SQS permissions. Then update the task definition to use this role for the task role setting.
+- D. Update the security group used by the ECS cluster to allow access to Amazon SQS.
+
+**Answer: C**
+
+ECS task roles (taskRoleArn) provide fine-grained, per-task IAM permissions — only the specific task gets SQS access. Granting permissions via the instance role (A) gives ALL containers on the EC2 instance SQS access, violating least privilege. IAM user credentials as environment variables (B) uses long-term credentials, which is insecure and harder to rotate. Security groups (D) operate at the network layer and cannot control AWS API permissions.
+
+### Q28: Immediate solution for viral traffic spike on an on-premises media site
+
+A company runs an online media site, hosted on-premises. An employee posted a product review that contained videos and pictures. The review went viral, and the company needs to handle the resulting spike in website traffic.
+
+What action would provide an immediate solution?
+
+- A. Redesign the website to use Amazon API Gateway, and use AWS Lambda to deliver content.
+- B. Add server instances using Amazon EC2 and use Amazon Route 53 with a failover routing policy.
+- C. Serve the images and videos using an Amazon CloudFront distribution created using the media site as the origin.
+- D. Use Amazon ElastiCache for Redis for caching and reducing the load requests from the origin.
+
+**Answer: C**
+
+CloudFront can be set up quickly with the existing on-premises site as the origin, immediately caching and distributing static media content (images and videos) at edge locations worldwide. Redesigning with API Gateway + Lambda (A) requires significant development — not immediate. Adding EC2 + Route 53 failover (B) requires provisioning and configuration time. ElastiCache (D) is an in-memory cache within AWS, not designed to front an on-premises website for external users.
+
+### Q29: Self-managed service for governance evaluations and remediations across AWS Organizations
+
+A company's cloud operations team wants to standardize resource remediation. The company wants to provide a standard set of governance evaluations and remediations to all member accounts in its organization in AWS Organizations.
+
+Which self-managed AWS service can the company use to meet these requirements with the LEAST amount of operational effort?
+
+- A. AWS Security Hub compliance standards
+- B. AWS Config conformance packs
+- C. AWS CloudTrail
+- D. AWS Trusted Advisor
+
+**Answer: A**
+
+AWS Security Hub compliance standards provide automated, continuous security checks against industry frameworks (CIS, AWS Foundational Best Practices) across all member accounts in AWS Organizations with minimal setup. Security Hub integrates with AWS Organizations natively for centralized management. Config conformance packs (B) provide evaluations and remediation but require more operational effort to configure and deploy. CloudTrail (C) provides audit logging, not governance evaluations or remediation. Trusted Advisor (D) offers best-practice recommendations but does not provide standardized remediations.
+
+### Q30: Most secure way for EC2 in private subnet to access SNS with PII data
+
+An application launched on Amazon EC2 instances needs to publish personally identifiable information (PII) about customers using Amazon Simple Notification Service (Amazon SNS). The application is launched in private subnets within an Amazon VPC.
+
+What is the MOST secure way to allow the application to access service endpoints in the same AWS Region?
+
+- A. Use an internet gateway.
+- B. Use AWS PrivateLink.
+- C. Use a NAT gateway.
+- D. Use a proxy instance.
+
+**Answer: B**
+
+AWS PrivateLink (VPC interface endpoints) allows private connectivity to AWS services like SNS without leaving the AWS network. Traffic never traverses the public internet, which is critical when handling PII. An internet gateway (A) would require the instances to be in public subnets and expose traffic to the internet. A NAT gateway (C) routes traffic through the public internet, which is less secure for PII. A proxy instance (D) adds operational overhead and still routes traffic through the internet.
+
+### Q31: Optimize Auto Scaling costs for highly variable demand without impacting performance
+
+A company hosts its website on AWS. To address the highly variable demand, the company has implemented Amazon EC2 Auto Scaling. Management is concerned that the company is over-provisioning its infrastructure, especially at the front end of the three-tier application. A solutions architect needs to ensure costs are optimized without impacting performance.
+
+What should the solutions architect do to accomplish this?
+
+- A. Use Auto Scaling with Reserved Instances.
+- B. Use Auto Scaling with a scheduled scaling policy.
+- C. Use Auto Scaling with the suspend-resume feature.
+- D. Use Auto Scaling with a target tracking scaling policy.
+
+**Answer: D**
+
+Target tracking scaling automatically adjusts capacity to maintain a specific metric (e.g., CPU utilization at a target percentage), scaling in when demand drops and scaling out when demand increases. This directly addresses over-provisioning by closely matching capacity to actual demand. Reserved Instances (A) reduce per-instance cost but don't address capacity optimization. Scheduled scaling (B) requires predictable demand patterns and cannot handle highly variable traffic. Suspend-resume (C) pauses scaling actions entirely, which would impact availability.
+
+### Q32: Improve security for EC2 running website and AD controller, minimize admin overhead
+
+A company is performing an AWS Well-Architected Framework review of an existing workload deployed on AWS. The review identified a public-facing website running on the same Amazon EC2 instance as a Microsoft Active Directory domain controller that was installed recently to support other AWS services. A solutions architect needs to recommend a new design that would improve the security of the architecture and minimize the administrative demand on IT staff.
+
+What should the solutions architect recommend?
+
+- A. Use AWS Managed Microsoft AD to create a managed Active Directory. Uninstall Active Directory on the current EC2 instance.
+- B. Create EC2 instances in the same subnet and reinstall Active Directory on a separate EC2 instance. Uninstall Active Directory on the current EC2 instance.
+- C. Use AWS Directory Service to create an Active Directory Connector to the Active Directory controller running on the current EC2 instance.
+- D. Configure AWS IAM Identity Center (AWS Single Sign-On) with Security Assertion Markup Language (SAML) 2.0 federation with the current Active Directory controller. Modify the EC2 instance's security group to deny public access to Active Directory.
+
+**Answer: A**
+
+AWS Managed Microsoft AD fully separates the Active Directory workload from the public-facing website and offloads AD management to AWS, addressing both security (separation of concerns) and administrative overhead (fully managed service). Reinstalling AD on a separate EC2 instance (B) improves security through separation but does not reduce admin effort — AD is still self-managed. An AD Connector (C) requires an existing directory to connect to and doesn't replace the AD on the instance. IAM Identity Center + security group (D) keeps AD on the same instance as the website, which doesn't resolve the fundamental architectural issue.
+
+### Q33: Most secure way to store an API key for AWS Lambda accessing a third-party service
+
+An application running on AWS Lambda requires an API key to access a third-party service. The key must be stored securely with audited access to the Lambda function only.
+
+What is the MOST secure way to store the key?
+
+- A. As an object in Amazon S3
+- B. As a secure string in AWS Systems Manager Parameter Store
+- C. Inside a file on an Amazon EBS volume attached to the Lambda function
+- D. Inside a secrets file stored on Amazon EFS
+
+**Answer: B**
+
+AWS Systems Manager Parameter Store SecureString parameters encrypt values using AWS KMS and integrate with IAM for fine-grained access control. Access to the parameter can be restricted to the Lambda function's execution role and all access is logged via CloudTrail for auditing. S3 (A) can store encrypted objects but lacks the native integration and access auditing purpose-built for secrets. EBS volumes (C) cannot be attached to Lambda functions. EFS (D) can be mounted by Lambda but storing secrets as files lacks built-in encryption management and fine-grained auditing.
+
+### Q34: SQS configuration to prioritize paid users over free users for photo processing
+
+An online photo application lets users upload photos and perform image editing operations. The application is built on Amazon EC2 instances and offers two classes of service: free and paid. Photos submitted by paid users are processed before those submitted by free users. Photos are uploaded to Amazon S3 and the job information is sent to Amazon SQS.
+
+Which configuration should a solutions architect recommend?
+
+- A. Use one SQS FIFO queue. Assign a higher priority to the photos from paid users so they are processed first.
+- B. Use two SQS FIFO queues: one for paid users and one for free users. Set the free queue to use short polling and the paid queue to use long polling.
+- C. Use two SQS standard queues: one for paid users and one for free users. Configure the application on the Amazon EC2 instances to prioritize polling for the paid queue over the free queue.
+- D. Use one SQS standard queue. Set the visibility timeout of the photos from paid users to zero. Configure the application on the Amazon EC2 instances to prioritize visibility settings so photos from paid users are processed first.
+
+**Answer: B**
+
+Using two separate FIFO queues ensures ordered processing within each tier. Long polling on the paid queue means the application retrieves messages immediately when available, while short polling on the free queue introduces deliberate delays — effectively prioritizing paid users. SQS does not support native message priority (A is invalid). Two standard queues with application-level prioritization (C) could work but standard queues don't guarantee ordering, potentially processing free user photos out of order. Manipulating visibility timeout (D) does not create a reliable prioritization mechanism and adds unnecessary complexity.
+
+### Q35: Document storage on EC2 across multi-AZ with immediate retrieval
+
+A company is building a document storage application on AWS. The application runs on Amazon EC2 instances in multiple Availability Zones. The company requires the document store to be highly available. The documents need to be available to all EC2 instances hosting the application and returned immediately when requested multiple times per month. The lead engineer has configured the application to use Amazon Elastic Block Store (Amazon EBS) to store the documents, but is willing to consider other options to meet the availability requirements.
+
+What should a solutions architect recommend?
+
+- A. Snapshot the EBS volumes regularly and build new volumes from those snapshots in additional Availability Zones.
+- B. Use Amazon EBS for the EC2 instance root volumes. Configure the application to build the document store on Amazon S3.
+- C. Use Amazon EBS for the EC2 instance root volumes. Configure the application to build the document store on Amazon S3 Glacier Flexible Retrieval.
+- D. Use at least three Provisioned IOPS EBS volumes for EC2 instances. Mount the volumes to the EC2 instances in a RAID 1 configuration.
+
+**Answer: B**
+
+Amazon S3 provides 99.999999999% (11 nines) durability, is accessible from any AZ or Region, and returns objects immediately — meeting all requirements. EBS snapshots (A) add complexity and lag since volumes must be rebuilt in each AZ. S3 Glacier Flexible Retrieval (C) has retrieval times of minutes to hours, not immediate. RAID 1 with EBS (D) provides redundancy within a single instance but does not make documents available across AZs.
+
+### Q36: Most cost-effective way to improve UDP audio streaming performance for North American users
+
+A company has a well-architected application that streams audio data by using UDP in the AWS Cloud. The company hosts the application in the eu-central-1 Region. The company plans to offer services to North American users. A solutions architect must improve application network performance for the North American users.
+
+Which of the following is the MOST cost-effective solution?
+
+- A. Create an AWS Global Accelerator standard accelerator with an endpoint group in eu-central-1.
+- B. Use AWS CloudFormation to deploy additional application infrastructure in the us-east-1 Region and the us-west-1 Region.
+- C. Create an Amazon CloudFront distribution and use the North America (United States, Mexico, Canada) and Europe and Israel price classes.
+- D. Configure the application to use an Amazon Route 53 latency-based routing policy.
+
+**Answer: A**
+
+AWS Global Accelerator routes UDP and TCP traffic through the AWS global backbone network, providing consistent low-latency performance without duplicating infrastructure. It is the most cost-effective because only an accelerator layer is added. Deploying in US regions (B) requires full infrastructure duplication — significantly more expensive. CloudFront (C) does not support UDP traffic. Route 53 latency-based routing (D) directs users to the nearest endpoint, but with only one endpoint in eu-central-1, it provides no benefit.
+
+### Q37: Auto Scaling default termination policy behavior during scale-in across two AZs
+
+An environment has an Auto Scaling group across two Availability Zones referred to as AZ-a and AZ-b. AZ-a has four Amazon EC2 instances, and AZ-b has three EC2 instances. The Auto Scaling group uses a default termination policy. None of the instances are protected from a scale-in event.
+
+How will Auto Scaling proceed if there is a scale-in event?
+
+- A. Auto Scaling selects an instance to terminate randomly.
+- B. Auto Scaling terminates the instance with the oldest launch configuration of all instances.
+- C. Auto Scaling selects the Availability Zone with four EC2 instances, and then continues to evaluate.
+- D. Auto Scaling terminates the instance with the closest next billing hour of all instances.
+
+**Answer: C**
+
+The default termination policy first selects the AZ with the most instances to maintain balance across AZs (AZ-a with 4 instances). Then within that AZ, it evaluates further: selecting the instance with the oldest launch configuration/template, then the one closest to the next billing hour, and finally randomly if still tied. It does not select randomly across all AZs (A), nor does it skip the AZ-balancing step to evaluate launch configuration globally (B) or billing hour globally (D).
+
+### Q38: Fix S3 bucket policy error missing required element
+
+An administrator wants to apply a resource-based policy to the S3 bucket named "iam-policy-testbucket" to restrict access and to allow accounts to only write objects to the bucket. When the administrator tries to apply the following policy to the "iam-policy-testbucket" bucket, the S3 bucket presents an error.
+
+`{ "Version": "2012-10-17", "Id": "Policy1646946718956", "Statement": [ { "Sid": "Stmt1646946717210", "Effect": "Allow", "Action": "s3:PutObject", "Resource": "arn:aws:s3:::iam-policy-testbucket/*" } ] }`
+
+How can the administrator correct the policy to resolve the error and successfully apply the policy?
+
+- A. Change the Action element from s3:PutObject to s3:*.
+- B. Remove the Resource element because it is unnecessary for resource-based policies.
+- C. Change the Resource element to NotResource.
+- D. Add a Principal element to the policy to declare which accounts have access.
+
+**Answer: D**
+
+Resource-based policies (such as S3 bucket policies) require a Principal element to specify who is granted or denied access. Without it, the policy is invalid and S3 rejects it. Changing the Action to s3:* (A) broadens permissions but doesn't fix the missing Principal. Removing the Resource element (B) is incorrect — Resource is required in bucket policies. Changing to NotResource (C) inverts the resource scope but doesn't address the missing Principal.
+
+### Q39: Collect 50,000 page clicks per second and process sequentially per user
+
+A company's website receives 50,000 requests each second. The company wants to use multiple applications to analyze the navigation patterns of the website users so that the experience can be personalized.
+
+Which AWS service or feature should a solutions architect use to collect page clicks for the website and process them sequentially for each user?
+
+- A. Amazon Kinesis Data Streams
+- B. Amazon Simple Queue Service (Amazon SQS) standard queue
+- C. Amazon Simple Queue Service (Amazon SQS) FIFO queue
+- D. AWS CloudTrail
+
+**Answer: A**
+
+Kinesis Data Streams handles massive throughput (tens of thousands of records per second) and uses partition keys to guarantee sequential processing within each shard — ideal for per-user ordering. SQS standard queues (B) do not guarantee message ordering. SQS FIFO queues (C) guarantee ordering but are limited to 300 transactions per second (3,000 with batching), far below the 50,000 requirement. CloudTrail (D) logs AWS API calls, not website clickstream data.
+
+### Q40: Prevent direct linking to S3 bucket assets for a hosted website
+
+A company is designing a website that will be hosted on Amazon S3.
+
+How should users be prevented from linking directly to the assets in the S3 bucket?
+
+- A. Create a static website, then update the bucket policy to require users to access the resources with the static website URL.
+- B. Create an Amazon CloudFront distribution with an origin access control (OAC) and update the bucket policy to grant permission to the OAC only.
+- C. Create a static website, then configure an Amazon Route 53 record set with an alias pointing to the static website. Provide this URL to users.
+- D. Create an Amazon CloudFront distribution with an AWS WAF web ACL that permits access to the origin server through the distribution only.
+
+**Answer: B**
+
+CloudFront with an origin access control (OAC) restricts S3 bucket access so that only the CloudFront distribution can read objects. The bucket policy explicitly denies all access except from the OAC, preventing users from bypassing CloudFront with direct S3 URLs. Updating the bucket policy for the static website URL (A) does not prevent direct S3 object access. A Route 53 alias (C) provides a friendly URL but doesn't restrict direct bucket access. A WAF web ACL (D) filters incoming requests at the CloudFront level but does not prevent direct S3 URL access.
+
+### Q41: Private subnet access to DynamoDB without leaving the AWS network
+
+An application running in a private subnet accesses an Amazon DynamoDB table. The data cannot leave the AWS network to meet security requirements.
+
+How should this requirement be met?
+
+- A. Configure a network ACL on DynamoDB to limit traffic to the private subnet.
+- B. Enable DynamoDB encryption at rest using an AWS Key Management Service (AWS KMS) key.
+- C. Add a NAT gateway and configure the route table on the private subnet.
+- D. Create a VPC endpoint for DynamoDB and configure the endpoint policy.
+
+**Answer: D**
+
+A VPC gateway endpoint for DynamoDB keeps all traffic between the private subnet and DynamoDB within the AWS network — no internet traversal. Network ACLs (A) cannot be applied directly to DynamoDB, which is a managed service outside the VPC. Encryption at rest (B) protects stored data but does not control network routing. A NAT gateway (C) routes traffic through the public internet, which violates the requirement that data cannot leave the AWS network.
+
+### Q42: Private connectivity to AWS services without public internet, most operationally efficient
+
+A solutions architect is designing a secure cloud-based application that uses Amazon EC2 instances within a VPC. The application uses other supported AWS services within the same Region. The network traffic between the instances and AWS services must remain private and must not travel across the public internet.
+
+Which service or resource will meet the security requirement with the MOST operational efficiency?
+
+- A. Internet gateway
+- B. NAT gateway
+- C. VPC endpoint
+- D. AWS Direct Connect
+
+**Answer: C**
+
+VPC endpoints (gateway and interface) provide private connectivity between a VPC and supported AWS services entirely within the AWS network, with minimal setup and no infrastructure to manage. An internet gateway (A) enables public internet access, violating the private traffic requirement. A NAT gateway (B) routes traffic through the public internet. AWS Direct Connect (D) provides dedicated private connectivity from on-premises to AWS but is unnecessary and expensive for VPC-to-service communication within the same Region.
+
+### Q43: Backup website with contact info when primary EC2 site is down
+
+A company runs a website on Amazon EC2 instances behind an ELB Application Load Balancer. Amazon Route 53 is used for the DNS. The company wants to set up a backup website with a message including a phone number and email address that users can reach if the primary website is down.
+
+How should the company deploy this solution?
+
+- A. Use Amazon S3 website hosting for the backup website and a Route 53 failover routing policy.
+- B. Use Amazon S3 website hosting for the backup website and a Route 53 latency routing policy.
+- C. Deploy the application in another AWS Region and use ELB health checks for failover routing.
+- D. Deploy the application in another AWS Region and use server-side redirection on the primary website.
+
+**Answer: A**
+
+S3 static website hosting is ideal for a simple backup page (static HTML with contact info) — it's highly available, low cost, and requires no servers. Route 53 failover routing automatically directs traffic to the S3 backup when the primary ALB health check fails. Latency routing (B) routes based on lowest latency, not health status — it won't failover when the primary is down. Deploying a full application in another Region (C) is overkill for a simple static message page. Server-side redirection (D) requires the primary website to be running, which defeats the purpose of a backup when it's down.
+
 ## References
 
 - [AWS Solutions Architect Associate - Official Exam Guide](https://aws.amazon.com/certification/certified-solutions-architect-associate/)
