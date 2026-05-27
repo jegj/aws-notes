@@ -740,6 +740,315 @@ How should the company deploy this solution?
 
 S3 static website hosting is ideal for a simple backup page (static HTML with contact info) — it's highly available, low cost, and requires no servers. Route 53 failover routing automatically directs traffic to the S3 backup when the primary ALB health check fails. Latency routing (B) routes based on lowest latency, not health status — it won't failover when the primary is down. Deploying a full application in another Region (C) is overkill for a simple static message page. Server-side redirection (D) requires the primary website to be running, which defeats the purpose of a backup when it's down.
 
+### Q44: SQS dead-letter queue for failed microservice messages
+
+A solutions architect is redesigning a monolithic application to be a loosely coupled application composed of two microservices: Microservice A and Microservice B.
+
+Microservice A places messages in a main Amazon Simple Queue Service (Amazon SQS) queue for Microservice B to consume. When Microservice B fails to process a message after four retries, the message needs to be removed from the queue and stored for further investigation.
+
+What should the solutions architect do to meet these requirements?
+
+- A. Create an SQS dead-letter queue. Microservice B adds failed messages to that queue after it receives and fails to process the message four times.
+- B. Create an SQS dead-letter queue. Configure the dead-letter queue to deliver messages to the dead-letter queue after the message has been received four times.
+- C. Create an SQS queue for failed messages. Microservice A adds failed messages to that queue after Microservice B receives and fails to process the message four times.
+- D. Create an SQS queue for failed messages. Configure the SQS queue for failed messages to pull messages from the main SQS queue after the original message has been received four times.
+
+**Answer: B**
+
+An SQS dead-letter queue (DLQ) with a redrive policy configured on the main queue automatically moves messages that exceed the maxReceiveCount (set to 4) to the DLQ. This is a native SQS feature that requires no application code changes. Option A puts the burden on Microservice B to manually route messages, adding complexity. Options C and D describe non-standard patterns — SQS queues don't pull from other queues, and having Microservice A track Microservice B's failures breaks the decoupled architecture.
+
+### Q45: Storage for high random IOPS with consistent performance and persistence
+
+A solutions architect is designing a database solution that must support a high rate of random disk reads and writes. It must provide consistent performance, and requires long-term persistence.
+
+Which storage solution meets these requirements?
+
+- A. An Amazon Elastic Block Store (Amazon EBS) Provisioned IOPS volume
+- B. An Amazon Elastic Block Store (Amazon EBS) General Purpose volume
+- C. An Amazon Elastic Block Store (Amazon EBS) magnetic volume
+- D. An Amazon EC2 instance store
+
+**Answer: A**
+
+EBS Provisioned IOPS (io1/io2) volumes are designed for I/O-intensive workloads that require consistently high random read/write performance, making them ideal for databases. General Purpose (gp2/gp3) volumes (B) provide burstable performance but cannot guarantee sustained high IOPS. Magnetic volumes (C) offer the lowest performance tier and are not suitable for high IOPS workloads. EC2 instance store (D) provides high I/O but is ephemeral — data is lost when the instance stops or terminates, failing the persistence requirement.
+
+### Q46: Caching strategy that ensures cache is never stale on writes
+
+A company has a three-tier architecture solution in which an application writes to a relational database. Because of frequent requests, the company wants to cache data whenever the application writes data to the database. The company's priority is to minimize latency for data retrieval and to ensure that data in the cache is never stale.
+
+Which caching strategy should the company use to meet these requirements?
+
+- A. Amazon ElastiCache with write-through
+- B. Amazon DynamoDB Accelerator (DAX)
+- C. Amazon ElastiCache with lazy loading
+- D. Amazon Simple Queue Service (Amazon SQS)
+
+**Answer: A**
+
+Write-through caching updates the cache simultaneously whenever data is written to the database, ensuring the cache is always in sync and never stale. This directly meets the requirement. Lazy loading (C) only populates the cache on read misses, meaning stale data can be served until the cache entry expires — violating the "never stale" requirement. DAX (B) is a caching layer specifically for DynamoDB, not relational databases. SQS (D) is a messaging service, not a caching solution.
+
+### Q47: Waiting list service that preserves customer order
+
+A restaurant reservation application needs to access a waiting list. When a customer tries to reserve a table, and none are available, the customer application will put the user on the waiting list, and the application will notify the customer when a table becomes free. The waiting list must preserve the order in which customers were added to the waiting list.
+
+Which service should the solutions architect recommend to store this waiting list?
+
+- A. Amazon Simple Notification Service (Amazon SNS)
+- B. AWS Step Functions invoking AWS Lambda functions
+- C. A FIFO queue in Amazon Simple Queue Service (Amazon SQS)
+- D. A standard queue in Amazon Simple Queue Service (Amazon SQS)
+
+**Answer: C**
+
+An SQS FIFO (First-In-First-Out) queue guarantees that messages are processed in exactly the order they were sent, which is essential for a waiting list where position order matters. A standard SQS queue (D) provides best-effort ordering but does not guarantee strict order, so customers could be served out of turn. SNS (A) is a pub/sub notification service, not a queue for ordered message storage. Step Functions (B) is a workflow orchestration service, not designed for ordered queue management.
+
+### Q48: Resources that still generate costs when EC2 instances are stopped (Select TWO)
+
+A company stops a cluster of Amazon EC2 instances over a weekend. The costs decrease, but they do not drop to zero.
+
+Which resources could still be generating costs? (Select TWO.)
+
+- A. Elastic IP addresses
+- B. Data transfer out
+- C. Regional data transfers
+- D. Amazon Elastic Block Store (Amazon EBS) volumes
+- E. AWS Auto Scaling
+
+**Answer: A, D**
+
+Elastic IP addresses (A) incur charges when they are allocated but not associated with a running instance — stopped instances count as unassociated. EBS volumes (D) continue to incur storage charges regardless of whether the attached EC2 instance is running or stopped. Data transfer out (B) and regional data transfers (C) only occur when instances are actively sending data, which doesn't happen when they're stopped. Auto Scaling (E) is a free service — you only pay for the underlying resources it manages.
+
+### Q49: Secure file downloads reducing web server load, users access only their own files
+
+An application provides a feature that allows users to securely download private and personal files. The web server is currently overwhelmed with serving files for download. A solutions architect must find a more effective solution to reduce the web server load and cost, and must allow users to download only their own files.
+
+Which solution meets all requirements?
+
+- A. Store the files securely on Amazon S3 and have the application generate an Amazon S3 presigned URL for the user to download.
+- B. Store the files in an encrypted Amazon Elastic Block Store (Amazon EBS) volume, and use a separate set of servers to serve the downloads.
+- C. Have the application encrypt the files and store them in the local Amazon EC2 instance store prior to serving them up for download.
+- D. Create an Amazon CloudFront distribution to distribute and cache the files.
+
+**Answer: A**
+
+S3 presigned URLs offload file serving from the web server to S3 (reducing load and cost) while ensuring security — each URL is time-limited and scoped to a specific object, so users can only download their own files. EBS with separate servers (B) doesn't reduce infrastructure burden — it just shifts it. EC2 instance store (C) is ephemeral and doesn't reduce web server load. CloudFront (D) caches and distributes content but doesn't inherently restrict users to only their own files without additional authorization logic.
+
+### Q50: Resolving EC2 QUOTA EXCEEDED error with Auto Scaling
+
+A company has decided to use AWS to achieve high availability. The company's architecture consists of an Application Load Balancer in front of an Auto Scaling group that consists of Amazon EC2 instances. The company uses Amazon CloudWatch metrics and alarms to monitor the architecture. A solutions architect notices that the company is not able to launch some instances. The solutions architect finds the following message: EC2 QUOTA EXCEEDED.
+
+How can the solutions architect ensure that the company is able to launch all the EC2 instances correctly?
+
+- A. Modify the Auto Scaling group to raise the maximum number of instances that the company can launch.
+- B. Use Service Quotas to request an increase to the number of EC2 instances that the company can launch.
+- C. Recreate the Auto Scaling group to ensure the Auto Scaling group is connected to the Application Load Balancer.
+- D. Modify the CloudWatch metric that the company monitors to launch the instances.
+
+**Answer: B**
+
+The "EC2 QUOTA EXCEEDED" error indicates the AWS account has hit its service quota (limit) for the number of EC2 instances in the Region. The fix is to request a quota increase through AWS Service Quotas. Modifying the Auto Scaling group max (A) changes the desired capacity ceiling but doesn't address the account-level quota. Recreating the Auto Scaling group (C) doesn't affect service quotas. Modifying CloudWatch metrics (D) changes monitoring, not instance launch capacity.
+
+### Q51: Improving Athena query performance on large CSV dataset (Select TWO)
+
+A company wants to measure the effectiveness of its recent marketing campaigns. The company performs batch processing on .csv files of sales data and stores the results in an Amazon S3 bucket once every hour. The S3 bucket contains petabytes of objects. The company runs one-time queries in Amazon Athena to determine which products are most popular on a particular date for a particular region. Queries sometimes fail or take longer than expected to finish running.
+
+Which actions should a solutions architect take to improve the query performance and reliability? (Select TWO.)
+
+- A. Reduce the S3 object sizes to less than 128 MB.
+- B. Partition the data by date and region in Amazon S3.
+- C. Store the files as large, single objects in Amazon S3.
+- D. Use Amazon Kinesis Data Analytics to run the queries as part of the batch processing operation.
+- E. Use an AWS Glue extract, transform, and load (ETL) process to convert the .csv files into Apache Parquet format.
+
+**Answer: B, E**
+
+Partitioning data by date and region (B) allows Athena to scan only the relevant subset of data instead of the entire petabyte-scale dataset, drastically reducing query time and cost. Converting CSV to Apache Parquet (E) provides columnar storage with compression, which Athena reads far more efficiently than row-based CSV — reducing data scanned and improving performance. Reducing object sizes (A) doesn't address the core issue of scanning too much data. Storing as large single objects (C) would actually worsen performance. Kinesis Data Analytics (D) is for real-time streaming analytics, not one-time batch queries.
+
+### Q52: Decoupling click-tracking infrastructure for fastest SQL access to new data
+
+A media company has an application that tracks user clicks on its websites and performs analytics to provide near-real-time recommendations. The application has a fleet of Amazon EC2 instances that receive data from the websites and send the data to an Amazon RDS DB instance for long-term retention. Another fleet of EC2 instances handles the portion of the application that is continuously checking changes in the database and running SQL queries to provide recommendations.
+
+Management has requested a redesign to decouple the infrastructure. The solution must ensure that data analysts are writing SQL to analyze the new data only. No data can be lost during the deployment.
+
+What should a solutions architect recommend to meet these requirements and to provide the FASTEST access to the user activity?
+
+- A. Use Amazon Kinesis Data Streams to capture the data from the websites, Kinesis Data Firehose to persist the data on Amazon S3, and Amazon Athena to query the data.
+- B. Use Amazon Kinesis Data Streams to capture the data from the websites, Kinesis Data Analytics to query the data, and Kinesis Data Firehose to persist the data on Amazon S3.
+- C. Use Amazon Simple Queue Service (Amazon SQS) to capture the data from the websites, keep the fleet of EC2 instances, and change to a bigger instance type in the Auto Scaling group configuration.
+- D. Use Amazon Simple Notification Service (Amazon SNS) to receive data from the websites and proxy the messages to AWS Lambda functions that run the queries and persist the data. Change Amazon RDS to Amazon Aurora Serverless to persist the data.
+
+**Answer: B**
+
+Kinesis Data Streams captures click data in real time with no data loss. Kinesis Data Analytics allows running SQL queries directly on the streaming data, providing the fastest access to new user activity — analysts see data as it arrives rather than waiting for it to land in storage. Kinesis Data Firehose handles persistence to S3 for long-term storage. Option A uses Athena, which queries data at rest in S3 — slower since data must first be delivered and stored. Option C doesn't decouple the architecture. Option D introduces unnecessary complexity with SNS and Lambda for what is fundamentally a streaming analytics use case.
+
+### Q53: Ensuring high availability for S3-Lambda-DynamoDB-RDS application
+
+A team has an application that detects when new objects are uploaded into an Amazon S3 bucket. The uploads invoke an AWS Lambda function to write object metadata into an Amazon DynamoDB table and an Amazon RDS for PostgreSQL database.
+
+Which action should the team take to ensure high availability?
+
+- A. Enable Cross-Region Replication in the S3 bucket.
+- B. Create a Lambda function for each Availability Zone the application is deployed in.
+- C. Enable Multi-AZ on the RDS for PostgreSQL database.
+- D. Create a DynamoDB stream for the DynamoDB table.
+
+**Answer: C**
+
+RDS for PostgreSQL is the only component in this architecture that is not highly available by default. S3 is inherently highly available (99.99%), Lambda automatically runs across multiple AZs, and DynamoDB replicates across three AZs by default. Enabling Multi-AZ on RDS creates a standby replica in a different AZ with automatic failover, eliminating the single point of failure. Cross-Region Replication (A) addresses disaster recovery, not in-Region high availability. Creating per-AZ Lambda functions (B) is unnecessary since Lambda is already multi-AZ. DynamoDB Streams (D) enables change data capture but doesn't improve availability.
+
+### Q54: Audio version of product manual with custom pronunciations, least operational overhead
+
+A company wants to create an audio version of its product manual. The product manual contains custom product names and abbreviations. The product manual is divided into sections.
+
+Which solution will meet these requirements with the LEAST operational overhead?
+
+- A. Use Amazon Polly. Build custom lexicons for the product names and abbreviations. Use the StartSpeechSynthesisTask API operation for each section of the product manual.
+- B. Use Amazon Polly. Build custom Speech Synthesis Markup Language (SSML) for the product names and abbreviations. Use the StartDocumentTextDetection API operation for each section of the product manual.
+- C. Use Amazon Textract. Build custom Speech Synthesis Markup Language (SSML) for the product names and abbreviations. Use the StartDocumentTextDetection API operation for each section of the product manual.
+- D. Use Amazon Textract. Build custom lexicons for the product names. Use the StartTranscriptionJob API operation for each section of the product manual.
+
+**Answer: A**
+
+Amazon Polly is the AWS text-to-speech service, and custom lexicons allow you to define how custom product names and abbreviations are pronounced. StartSpeechSynthesisTask is the correct Polly API for generating speech output. Option B incorrectly pairs Polly with StartDocumentTextDetection, which is an Amazon Textract API for extracting text from images. Option C uses Textract, which extracts text from documents — not a speech service. Option D uses Textract with StartTranscriptionJob, which belongs to Amazon Transcribe (speech-to-text), the opposite direction.
+
+### Q55: Package tracking with variable traffic, searchable by multiple IDs, auto-expire old data
+
+A company is creating a three-tier web application consisting of a web server, an application server, and a database server. The application will track GPS coordinates of packages as they are being delivered. The application will update the database every 0.5 seconds.
+
+The tracking will need to be read as fast as possible for users to check the status of their packages. Only a few packages might be tracked on some days, whereas millions of packages might be tracked on other days. Tracking will need to be searchable by tracking ID, customer ID, and order ID. Orders older than 1 month no longer need to be tracked.
+
+What should a solutions architect recommend to accomplish this with minimal total cost of ownership?
+
+- A. Use Amazon DynamoDB. Activate Auto Scaling for the DynamoDB table. Schedule an automatic deletion script for items older than 1 month.
+- B. Use Amazon DynamoDB with global secondary indexes. Activate Auto Scaling for the DynamoDB table and the global secondary indexes. Turn on TTL for the DynamoDB table.
+- C. Use an Amazon RDS On-Demand Instance with Provisioned IOPS (PIOPS). Configure Amazon CloudWatch alarms to send notifications when PIOPS are exceeded. Increase and decrease PIOPS as needed.
+- D. Use an Amazon RDS Reserved Instance with Provisioned IOPS (PIOPS). Configure Amazon CloudWatch alarms to send notifications when PIOPS are exceeded. Increase and decrease PIOPS as needed.
+
+**Answer: B**
+
+DynamoDB with Auto Scaling handles the highly variable traffic pattern (few to millions of packages) cost-effectively by scaling capacity up and down automatically. Global secondary indexes enable efficient searching by tracking ID, customer ID, and order ID. TTL (Time to Live) automatically deletes items older than 1 month with no additional cost or operational overhead — unlike option A which requires maintaining a separate deletion script. RDS options (C, D) are more expensive, don't scale as elastically for variable workloads, and require more operational management.
+
+### Q56: Multi-Region disaster recovery with 30-minute RTO on a budget
+
+A solutions architect is responsible for a new highly available three-tier architecture on AWS. An Application Load Balancer distributes traffic to two different Availability Zones with an auto scaling group that consists of Amazon EC2 instances and a Multi-AZ Amazon RDS DB instance. The solutions architect must recommend a multi-Region recovery plan with a recovery time objective (RTO) of 30 minutes. Because of budget constraints, the solutions architect cannot recommend a plan that replicates the entire architecture. The recovery plan should not use the secondary Region unless necessary.
+
+Which disaster recovery strategy will meet these requirements?
+
+- A. Backup and restore
+- B. Multi-site active/active
+- C. Pilot light
+- D. Warm standby
+
+**Answer: C**
+
+Pilot light keeps only the most critical core elements running in the secondary Region (such as a cross-Region RDS read replica), while compute resources remain off until needed. This meets the 30-minute RTO — when disaster strikes, the read replica is promoted and compute resources are launched from pre-configured AMIs and templates. It satisfies the budget constraint since only the database replica incurs ongoing cost, not the full architecture. Backup and restore (A) has an RTO of hours, too slow. Multi-site active/active (B) replicates the entire architecture in both Regions, violating the budget constraint. Warm standby (D) runs a scaled-down but fully functional copy, which is more expensive than pilot light and closer to replicating the full architecture.
+
+### Q57: Reducing EBS io2 costs without downtime (Select TWO)
+
+Cost Explorer is showing charges higher than expected for Amazon Elastic Block Store (Amazon EBS) volumes connected to application servers in a production account. A significant portion of the charges from Amazon EBS are from volumes that were created as Provisioned IOPS SSD (io2) volume types. Controlling costs is the highest priority for this application.
+
+Which steps should the user take to analyze and reduce the EBS costs without incurring any application downtime? (Select TWO.)
+
+- A. Use the Amazon EC2 ModifyInstanceAttribute action to enable EBS optimization on the application server instances.
+- B. Use the Amazon CloudWatch GetMetricData action to evaluate the read/write operations and read/write bytes of each volume.
+- C. Use the Amazon EC2 ModifyVolume action to reduce the size of the underutilized io2 volumes.
+- D. Use the Amazon EC2 ModifyVolume action to change the volume type of the underutilized io2 volumes to General Purpose SSD (gp3).
+- E. Use an Amazon S3 PutBucketPolicy action to migrate existing volume snapshots to Amazon S3 Glacier Flexible Retrieval.
+
+**Answer: B, D**
+
+First, you need to analyze actual volume usage with CloudWatch metrics (B) to identify which io2 volumes are underutilized — you can't optimize what you haven't measured. Then, for underutilized volumes, use ModifyVolume (D) to change them from expensive io2 to cost-effective gp3, which can be done live without downtime. Enabling EBS optimization (A) doesn't reduce costs — it improves network throughput to EBS. Reducing volume size (C) is not supported by ModifyVolume (you can only increase size). Migrating snapshots via S3 PutBucketPolicy (E) is not a valid operation — EBS snapshots are managed by AWS and cannot be moved to Glacier through S3 bucket policies.
+
+### Q58: Most secure way to grant Lambda access to DynamoDB
+
+A solutions architect is designing a new workload in which an AWS Lambda function will access an Amazon DynamoDB table.
+
+What is the MOST secure means of granting the Lambda function access to the DynamoDB table?
+
+- A. Create an IAM role with the necessary permissions to access the DynamoDB table. Assign the role to the Lambda function.
+- B. Create a DynamoDB user name and password and give them to the developer to use in the Lambda function.
+- C. Create an IAM user, and create access and secret keys for the user. Give the user the necessary permissions to access the DynamoDB table. Have the developer use these keys to access the resources.
+- D. Create an IAM role allowing access from AWS Lambda. Assign the role to the DynamoDB table.
+
+**Answer: A**
+
+IAM roles are the most secure way to grant Lambda access to AWS resources. The Lambda service automatically assumes the execution role and receives temporary credentials — no long-term secrets to manage or risk leaking. DynamoDB doesn't have its own user/password system (B), so that option is invalid. IAM users with access keys (C) require embedding long-term credentials in code, which is a security anti-pattern. Option D incorrectly assigns the role to the DynamoDB table — roles are attached to the compute resource (Lambda), not to the data resource.
+
+### Q59: Mobile app with MFA, minimal build time and maintenance
+
+A company designs a mobile app for its customers to upload photos to a website. The app needs a secure login with multi-factor authentication (MFA). The company wants to limit the initial build time and the maintenance of the solution.
+
+Which solution should a solutions architect recommend to meet these requirements?
+
+- A. Use Amazon Cognito Identity with SMS-based MFA.
+- B. Edit IAM policies to require MFA for all users.
+- C. Federate IAM against the corporate Active Directory that requires MFA.
+- D. Use Amazon API Gateway and require server-side encryption (SSE) for photos.
+
+**Answer: A**
+
+Amazon Cognito provides fully managed user authentication for mobile and web apps with built-in MFA support (SMS, TOTP). It minimizes build time since authentication, user management, and MFA are all handled by the service — no custom auth infrastructure needed. IAM MFA (B) is designed for AWS console and API access, not for mobile app end users. Federating with Active Directory (C) adds complexity and is designed for enterprise/corporate users, not consumer-facing mobile apps. API Gateway with SSE (D) addresses data encryption, not user authentication or MFA.
+
+### Q60: Database for gaming app with unstructured data, millions of users, least operational support
+
+A database architect is designing an online gaming application that uses a simple, unstructured data format. The database must have the ability to store user information and to track the progress of each user. The database must have the ability to scale to millions of users throughout the week.
+
+Which database service will meet these requirements with the LEAST amount of operational support?
+
+- A. Amazon RDS Multi-AZ
+- B. Amazon Neptune
+- C. Amazon DynamoDB
+- D. Amazon Aurora
+
+**Answer: C**
+
+DynamoDB is a fully managed NoSQL database that handles unstructured/semi-structured data natively, scales seamlessly to millions of users with on-demand capacity, and requires virtually no operational support — no patching, no provisioning, no cluster management. RDS Multi-AZ (A) and Aurora (D) are relational databases that require schema design and more operational management, and are better suited for structured data with complex relationships. Neptune (B) is a graph database optimized for highly connected datasets, which is overkill for simple user progress tracking.
+
+### Q61: Shared storage for ECS tasks across AZs with highest throughput
+
+A solutions architect is designing a solution that involves orchestrating a series of Amazon Elastic Container Service (Amazon ECS) tasks. The tasks run on an ECS cluster that uses Amazon EC2 instances across multiple Availability Zones. The output and state data for all tasks must be stored. The amount of data that each task outputs is approximately 10 MB, and hundreds of tasks can run at a time. As old outputs are archived and deleted, the storage size will not exceed 1 TB.
+
+Which storage solution should the solutions architect recommend to meet these requirements with the HIGHEST throughput?
+
+- A. An Amazon DynamoDB table that is accessible by all ECS cluster instances
+- B. An Amazon Elastic Block Store (Amazon EBS) volume that is mounted to the ECS cluster instances
+- C. An Amazon Elastic File System (Amazon EFS) file system with Bursting Throughput mode
+- D. An Amazon Elastic File System (Amazon EFS) file system with Provisioned Throughput mode
+
+**Answer: D**
+
+EFS with Provisioned Throughput mode allows you to specify throughput independent of storage size, guaranteeing high throughput regardless of how much data is stored. With Bursting Throughput mode (C), throughput scales with storage size — at 1 TB, baseline throughput is only ~50 MiB/s, which may not be sufficient for hundreds of concurrent tasks. EBS (B) cannot be shared across instances in different AZs — each volume attaches to a single instance. DynamoDB (A) is a database service, not optimized for storing 10 MB file outputs from tasks.
+
+### Q62: Highly resilient AWS Direct Connect configuration
+
+A solutions architect is designing a hybrid application using the AWS Cloud. The network between the on-premises data center and AWS will use an AWS Direct Connect (DX) connection. The application connectivity between AWS and the on-premises data center must be highly resilient.
+
+Which DX configuration should be implemented to meet these requirements?
+
+- A. Configure a DX connection with a VPN on top of it.
+- B. Configure a DX connection using the most reliable DX partner.
+- C. Configure multiple virtual interfaces on top of a DX connection.
+- D. Configure DX connections at multiple DX locations.
+
+**Answer: D**
+
+Multiple DX connections at different physical DX locations provides true high resiliency by eliminating single points of failure — if one location experiences an outage, traffic fails over to the other. A VPN on top of DX (A) adds encryption but doesn't improve resiliency since it still depends on a single DX connection. Using a reliable DX partner (B) is still a single connection and single point of failure. Multiple virtual interfaces on one DX connection (C) share the same physical link, so a failure of that link takes down all VIFs.
+
+### Q63: Decoupling food ordering app and making it scalable
+
+A company built a food ordering application that captures user data and stores it for future analysis. The application's static front-end is deployed on an Amazon EC2 instance. The front-end application sends the requests to the backend application running on a separate EC2 instance. The backend application then stores the data in Amazon RDS.
+
+What should a solutions architect do to decouple the architecture and make it scalable?
+
+- A. Use Amazon S3 to serve the static front-end application, which sends requests to Amazon EC2 to run the backend application. The backend application will process and store the data in Amazon RDS.
+- B. Use Amazon S3 to serve the static front-end application and write requests to an Amazon Simple Notification Service (Amazon SNS) topic. Subscribe the backend Amazon EC2 instance HTTPS endpoint to the topic, and process and store the data in Amazon RDS.
+- C. Use an EC2 instance to serve the static front-end application and write requests to an Amazon SQS queue. Place the backend instances in an Auto Scaling group, and scale based on the queue depth to process and store the data in Amazon RDS.
+- D. Use Amazon S3 to serve the static front-end application and send requests to Amazon API Gateway, which writes the requests to an Amazon SQS queue. Place the backend instances in an Auto Scaling group, and scale based on the queue length to process and store the data in Amazon RDS.
+
+**Answer: D**
+
+This architecture fully decouples every tier: S3 hosts the static frontend (no EC2 needed), API Gateway provides a managed REST API endpoint, SQS queues requests for asynchronous processing, and Auto Scaling adjusts backend capacity based on queue depth. Option A still has a tightly coupled backend with no scaling. Option B uses SNS which is push-based and doesn't buffer requests — if the backend is overwhelmed, messages are lost. Option C keeps the frontend on EC2, missing the opportunity to decouple it with S3. Only D decouples all layers and enables horizontal scaling.
+
 ## References
 
 - [AWS Solutions Architect Associate - Official Exam Guide](https://aws.amazon.com/certification/certified-solutions-architect-associate/)
