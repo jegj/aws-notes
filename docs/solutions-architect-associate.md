@@ -1049,6 +1049,113 @@ What should a solutions architect do to decouple the architecture and make it sc
 
 This architecture fully decouples every tier: S3 hosts the static frontend (no EC2 needed), API Gateway provides a managed REST API endpoint, SQS queues requests for asynchronous processing, and Auto Scaling adjusts backend capacity based on queue depth. Option A still has a tightly coupled backend with no scaling. Option B uses SNS which is push-based and doesn't buffer requests — if the backend is overwhelmed, messages are lost. Option C keeps the frontend on EC2, missing the opportunity to decouple it with S3. Only D decouples all layers and enables horizontal scaling.
 
+### Q64: Cost-effective Aurora dev cluster for intermittent use
+
+A company wants to deploy an additional Amazon Aurora MySQL DB cluster for development purposes. This cluster will be used several times a week for a few minutes upon request to debug production query issues. The company wants to keep overhead low for this resource.
+
+Which solution meets the company's requirements MOST cost-effectively?
+
+- A. Purchase a Reserved Instance for the DB instances.
+- B. Run the DB instances on Aurora Serverless.
+- C. Create a stop/start schedule for the DB instances.
+- D. Create an AWS Lambda function to stop DB instances if there are no active connections.
+
+**Answer: B**
+
+Aurora Serverless automatically starts, scales, and pauses based on demand — you pay only for the capacity consumed while the cluster is active. This is ideal for an intermittent, on-request workload used only a few minutes a week, and it requires no manual management. Reserved Instances (A) are cost-effective only for steady-state, always-on workloads. A stop/start schedule (C) doesn't fit because usage is on-request and unpredictable, not on a fixed schedule. A custom Lambda function (D) adds operational overhead that Aurora Serverless eliminates natively.
+
+### Q65: S3 storage class for logs with unpredictable access patterns
+
+A solutions architect at an ecommerce company wants to store application log data using Amazon S3. The solutions architect is unsure how frequently the logs will be accessed or which logs will be accessed the most. The company wants to keep costs as low as possible by using the appropriate S3 storage class.
+
+Which S3 storage class should be implemented to meet these requirements?
+
+- A. S3 Glacier Flexible Retrieval (formerly S3 Glacier)
+- B. S3 Intelligent-Tiering
+- C. S3 Standard-Infrequent Access (S3 Standard-IA)
+- D. S3 One Zone-Infrequent Access (S3 One Zone-IA)
+
+**Answer: B**
+
+S3 Intelligent-Tiering automatically moves objects between frequent and infrequent access tiers based on changing access patterns, optimizing cost without performance impact or operational overhead. It is purpose-built for exactly this scenario — unknown or unpredictable access patterns. Glacier (A) is for archival with retrieval delays. Standard-IA (C) and One Zone-IA (D) assume you already know the data is infrequently accessed and charge retrieval fees, which is risky when access patterns are unknown.
+
+### Q66: Overlooked cost factor for stopped EC2 data warehouse
+
+A company runs an application on three very large Amazon EC2 instances in a single Availability Zone in the us-east-1 Region. Multiple 16 TB Amazon Elastic Block Store (Amazon EBS) volumes are attached to each EC2 instance. The operations team uses an AWS Lambda script triggered by a schedule-based Amazon EventBridge rule to stop the instances on evenings and weekends, and start the instances on weekday mornings.
+
+Before deploying the solution, the company used the public AWS pricing documentation to estimate the overall costs of running this data warehouse solution 5 days a week for 10 hours a day. When looking at monthly Cost Explorer charges for this new account, the overall charges are higher than the estimate.
+
+What is the MOST likely cost factor that the company overlooked?
+
+- A. EC2 data transfer charges between the instances are much higher than expected.
+- B. EC2 and EBS rates are higher in us-east-1 than most other AWS Regions.
+- C. The Lambda charges to stop and start the instances are much higher than expected.
+- D. The company is being billed for the EBS storage on nights and weekends.
+
+**Answer: D**
+
+EBS volumes continue to incur storage charges 24/7 regardless of whether the attached EC2 instances are running or stopped. With multiple 16 TB volumes per instance across three instances, that's a substantial ongoing cost that persists during evenings and weekends — easily overlooked when estimating based only on EC2 running hours. Data transfer between instances (A) is unlikely to be significant in this scenario. us-east-1 (B) is one of the cheapest AWS Regions, not more expensive. Lambda charges (C) for a simple stop/start script are negligible and covered by the free tier.
+
+### Q67: Improving Site-to-Site VPN throughput
+
+A company is using AWS Site-to-Site VPN connections for secure connectivity to its AWS Cloud resources from on-premises locations. Due to an increase in traffic across the VPN connections to the Amazon EC2 instances, users are experiencing slower VPN connectivity. The network team reports that the internet connection used for the VPN has additional unused throughput.
+
+Which solution will improve the VPN throughput?
+
+- A. Implement multiple customer gateways for the same network.
+- B. Configure a virtual private gateway with equal cost multipath routing and multiple channels.
+- C. Use a transit gateway with equal cost multipath routing and add additional VPN tunnels.
+- D. Increase the number of tunnels in the VPN configuration.
+
+**Answer: C**
+
+A single Site-to-Site VPN tunnel is limited to ~1.25 Gbps of throughput. To scale beyond that, a transit gateway supports Equal Cost Multipath (ECMP) routing, which aggregates bandwidth across multiple VPN tunnels — distributing traffic and increasing total throughput. A virtual private gateway (B) does not support ECMP for aggregating VPN bandwidth. Multiple customer gateways (A) alone don't aggregate throughput. Simply adding tunnels to a VPN connection (D) doesn't help because, without ECMP on a transit gateway, the second tunnel serves as failover/redundancy, not aggregation.
+
+### Q68: Serverless processing of S3 location uploads with auto-scaling
+
+A user is designing a new service that receives location updates from 3,600 rental cars every hour. The cars upload their location to an Amazon S3 bucket. Each location must be checked for distance from the original rental location.
+
+Which services will process the updates and automatically scale?
+
+- A. Amazon EC2 and Amazon Elastic Block Store (Amazon EBS)
+- B. Amazon Data Firehose and Amazon S3
+- C. Amazon Elastic Container Service (Amazon ECS) and Amazon RDS
+- D. Amazon S3 events and AWS Lambda
+
+**Answer: D**
+
+S3 event notifications automatically trigger an AWS Lambda function whenever a car uploads its location to the bucket. Lambda processes each update (calculating distance from the original location) and scales automatically to handle any number of concurrent uploads — no servers to manage. EC2 with EBS (A) requires manual scaling configuration. Data Firehose (B) is for streaming data delivery, not running custom processing logic. ECS with RDS (C) requires provisioning and managing container infrastructure and a database, adding unnecessary overhead.
+
+### Q69: Applying least privilege to security group rules between tiers
+
+A company is reviewing a recent migration of a three-tier application to a VPC. The security team discovers that the principle of least privilege is not being applied to Amazon EC2 security group ingress and egress rules between the application tiers.
+
+What should a solutions architect do to correct this issue?
+
+- A. Create security group rules using the instance ID as the source or destination.
+- B. Create security group rules using the security group ID as the source or destination.
+- C. Create security group rules using the VPC CIDR blocks as the source or destination.
+- D. Create security group rules using the subnet CIDR blocks as the source or destination.
+
+**Answer: B**
+
+Referencing another security group's ID as the source or destination enforces least privilege — only instances belonging to that specific security group can communicate, regardless of their IP addresses, and it automatically adapts as instances are added or removed. Instance IDs (A) cannot be used as a source/destination in security group rules. VPC CIDR blocks (C) allow the entire VPC, and subnet CIDR blocks (D) allow an entire subnet — both are far too broad and violate the principle of least privilege.
+
+### Q70: Querying an S3 data lake with infrequent SQL queries at minimal cost
+
+A company is developing a data lake solution in Amazon S3 to analyze large-scale datasets. The solution makes infrequent SQL queries only. In addition, the company wants to minimize infrastructure costs.
+
+Which AWS service should be used to meet these requirements?
+
+- A. Amazon Athena
+- B. Amazon Redshift Spectrum
+- C. Amazon RDS for PostgreSQL
+- D. Amazon Aurora
+
+**Answer: A**
+
+Amazon Athena is a serverless, interactive query service that runs standard SQL directly against data in S3. You pay only per query based on the amount of data scanned — with no infrastructure to provision or manage — making it ideal for infrequent queries at minimal cost. Redshift Spectrum (B) requires a running Redshift cluster, incurring ongoing infrastructure cost. RDS for PostgreSQL (C) and Aurora (D) require loading data into a managed database that runs continuously, which is unnecessary cost and effort for infrequent ad-hoc queries on a data lake.
+
 ## References
 
 - [AWS Solutions Architect Associate - Official Exam Guide](https://aws.amazon.com/certification/certified-solutions-architect-associate/)
