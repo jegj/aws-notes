@@ -1156,6 +1156,242 @@ Which AWS service should be used to meet these requirements?
 
 Amazon Athena is a serverless, interactive query service that runs standard SQL directly against data in S3. You pay only per query based on the amount of data scanned — with no infrastructure to provision or manage — making it ideal for infrequent queries at minimal cost. Redshift Spectrum (B) requires a running Redshift cluster, incurring ongoing infrastructure cost. RDS for PostgreSQL (C) and Aurora (D) require loading data into a managed database that runs continuously, which is unnecessary cost and effort for infrequent ad-hoc queries on a data lake.
 
+### Q71: Cost-effective storage for rarely accessed documents that must stay immediately available
+
+A company has a three-tier web application on AWS for document storage and retrieval. The application stores documents on a shared NFS volume and references documents by using a Multi-AZ deployment of an Amazon RDS for MySQL DB instance. The document metadata is consulted regularly. The documents are not accessed more than one time a year, but they must remain immediately available. A solutions architect needs to optimize the workload and implement application modifications.
+
+Which solution will meet these requirements MOST cost-effectively?
+
+- A. Use an Amazon FSx for Lustre shared volume for document storage. Use a Multi-AZ deployment of an RDS for MySQL DB instance to keep document metadata.
+- B. Use an Amazon S3 bucket with the S3 Glacier Deep Archive storage class for document storage. Use an Amazon DynamoDB table to keep document metadata.
+- C. Use an Amazon S3 bucket with the S3 Standard-Infrequent Access (S3 Standard-IA) storage class for document storage. Use an Amazon DynamoDB table to keep document metadata.
+- D. Use an Amazon Elastic File System (Amazon EFS) file system with the EFS Standard-Infrequent Access (EFS Standard-IA) storage class for document storage. Use a Multi-AZ deployment of an RDS for MySQL DB instance to keep document metadata.
+
+**Answer: C**
+
+S3 Standard-IA is designed for data accessed infrequently (such as once a year) while still providing immediate, millisecond access — meeting the "must remain immediately available" requirement at a lower storage cost than S3 Standard. DynamoDB is a cost-effective, fully managed store for the regularly consulted metadata. Glacier Deep Archive (B) is the cheapest storage but has retrieval times of hours, violating the immediate-availability requirement. FSx for Lustre (A) is a high-performance file system for HPC, far too expensive for archival. EFS Standard-IA (D) costs more than S3 Standard-IA, and keeping RDS Multi-AZ for simple metadata is more expensive than DynamoDB.
+
+### Q72: Reducing NAT gateway costs for EMR jobs accessing S3
+
+An application team has started using Amazon EMR to run batch jobs, using datasets located in Amazon S3. During the initial testing of the workload, a solutions architect notices that the account is starting to accrue NAT gateway data processing costs.
+
+How can the team optimize the cost of the workload?
+
+- A. Detach the NAT gateway from the subnet where the Amazon EMR clusters are running.
+- B. Replace the NAT gateway with a customer gateway.
+- C. Replace the NAT gateway with an S3 VPC endpoint.
+- D. Configure a network ACL on the subnets where the Amazon EMR clusters are running to open access to Amazon S3.
+
+**Answer: C**
+
+A gateway VPC endpoint for S3 routes traffic between the EMR clusters and S3 directly over the AWS network, bypassing the NAT gateway entirely — and gateway endpoints incur no data processing charges. This eliminates the NAT data processing costs while preserving connectivity. Detaching the NAT gateway (A) would break the EMR clusters' other internet-bound traffic. A customer gateway (B) is a VPN component, irrelevant here. A network ACL (D) controls traffic permissions but doesn't change routing, so traffic would still flow through the NAT gateway and accrue charges.
+
+### Q73: Securing a web tier and private database tier without disrupting running apps
+
+A company hosts a popular web application. The web application connects to a database running in a private VPC subnet. The web servers must be accessible only to customers on an SSL connection. The Amazon RDS for MySQL database server must be accessible only from the web servers.
+
+How should a solutions architect design a solution to meet the requirements without impacting running applications?
+
+- A. Create a network ACL on the web server's subnet, allow HTTPS inbound and MySQL outbound. Place both database and web servers on the same subnet.
+- B. Open an HTTPS port on the security group for web servers and set the source to 0.0.0.0/0. Open the MySQL port on the database security group and attach it to the MySQL instance. Set the source to web server security group.
+- C. Create a network ACL on the web server's subnet; allow HTTPS inbound, and specify the source as 0.0.0.0/0. Create a network ACL on a database subnet, allow MySQL port inbound for web servers, and deny all outbound traffic.
+- D. Open the MySQL port on the security group for web servers and set the source to 0.0.0.0/0. Open the HTTPS port on the database security group and attach it to the MySQL instance. Set the source to web server security group.
+
+**Answer: B**
+
+Security groups are stateful and can be applied without disrupting running applications. Opening HTTPS (443) with source 0.0.0.0/0 on the web server security group allows customers to reach the web tier over SSL. Setting the database security group's MySQL port (3306) source to the web server security group enforces least privilege — only the web servers can reach the database. Network ACLs (A, C) are stateless, harder to manage for stateful traffic, and option A's placement of the database in the web subnet undermines isolation. Option D inverts the ports/services incorrectly (MySQL open to the internet, HTTPS on the database).
+
+### Q74: Minimizing throughput impact of a slow-running API endpoint
+
+A company has a web application that makes requests to a backend API service. The API service runs on Amazon EC2 instances accessed behind an Elastic Load Balancer.
+
+Most backend API service endpoint calls finish very quickly, but one endpoint that makes calls to create objects in an external service takes a long time to complete. These long-running calls are causing client timeouts and increasing overall system latency.
+
+What should be done to minimize the system throughput impact of the slow-running endpoint?
+
+- A. Change the EC2 instance size to increase memory and compute capacity.
+- B. Use Amazon Simple Queue Service (Amazon SQS) to offload the long-running requests for asynchronous processing by separate workers.
+- C. Increase the load balancer idle timeout to allow the long-running requests to complete.
+- D. Use Amazon ElastiCache for Redis to cache responses from the external service.
+
+**Answer: B**
+
+Offloading the long-running object-creation requests to an SQS queue decouples them from the synchronous request path. Separate worker processes consume the queue and call the external service asynchronously, so slow calls no longer block resources or cause client timeouts — preserving overall system throughput. Increasing instance size (A) doesn't fix the blocking behavior. Increasing the load balancer idle timeout (C) just makes clients wait longer instead of eliminating the bottleneck. ElastiCache (D) caches read responses, but these calls create objects (writes), so caching doesn't apply.
+
+### Q75: Least-privilege IAM policy for a Lambda function accessing one DynamoDB table
+
+A company has implemented one of its microservices on AWS Lambda that accesses an Amazon DynamoDB table named "Books". A solutions architect is designing an IAM policy to be attached to the Lambda function's IAM role giving it access to put, update, and delete items in the "Books" table. The IAM policy must prevent the function from performing any other actions on the "Books" table and any other table.
+
+Which IAM policy would fulfill these needs and provide the LEAST privileged access?
+
+- A. Allow only the `dynamodb:PutItem`, `dynamodb:UpdateItem`, and `dynamodb:DeleteItem` actions on the resource `arn:aws:dynamodb:us-west-2:123456789012:table/Books`.
+- B. Allow the `dynamodb:PutItem`, `dynamodb:UpdateItem`, and `dynamodb:DeleteItem` actions on the resource `arn:aws:dynamodb:us-west-2:123456789012:table/*` (all tables).
+- C. Allow the action `dynamodb:*` (all DynamoDB actions) on the resource `arn:aws:dynamodb:us-west-2:123456789012:table/Books`.
+- D. Allow `dynamodb:*` on the `Books` table, plus a separate statement that denies `dynamodb:*` on `*`.
+
+**Answer: A**
+
+Granting exactly the three required actions (PutItem, UpdateItem, DeleteItem) scoped to the specific `table/Books` resource ARN is the definition of least privilege — nothing more is allowed. Option B uses a wildcard resource (`table/*`), granting access to all tables. Option C allows every DynamoDB action (`dynamodb:*`) on the Books table, far more than the three needed operations. Option D both over-grants (all actions on Books) and creates a conflicting/over-broad explicit Deny that would also block the intended write actions.
+
+### Q76: Relational database with multi-Region DR, 1-second RPO and 1-minute RTO
+
+A company needs to implement a relational database with a multi-Region disaster recovery Recovery Point Objective (RPO) of 1 second and a Recovery Time Objective (RTO) of 1 minute.
+
+Which AWS solution can achieve this?
+
+- A. Amazon Aurora Global Database
+- B. Amazon DynamoDB global tables
+- C. Amazon RDS for MySQL with Multi-AZ turned on
+- D. Amazon RDS for MySQL with a cross-Region snapshot copy
+
+**Answer: A**
+
+Aurora Global Database replicates data across Regions with typical latency under 1 second (meeting the 1-second RPO) and supports promoting a secondary Region in under a minute (meeting the 1-minute RTO) — and it is a relational database. DynamoDB global tables (B) meet the RPO/RTO but are NoSQL, not relational. RDS Multi-AZ (C) provides high availability within a single Region, not multi-Region DR. Cross-Region snapshot copy (D) has an RPO/RTO measured in hours, far exceeding the requirements.
+
+### Q77: Privately exposing an application to thousands of consumer accounts (PHI)
+
+A company wants to create an application that will transmit protected health information (PHI) to thousands of service consumers in different AWS accounts. The application servers will sit in private VPC subnets. The routing for the application must be fault tolerant.
+
+What should be done to meet these requirements?
+
+- A. Create a VPC endpoint service and grant permissions to specific service consumers to create a connection.
+- B. Create a virtual private gateway connection between each pair of service provider VPCs and service consumer VPCs.
+- C. Create an internal Application Load Balancer in the service provider VPC and put application servers behind it.
+- D. Create a proxy server in the service provider VPC to route requests from service consumers to the application servers.
+
+**Answer: A**
+
+AWS PrivateLink (a VPC endpoint service) allows a provider to expose an application privately to thousands of consumers across different AWS accounts. Traffic stays entirely on the AWS network — never traversing the public internet — which is ideal for sensitive PHI data. Backed by a Network Load Balancer spanning multiple Availability Zones, it is inherently fault tolerant, and access is granted per consumer. Virtual private gateways (B) are VPN connections that don't scale to thousands of accounts. An internal ALB (C) is not reachable from other accounts. A custom proxy server (D) adds operational overhead and is not inherently fault tolerant.
+
+### Q78: Modernizing a hospital's database write process to lower operational overhead (Select TWO)
+
+A hospital is migrating from another cloud provider to AWS and wants to modernize as they migrate. The hospital has containerized applications that run on tablets. During spikes caused by increases in patient visits, the communications from the applications to the central database occasionally fail. As a result, the hospital currently has the applications try to write to the central database once. If that write fails, the application writes to a dedicated application PostgreSQL database run by the hospital IT team on premises. Each of the PostgreSQL databases then sends batch information to the central database.
+
+The hospital is asking for recommendations on migrating or refactoring the database write process to lower operational overhead.
+
+What should the solutions architect recommend? (Select TWO.)
+
+- A. Migrate the containerized applications to AWS Fargate.
+- B. Migrate the local databases to Amazon Aurora Serverless PostgreSQL-Compatible Edition.
+- C. Migrate the PostgreSQL databases to an Amazon RDS instance with a read replica that replaces each of the local databases.
+- D. Refactor the applications to use an Amazon Simple Queue Service (Amazon SQS) and eliminate the local PostgreSQL databases.
+- E. Refactor the central database to add an Amazon ElastiCache lazy loading cache in front of the database.
+
+**Answer: A, D**
+
+Migrating the containerized applications to AWS Fargate (A) provides a serverless container platform with no infrastructure to manage, modernizing the apps and reducing operational overhead. Refactoring to use SQS (D) durably buffers writes during patient-visit spikes — messages are never lost and are processed to the central database at a sustainable rate, which eliminates the need for the on-premises PostgreSQL workaround databases entirely. Migrating the local databases to Aurora Serverless (B) or RDS with read replicas (C) keeps the unnecessary intermediate databases instead of removing them. ElastiCache (E) is a read cache and does nothing to solve failing writes.
+
+### Q79: Preventing lost DynamoDB transactions during flash sales
+
+A company is using Amazon DynamoDB with provisioned throughput for the inventory database tier of its ecommerce website. During flash sales, customers experience periods of time when the database cannot handle the high number of transactions taking place. This causes the company to lose transactions. During normal periods, the database performs appropriately.
+
+Which solution solves the performance problem the company faces?
+
+- A. Switch DynamoDB to on-demand mode during flash sales.
+- B. Implement DynamoDB Accelerator (DAX).
+- C. Use Amazon Kinesis to queue transactions for processing to DynamoDB.
+- D. Use Amazon Simple Queue Service (Amazon SQS) to queue transactions to DynamoDB.
+
+**Answer: D**
+
+Placing an SQS queue in front of DynamoDB decouples the rate of incoming transactions from the database's write capacity. During a flash sale, transactions accumulate durably in the queue and are written to DynamoDB at a sustainable rate, so no transactions are lost. Switching to on-demand mode (A) can still throttle on sudden extreme spikes and is limited to one mode change per 24 hours, making it awkward to toggle for sales. DAX (B) is a read-through cache that doesn't help with write throughput. Kinesis (C) is designed for streaming analytics, adding unnecessary complexity for simple transaction buffering.
+
+### Q80: Secure SSH access to private web servers via a bastion host (Select TWO)
+
+A solutions architect needs to allow developers to have SSH connectivity to web servers. The requirements are as follows:
+
+- Limit access to users originating from the corporate network.
+- Web servers cannot have SSH access directly from the internet.
+- Web servers reside in a private subnet.
+
+Which combination of steps must the architect complete to meet these requirements? (Select TWO.)
+
+- A. Create a bastion host that authenticates users against the corporate directory.
+- B. Create a bastion host with security group rules that only allow traffic from the corporate network.
+- C. Attach an IAM role to the bastion host with relevant permissions.
+- D. Configure the web servers' security group to allow SSH traffic from a bastion host.
+- E. Deny all SSH traffic from the corporate network in the inbound network ACL.
+
+**Answer: B, D**
+
+A bastion host (jump box) in a public subnet with a security group that only allows SSH from the corporate network (B) ensures access originates only from the corporate network and not the open internet. Configuring the private web servers' security group to allow SSH only from the bastion's security group (D) prevents any direct SSH from the internet while permitting developers to reach them through the bastion. Authenticating against the corporate directory (A) is not required by the stated requirements. IAM roles (C) grant AWS API permissions, not SSH access. Denying SSH from the corporate network in a NACL (E) directly contradicts the requirement.
+
+### Q81: Encrypting S3 objects at rest without managing keys, while controlling key access
+
+A company is planning to use Amazon S3 to store images uploaded by its users. The images must be encrypted at rest in Amazon S3. The company does not want to spend time managing and rotating the keys, but it does want to control who can access those keys.
+
+What should a solutions architect use to accomplish this?
+
+- A. Server-Side Encryption with encryption keys stored in an S3 bucket
+- B. Server-Side Encryption with Customer-Provided Keys (SSE-C)
+- C. Server-Side Encryption with encryption keys stored in AWS Systems Manager Parameter Store
+- D. Server-Side Encryption with AWS KMS-Managed Keys (SSE-KMS)
+
+**Answer: D**
+
+SSE-KMS encrypts objects at rest using keys managed by AWS Key Management Service, which handles key storage and automatic rotation — so the company doesn't manage or rotate keys — while KMS key policies and IAM give the company fine-grained control over who can use the keys. SSE-C (B) requires the customer to provide and manage their own keys, the opposite of the requirement. Options A and C describe storing keys in S3 or Parameter Store, which are not valid S3 server-side encryption mechanisms.
+
+### Q82: Internet access for private EC2 instances that is fault tolerant per Availability Zone
+
+An application runs on Amazon EC2 instances in multiple Availability Zones behind an Application Load Balancer. The load balancer is in public subnets. The EC2 instances are in private subnets and must not be accessible from the internet. The EC2 instances must call external services on the internet. Each Availability Zone must be able to call the external services, regardless of the status of the other Availability Zones.
+
+How should these requirements be met?
+
+- A. Create a NAT gateway attached to the VPC. Add a route to the gateway that connects to each private subnet route table.
+- B. Configure an internet gateway. Add a route to the gateway that connects to each private subnet route table.
+- C. Create a NAT instance in the private subnet of each Availability Zone. Update the route tables for each private subnet to direct internet-bound traffic to the NAT instance.
+- D. Create a NAT gateway in each Availability Zone. Update the route tables for each private subnet to direct internet-bound traffic to the NAT gateway.
+
+**Answer: D**
+
+Deploying a NAT gateway in each Availability Zone makes outbound internet access fault tolerant per AZ — if one AZ (or its NAT gateway) fails, the other AZs continue to reach external services independently. NAT gateways allow outbound traffic while keeping the private instances unreachable from the internet. A single NAT gateway (A) is a single point of failure across AZs. An internet gateway in private subnet route tables (B) would expose the instances to inbound internet traffic, violating the requirement. NAT instances (C) belong in public subnets, are self-managed, and are less resilient than NAT gateways.
+
+### Q83: Reducing AWS Lambda cost by adjusting memory allocation (Select TWO)
+
+A development team is deploying a new product on AWS and is using AWS Lambda as part of the deployment. The team allocates 512 MB of memory for one of the Lambda functions. With this memory allocation, the function is completed in 2 minutes. The function runs millions of times monthly, and the development team is concerned about cost. The team conducts tests to see how different Lambda memory allocations affect the cost of the function.
+
+Which steps will reduce the Lambda costs for the product? (Select TWO.)
+
+- A. Increase the memory allocation for this Lambda function to 1,024 MB if this change causes the run time of each function to be less than 1 minute.
+- B. Increase the memory allocation for this Lambda function to 1,024 MB if this change causes the run time of each function to be less than 90 seconds.
+- C. Reduce the memory allocation for this Lambda function to 256 MB if this change causes the run time of each function to be less than 4 minutes.
+- D. Increase the memory allocation for this Lambda function to 2,048 MB if this change causes the run time of each function to be less than 1 minute.
+- E. Reduce the memory allocation for this Lambda function to 256 MB if this change causes the run time of each function to be less than 5 minutes.
+
+**Answer: A, C**
+
+Lambda billing is based on GB-seconds (memory × duration). The baseline is 512 MB × 120 s = 61,440 MB-seconds. Option A (1,024 MB × under 60 s) yields under 61,440 MB-seconds — cheaper. Option C (256 MB × under 240 s) also yields under 61,440 MB-seconds — cheaper. Option B (1,024 MB × 90 s = 92,160 MB-seconds) and option D (2,048 MB × 60 s = 122,880 MB-seconds) both cost more. Option E (256 MB × 300 s = 76,800 MB-seconds) also costs more than the baseline.
+
+### Q84: Migrating a desktop relational app to a highly available solution with least disruption
+
+During a review of business applications, a solutions architect identifies a critical application with a relational database that was built by a business user and is running on the user's desktop. To reduce the risk of a business interruption, the solutions architect wants to migrate the application to a highly available, multi-tiered solution in AWS.
+
+What should the solutions architect do to accomplish this with the LEAST amount of disruption to the business?
+
+- A. Create an import package of the application code for upload to AWS Lambda, and include a function to create another Lambda function to migrate data into an Amazon RDS database.
+- B. Create an image of the user's desktop and migrate it to Amazon EC2 using VM Import. Place the EC2 instance in an Auto Scaling group.
+- C. Pre-stage new Amazon EC2 instances running the application code on AWS behind an Application Load Balancer and an Amazon RDS Multi-AZ DB instance.
+- D. Use AWS Database Migration Service (AWS DMS) to migrate the backend database to an Amazon RDS Multi-AZ DB instance. Migrate the application code to AWS Elastic Beanstalk.
+
+**Answer: D**
+
+AWS DMS migrates the relational database to a highly available RDS Multi-AZ instance with minimal downtime, while AWS Elastic Beanstalk hosts the application code in a managed, automatically scalable, multi-tiered environment — together delivering high availability with the least disruption. Lambda (A) would require significant refactoring of a desktop application. Imaging the desktop to a single EC2 instance (B) is just a lift-and-shift that doesn't create a proper multi-tier, highly available architecture and leaves the database embedded in the image. Pre-staging EC2 with hand-deployed code (C) requires manually re-platforming the application, which is more disruptive and error-prone than the managed DMS + Elastic Beanstalk approach.
+
+### Q85: Cost-optimizing an underutilized Aurora cluster used intermittently for reads
+
+A solutions architect finds that an Amazon Aurora cluster with On-Demand Instance pricing is being underutilized for a blog application. The application is used only for a few minutes several times each day for reads.
+
+What should a solutions architect do to optimize utilization MOST cost-effectively?
+
+- A. Turn on Auto Scaling on the original Aurora database.
+- B. Refactor the blog application to use Aurora parallel query.
+- C. Convert the original Aurora database to an Aurora global database.
+- D. Convert the original Aurora database to Amazon Aurora Serverless.
+
+**Answer: D**
+
+Aurora Serverless automatically scales capacity up and down based on demand and pauses when idle, so the company pays only for the capacity consumed during the brief periods of use — ideal for a blog accessed only a few minutes several times a day. Auto Scaling (A) adds read replicas but the always-on base instance continues to incur On-Demand charges during idle periods. Aurora parallel query (B) accelerates analytic queries but doesn't reduce idle cost. An Aurora global database (C) adds cross-Region replication, increasing cost rather than reducing it.
+
 ## References
 
 - [AWS Solutions Architect Associate - Official Exam Guide](https://aws.amazon.com/certification/certified-solutions-architect-associate/)
