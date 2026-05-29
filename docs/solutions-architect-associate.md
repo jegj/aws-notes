@@ -1392,6 +1392,440 @@ What should a solutions architect do to optimize utilization MOST cost-effective
 
 Aurora Serverless automatically scales capacity up and down based on demand and pauses when idle, so the company pays only for the capacity consumed during the brief periods of use — ideal for a blog accessed only a few minutes several times a day. Auto Scaling (A) adds read replicas but the always-on base instance continues to incur On-Demand charges during idle periods. Aurora parallel query (B) accelerates analytic queries but doesn't reduce idle cost. An Aurora global database (C) adds cross-Region replication, increasing cost rather than reducing it.
 
+### Q86: Modernizing a self-managed PostgreSQL hospital app to reduce operational overhead (Select TWO)
+
+A hospital is migrating from another cloud provider to AWS and wants to modernize as they migrate. The hospital has containerized applications that run on Amazon EC2 instances. During spikes caused by increases in patient visits, the communications from the applications to the central database increase substantially. As a result, the hospital currently has the applications try to write to the central database one at a time. If that write fails, the application retries on a dedicated self-managed PostgreSQL database for the hospital IT team on premises. Each of the PostgreSQL databases then sends batch information back to the central database.
+
+The hospital is asking for recommendations on migrating or refactoring the database while process to lower operational overhead.
+
+What should the solutions architect recommend? (Select TWO.)
+
+- A. Migrate the containerized applications to AWS Fargate.
+- B. Migrate the local databases to Amazon Aurora Serverless PostgreSQL-Compatible Edition.
+- C. Migrate the PostgreSQL databases to an Amazon RDS instance with a read replica that replaces each of the local databases.
+- D. Refactor the application to use an Amazon Simple Queue Service (Amazon SQS) queue instead of the local PostgreSQL databases.
+- E. Refactor the local database to use an Amazon ElastiCache lazy loading cache in front of the database.
+
+**Answer: A, B**
+
+Moving the containers to AWS Fargate removes the need to provision and manage EC2 instances, cutting operational overhead. Aurora Serverless PostgreSQL-Compatible Edition automatically scales database capacity up and down to absorb the spikes during patient-visit increases, so the team no longer manages self-managed PostgreSQL servers. Replacing the local databases with RDS read replicas (C) still requires managing instances and read replicas can't accept writes. Refactoring to SQS (D) changes application behavior but doesn't reduce the database operational burden. An ElastiCache cache (E) speeds reads but the team would still self-manage the underlying PostgreSQL database.
+
+### Q87: Most cost-effective compute for a short, low-memory prediction process
+
+A prediction process requires access to a trained model that is stored in an Amazon S3 bucket. The process takes a few seconds to process an image and make a prediction. The process is not overly resource-intensive, does not require any specialized hardware, and takes less than 512 MB of memory to run.
+
+What is the MOST cost-effective compute solution for this use case?
+
+- A. Amazon Elastic Container Service (Amazon ECS)
+- B. Amazon EC2 Spot Instances
+- C. AWS Elastic Beanstalk
+- D. AWS Lambda functions
+
+**Answer: D**
+
+Lambda runs code without provisioning or managing servers and charges only for the compute time consumed, with no charge when idle — ideal for a short (seconds), low-memory (<512 MB), non-specialized task. ECS (A), Beanstalk (C), and Spot Instances (B) all rely on EC2 instances that incur cost while running and add management overhead, making them more expensive for this lightweight, intermittent workload. Spot Instances are also unsuitable as a service backend because capacity is not guaranteed.
+
+### Q88: Most cost-effective storage for archived audit data retrievable next business day
+
+A company is using an Amazon S3 bucket to store archived data for audits. The company needs long-term storage for the data. The data is rarely accessed and must be available for retrieval the next business day.
+
+After a quarterly review, the company wants to reduce the storage cost for the S3 bucket. A solutions architect must recommend the most cost-effective solution to store the archived data.
+
+Which solution will meet these requirements?
+
+- A. Store the data on an Amazon EC2 instance that uses Amazon Elastic Block Store (Amazon EBS).
+- B. Store the data in S3 Glacier Flexible Retrieval.
+- C. Use an S3 Lifecycle configuration rule to move the data to S3 Standard-Infrequent Access (S3 Standard-IA).
+- D. Store the data in another S3 bucket in a different AWS Region.
+
+**Answer: B**
+
+S3 Glacier Flexible Retrieval is built for long-term archival of rarely accessed data and its standard retrieval (3–5 hours) easily satisfies a next-business-day requirement at a much lower storage cost than the other options. EBS on EC2 (A) is expensive block storage that must stay running. S3 Standard-IA (C) costs more than Glacier for archival data that is essentially never read. Copying to another Region (D) increases cost and addresses replication, not archival savings.
+
+### Q89: Automating EBS snapshot lifecycle with least effort (Select TWO)
+
+After reviewing the cost optimization checks in AWS Trusted Advisor, a team finds that it has 10,000 Amazon Elastic Block Store (Amazon EBS) snapshots in its account that are more than 30 days old. The team has determined that it needs to implement better governance for the lifecycle of its resources.
+
+Which actions should the team take to automate the lifecycle management of the EBS snapshots with the LEAST effort? (Select TWO.)
+
+- A. Create and schedule a backup plan with AWS Backup.
+- B. Copy the EBS snapshots to Amazon S3, and then create lifecycle configurations in the S3 bucket.
+- C. Use Amazon Data Lifecycle Manager.
+- D. Use a scheduled event in Amazon EventBridge and invoke AWS Step Functions to manage the snapshots.
+- E. Schedule and run backups in AWS Systems Manager.
+
+**Answer: A, C**
+
+Amazon Data Lifecycle Manager is purpose-built to automate creation, retention, and deletion of EBS snapshots through simple policies. AWS Backup centrally automates and schedules backup/retention lifecycles across services including EBS. Both require minimal effort. Copying snapshots to S3 (B) is manual and S3 lifecycle rules don't act on EBS snapshots. EventBridge + Step Functions (D) and Systems Manager scripting (E) require building and maintaining custom automation — far more effort.
+
+### Q90: Lifecycle policy for images accessed for 30 days then rarely, with millisecond access
+
+A company's application gives users the ability to upload image files to an Amazon S3 bucket. These files are accessed frequently for the first 30 days. After 30 days, these files are rarely accessed. However, the files need to be durably stored and available within milliseconds upon request. A solutions architect needs to configure a lifecycle policy that minimizes the overall cost while meeting the application requirements.
+
+Which solution will meet these requirements?
+
+- A. Configure a lifecycle policy to move the files to the S3 Standard-Infrequent Access (S3 Standard-IA) storage class after 30 days.
+- B. Configure a lifecycle policy to move the files to the S3 Glacier Flexible Retrieval storage class after 30 days.
+- C. Configure a lifecycle policy to move the files to the S3 Glacier Deep Archive storage class after 30 days.
+- D. Configure a lifecycle policy to move the files to the S3 One Zone-Infrequent Access (S3 One Zone-IA) storage class after 30 days.
+
+**Answer: A**
+
+S3 Standard-IA delivers millisecond retrieval and stores data redundantly across multiple Availability Zones at a lower cost than S3 Standard — perfect for infrequently accessed files that still must be returned within milliseconds. Glacier Flexible Retrieval (B) and Glacier Deep Archive (C) require minutes to hours for retrieval, violating the millisecond requirement. S3 One Zone-IA (D) gives millisecond access but stores data in a single AZ, reducing durability against AZ loss.
+
+### Q91: Charging departments for a shared analytics environment with least effort
+
+A company is deploying an environment for a new data processing application. The application will be frequently accessed by 20 different departments across the globe seeking to run analytics. The company plans to charge each department for the cost of that department's access.
+
+Which solution will meet these requirements with the LEAST effort?
+
+- A. Amazon Aurora with global databases. Each department will query a database in a different Region, and the Region is tagged in the billing console.
+- B. Amazon RDS for PostgreSQL, with read replicas for each department. Each department will query the read replica tagged for their department in the billing console.
+- C. Amazon Redshift, with clusters set up for each department. Each department will query the cluster tagged for their department in the billing console.
+- D. Amazon Athena with workgroups set up for each department. Each department will query through the workgroup tagged for their department in the billing console.
+
+**Answer: D**
+
+Amazon Athena lets you query data directly in Amazon S3, and workgroups are purpose-built to separate users/teams and track and allocate query costs per group with minimal setup. Aurora global databases (A) and RDS read replicas (B) are built for transactional workloads, not analytics, and spinning up per-department copies adds cost and effort. Redshift clusters per department (C) duplicate infrastructure and add significant cost and management overhead.
+
+### Q92: Removing EC2 Spot Instances after a demonstration
+
+A company used Amazon EC2 Spot Instances for a demonstration that is now complete. A solutions architect must remove the Spot Instances to stop them from incurring cost.
+
+What should the solutions architect do to meet this requirement?
+
+- A. Cancel the Spot request. Terminate the Spot Instances.
+- B. Cancel the Spot request only.
+- C. Terminate the Spot Instances only.
+- D. Terminate the Spot Instances. Cancel the Spot request.
+
+**Answer: A**
+
+To stop Spot Instances from incurring cost you must first cancel the Spot request so it cannot launch replacements, and then terminate the running Spot Instances. Canceling the request only (B) leaves running instances incurring cost. Terminating instances only (C), or terminating before canceling (D), can cause the still-active request to launch new instances to maintain target capacity. The correct order is cancel the request, then terminate the instances.
+
+### Q93: Database tier requiring full OS control and high availability
+
+A financial services company is migrating its multi-tier web application to AWS. The application architecture consists of a fleet of web servers, application servers, and an Oracle database. The company must have full control over the database's underlying operating system. The database must be highly available.
+
+Which approach should a solutions architect use for the database tier to meet these requirements?
+
+- A. Migrate the database to an Amazon RDS for Oracle DB Single-AZ DB instance.
+- B. Migrate the database to an Amazon RDS for Oracle Multi-AZ DB instance.
+- C. Migrate to Amazon EC2 instances in two Availability Zones. Install Oracle and configure the instances to operate as a cluster.
+- D. Migrate to Amazon EC2 instances in a single Availability Zone. Install Oracle and configure the instances to operate as a cluster.
+
+**Answer: C**
+
+Full control over the underlying operating system rules out Amazon RDS, which is a managed service that does not grant OS access — eliminating options A and B. Running Oracle on self-managed EC2 instances gives the company OS-level control, and deploying across two Availability Zones in a cluster provides high availability. A single-AZ deployment (D) cannot survive an Availability Zone failure, so it does not meet the high-availability requirement.
+
+### Q94: DR strategy with seconds RPO, minutes RTO, and a scaled-down running environment
+
+A solutions architect must create a disaster recovery (DR) solution for a company's business-critical applications. The DR site must reside in a different AWS Region than the primary site. The solution requires a recovery point objective (RPO) in seconds and a recovery time objective (RTO) in minutes. The solution also requires the deployment of a completely functional but scaled-down version of the applications.
+
+Which DR strategy will meet these requirements?
+
+- A. Multi-site active-active
+- B. Backup and restore
+- C. Pilot light
+- D. Warm standby
+
+**Answer: D**
+
+Warm standby keeps a fully functional but scaled-down copy of the environment always running in the DR Region, enabling an RPO in seconds and an RTO in minutes by simply scaling up when failover occurs. Multi-site active-active (A) also meets the RTO/RPO but runs a full-scale environment, which is more than "scaled-down" and the most expensive. Backup and restore (B) has RTO/RPO in hours. Pilot light (C) keeps only core services running (not a "completely functional" version), so bringing up the full application takes longer.
+
+### Q95: Highly available relational database when OS-level permission is required
+
+A company requires operating system permission on a relational database server.
+
+What should a solutions architect suggest as a configuration for a highly available database architecture?
+
+- A. Multiple Amazon EC2 instances in a database replication configuration that uses two Availability Zones
+- B. A database installed on a single Amazon EC2 instance in an Availability Zone
+- C. Amazon RDS in a Multi-AZ configuration with Provisioned IOPS
+- D. Multiple Amazon EC2 instances in a replication configuration that uses a placement group
+
+**Answer: A**
+
+The requirement for operating system permission rules out Amazon RDS, which is fully managed and does not grant OS access — eliminating C. High availability requires spanning two Availability Zones, so a single instance (B) cannot survive an AZ failure. A placement group (D) clusters instances within a single AZ to reduce latency, which actually reduces availability. Running the database on EC2 instances replicated across two Availability Zones gives both OS control and high availability.
+
+### Q96: Highly available MySQL database that maximizes ease of management
+
+A company is deploying a production portal application on AWS. The database tier runs on a MySQL database. The company requires a highly available database solution that maximizes ease of management.
+
+How can the company meet these requirements?
+
+- A. Deploy the database on multiple Amazon EC2 instances that are backed by Amazon Elastic Block Store (Amazon EBS) across multiple Availability Zones. Schedule periodic EBS snapshots.
+- B. Use Amazon RDS with a Single-AZ deployment. Schedule periodic database snapshots.
+- C. Use Amazon RDS with a Multi-AZ deployment. Schedule periodic database snapshots.
+- D. Use Amazon DynamoDB with a DynamoDB Accelerator (DAX) cluster. Create periodic on-demand backups.
+
+**Answer: C**
+
+Amazon RDS is a managed service that maximizes ease of management, and a Multi-AZ deployment provides high availability by automatically failing over to a standby in another Availability Zone. Self-managing MySQL on EC2 (A) maximizes operational effort, the opposite of the requirement. RDS Single-AZ (B) is easy to manage but not highly available. DynamoDB (D) is a NoSQL database and is not compatible with the existing MySQL (relational) workload.
+
+### Q97: Resilient, highly scalable architecture for a fast-growing gaming application
+
+A gaming company is experiencing exponential growth. On multiple occasions, customers have been unable to access resources. To keep up with the increased demand, management is considering deploying a cloud-based solution. The company wants a solution that can match the on-premises resilience of multiple data centers and is robust enough to withstand the increased growth in usage.
+
+Which configuration should a solutions architect implement to meet these requirements?
+
+- A. A VPC configured with an ELB Network Load Balancer that targets an Amazon EC2 Auto Scaling group consisting of Amazon EC2 instances that span two Availability Zones.
+- B. A VPC configured with an ELB Application Load Balancer that targets an Amazon EC2 Auto Scaling group consisting of Amazon EC2 instances across two Availability Zones.
+- C. Multiple Amazon EC2 instances that are configured within peered VPCs across two Availability Zones.
+- D. A VPC configured with an ELB Application Load Balancer that targets an Amazon EC2 Auto Scaling group consisting of Amazon EC2 instances that span two AWS Regions.
+
+**Answer: B**
+
+An Application Load Balancer fronting an EC2 Auto Scaling group across two Availability Zones provides both resilience (multiple AZs mirror multiple on-premises data centers) and elastic scaling to absorb growth. A Network Load Balancer (A) is for extreme TCP/UDP performance and is less suited to this web-facing application. Peered VPCs (C) add complexity without an autoscaling/load-balancing front end. An ALB cannot span two AWS Regions (D) — load balancers are Regional — so that option is not valid.
+
+### Q98: Decoupling service that processes requests in the order received
+
+A company is migrating its on-premises application to AWS and refactoring the application's design. The design will consist of frontend Amazon EC2 instances that receive requests, backend EC2 instances that process the requests, and a message-queuing service that addresses decoupling the application. A solutions architect has been informed that a key aspect of the application is that requests are processed in the order in which they are received.
+
+Which AWS service should the solutions architect use to decouple the application?
+
+- A. Amazon Simple Queue Service (Amazon SQS) FIFO queue
+- B. Amazon Simple Queue Service (Amazon SQS) standard queue
+- C. Amazon Simple Notification Service (Amazon SNS)
+- D. Amazon Kinesis
+
+**Answer: A**
+
+An SQS FIFO (first-in-first-out) queue guarantees that messages are processed exactly once and strictly in the order they are received, which is the key requirement. An SQS standard queue (B) offers best-effort ordering only. SNS (C) is a pub/sub notification service, not an ordered work queue. Kinesis (D) maintains order within a shard but is built for streaming/analytics, not simple request decoupling between application tiers.
+
+### Q99: Cost-effective, highly available data store protected from accidental deletion
+
+A solutions architect must create a data store location that will be able to handle different file formats of unknown sizes. The data must be highly available and protected from being accidentally deleted.
+
+What solution meets the requirements and is the MOST cost-effective?
+
+- A. Deploy an Amazon S3 bucket and activate Cross-Region Replication.
+- B. Deploy an Amazon DynamoDB table and activate global tables.
+- C. Deploy a database by using Amazon RDS and configure a Multi-AZ deployment for that database.
+- D. Deploy an Amazon S3 bucket and enable object versioning.
+
+**Answer: D**
+
+Amazon S3 is object storage ideal for arbitrary file formats of any size and is highly durable and available across multiple Availability Zones by default. Enabling object versioning protects against accidental deletion or overwrite at minimal extra cost. Cross-Region Replication (A) adds cost mainly for regional resilience, which isn't required here. DynamoDB (B) and RDS (C) are structured databases unsuited to storing arbitrary files and cost more for this use case.
+
+### Q100: Centrally automating SSL/TLS certificate deployment and management
+
+A SysOps administrator wants to automate the deployment of new SSL/TLS certificates to web servers. The administrator wants a centralized way to keep track of and manage the deployed certificates.
+
+Which AWS service can the administrator use to meet these requirements?
+
+- A. AWS Key Management Service (AWS KMS)
+- B. Run Command, a capability of AWS Systems Manager
+- C. AWS Certificate Manager (ACM)
+- D. Parameter Store, a capability of AWS Systems Manager
+
+**Answer: C**
+
+AWS Certificate Manager provisions, manages, deploys, and automatically renews public and private SSL/TLS certificates from a central place, removing the manual work of purchasing, uploading, and renewing them. KMS (A) manages encryption keys, not SSL/TLS certificates. Run Command (B) can push a one-time deployment but does not provide ongoing certificate management. Parameter Store (D) stores configuration data and secrets but cannot manage SSL/TLS certificates.
+
+### Q101: Identifying the destination of malicious network traffic from an EC2 instance
+
+A solutions architect notices an abnormal amount of network traffic coming from an Amazon EC2 instance. The traffic is determined to be malicious, and the destination needs to be determined.
+
+What tool can the solutions architect use to identify the destination of the malicious network traffic?
+
+- A. Turn on AWS CloudTrail and filter the logs.
+- B. Turn on VPC Flow Logs and filter the logs.
+- C. Consult the AWS Health Dashboard.
+- D. Filter the logs from Amazon CloudWatch.
+
+**Answer: B**
+
+VPC Flow Logs capture information about the IP traffic going to and from network interfaces in a VPC, including source and destination IP addresses and ports — exactly what is needed to identify where the malicious traffic is going. CloudTrail (A) records API calls, not network packet flows. The AWS Health Dashboard (C) reports AWS service health. CloudWatch (D) collects metrics and application logs but does not, by itself, record network traffic destinations.
+
+### Q102: Securing a three-tier VPC architecture with HTTPS-only web access (Select TWO)
+
+A solutions architect needs to design a secure environment for AWS resources that are being deployed to Amazon EC2 instances in a VPC. The solution should support a three-tier architecture that consists of web servers, application servers, and a database cluster. The VPC needs to allow resources in the web tier to be accessible from the internet over only the HTTPS protocol.
+
+Which combination of actions would meet these requirements? (Select TWO.)
+
+- A. Attach an Amazon API Gateway to the VPC. Create private subnets for the web, application, and database tiers.
+- B. Attach an internet gateway to the VPC. Create public subnets for the web tier. Create private subnets for the application and database tiers.
+- C. Attach a virtual private gateway to the VPC. Create public subnets for the web and application tiers. Create private subnets for the database tier.
+- D. Create a web server security group that allows all traffic from the internet. Create an application server security group that allows requests from only the Amazon API Gateway on the application port. Create a database cluster security group that allows requests from the application security group on the database port only.
+- E. Create a web server security group that allows HTTPS requests from the internet. Create an application server security group that allows requests from the web security group only. Create a database cluster security group that allows requests from the application security group on the database port only.
+
+**Answer: B, E**
+
+An internet gateway with public subnets for the web tier and private subnets for the application and database tiers correctly isolates the back-end tiers from direct internet access. Security groups that allow only HTTPS from the internet to the web tier, only web-tier traffic to the application tier, and only application-tier traffic to the database enforce least-privilege flow between tiers. Option D allows all traffic to the web tier (not HTTPS-only). A virtual private gateway (C) is for VPN connectivity, not internet access, and placing the application tier in public subnets reduces security. API Gateway (A) does not provide the EC2 three-tier network isolation described.
+
+### Q103: Minimizing data transfer cost for a global static website on S3
+
+A company will host a static website within an Amazon S3 bucket. The website will serve millions of users globally, and the company wants to minimize data transfer costs.
+
+What should a solutions architect do to ensure costs are kept to a minimum?
+
+- A. Implement an AWS Auto Scaling group for the website to ensure it grows with use.
+- B. Use Cross-Region Replication to copy the website to an additional S3 bucket in a different AWS Region.
+- C. Move the website to large compute-optimized Amazon EC2 instances with on-demand pricing.
+- D. Create an Amazon CloudFront distribution, with the S3 bucket as the origin server.
+
+**Answer: D**
+
+Amazon CloudFront caches the static content at edge locations close to users worldwide, reducing the volume of data served directly from S3 and lowering data transfer costs while improving performance. Auto Scaling (A) and EC2 instances (C) don't apply to static content served from S3 and add cost. Cross-Region Replication (B) duplicates storage and adds replication cost without reducing data transfer for global users.
+
+### Q104: Cost-effective secure login to EC2 instances in a private subnet
+
+A company is developing an application that runs on Amazon EC2 instances in a private subnet. The EC2 instances use a NAT gateway to access the internet. A solutions architect must provide a secure option so that developers can log in to the instances.
+
+Which solution meets these requirements MOST cost-effectively?
+
+- A. Configure AWS Systems Manager Session Manager for the EC2 instances to activate login.
+- B. Configure a bastion host in a public subnet to log in to the EC2 instances in a private subnet.
+- C. Use the existing NAT gateway to log in to the EC2 instances in a private subnet.
+- D. Configure AWS Site-to-Site VPN to log in directly to the EC2 instances.
+
+**Answer: A**
+
+AWS Systems Manager Session Manager provides secure, auditable shell access to private EC2 instances without opening inbound ports or running extra infrastructure, and there is no additional charge for the service — making it the most cost-effective and secure option. A bastion host (B) requires a continuously running EC2 instance and incurs cost. A NAT gateway (C) only enables outbound internet access and cannot be used for inbound login. Site-to-Site VPN (D) is for connecting networks and adds cost and complexity not warranted here.
+
+### Q105: Cost-effective microservices with no infrastructure management, scaling, and DDoS protection
+
+A startup company is looking for a solution to cost-effectively run and access microservices without the operational overhead of managing infrastructure. The solution needs to be able to scale quickly to accommodate rapid changes in the volume of requests and protect against common DDoS attacks.
+
+What is the MOST cost-effective solution that meets these requirements?
+
+- A. Run the microservices in containers using AWS Elastic Beanstalk.
+- B. Run the microservices in AWS Lambda behind an Amazon API Gateway.
+- C. Run the microservices on Amazon EC2 instances in an Auto Scaling group.
+- D. Run the microservices in containers using Amazon Elastic Container Service (Amazon ECS) backed by EC2 instances.
+
+**Answer: B**
+
+AWS Lambda removes infrastructure management entirely and scales automatically with request volume, while you pay only for execution time. Fronting it with Amazon API Gateway provides a managed entry point that integrates with AWS Shield Standard for common DDoS protection. Elastic Beanstalk (A), EC2 Auto Scaling (C), and ECS on EC2 (D) all rely on EC2 instances that incur cost while idle and require more operational management, making them less cost-effective for spiky microservice traffic.
+
+### Q106: Shared file storage for Windows servers integrated with Active Directory
+
+A data processing facility wants to move a group of Microsoft Windows servers to the AWS Cloud. These servers require access to a shared file system that can integrate with the facility's existing Active Directory (AD) infrastructure for file and folder permissions. The solution needs to provide seamless support for shared files with AD users and groups located on premises. The solution must be highly available. The chosen solution should provide added security by supporting encryption at rest and in transit. Which storage solution would meet these requirements?
+
+- A. An AWS S3 File Gateway joined to the existing AD domain.
+- B. An Amazon FSx for Windows File Server file system joined to the existing AD domain.
+- C. An Amazon Elastic File System (Amazon EFS) file system joined to an AWS managed AD domain.
+- D. An Amazon S3 bucket mounted on Amazon EC2 instances in multiple Availability Zones running a Windows server.
+
+**Answer: B**
+
+Amazon FSx for Windows File Server provides a fully managed native Windows SMB file system that integrates directly with Active Directory for file and folder permissions, supports Multi-AZ high availability, and offers encryption at rest and in transit. S3 File Gateway (A) presents S3 as a file share but is not a native Windows file system with AD-based NTFS permissions. EFS (C) supports only Linux/NFS, not Windows SMB. Mounting an S3 bucket on EC2 (D) is not a native shared Windows file system and lacks AD-integrated file permissions.
+
+### Q107: API Gateway features for privacy, scale, and external customer security (Select THREE)
+
+A new application is going to be reviewed by the architecture board. The main concerns about required API implementation are as follows:
+
+- Privacy of internal information
+- Millions of concurrent calls
+- Security for external customers
+
+Which of the following Amazon API Gateway features alleviate these concerns? (Select THREE.)
+
+- A. Private endpoint
+- B. Distributed denial of service (DDoS) protection and throttling
+- C. AWS Lambda
+- D. Network Address Translation (NAT)
+- E. API Gateway cache
+- F. Edge optimized
+
+**Answer: A, B, F**
+
+A private endpoint keeps internal APIs reachable only from within the VPC, protecting the privacy of internal information. DDoS protection and throttling let API Gateway absorb and rate-limit millions of concurrent calls. An edge-optimized endpoint routes requests through the Amazon CloudFront network, improving security and latency for geographically distributed external customers. AWS Lambda (C) is a compute backend, not an API Gateway feature. NAT (D) is a networking construct, not an API Gateway feature. API Gateway cache (E) improves performance/cost but doesn't directly address these three stated concerns.
+
+### Q108: Fastest way to migrate large data given limited VPN bandwidth and a 3-week deadline
+
+You need to move a large amount of data from your data center to AWS in the next 3 weeks. You have a virtual private network (VPN) currently set up that provides 100 Mbps of bandwidth. Current saturation on the VPN is 75 percent, making it an untenable solution for your transfer. Which AWS service would be the FASTEST option for migrating the data within the 3-week timeframe?
+
+- A. AWS Snow Family products
+- B. AWS Storage Gateway
+- C. AWS WAF
+- D. Amazon CloudFront
+
+**Answer: A**
+
+With the VPN already 75 percent saturated, transferring a large data set over the network within three weeks is impractical. AWS Snow Family devices let you physically ship the data to AWS, making them the fastest option under limited bandwidth. Storage Gateway (B) still relies on the constrained network link. AWS WAF (C) is a web application firewall and CloudFront (D) is a content delivery network — neither is a bulk data-migration service.
+
+### Q109: Route 53 routing policy to split traffic 80/20 across two Regions
+
+A network engineer wants to route 80 percent of web traffic to the ap-southeast-2 Region. The remaining 20 percent of traffic will be directed to the eu-west-1 Region. Which Route 53 routing policy is the best choice for this use case?
+
+- A. Geoproximity routing
+- B. Weighted routing
+- C. Geolocation routing
+- D. Simple routing
+- E. Multivalue answer routing
+
+**Answer: B**
+
+Weighted routing lets you assign relative weights to records so traffic is distributed by percentage — for example, 80 percent to one Region and 20 percent to another. Geoproximity (A) and geolocation (C) route based on the user's physical or geographic location, not fixed percentages. Simple routing (D) returns a single record with no traffic splitting. Multivalue answer routing (E) returns multiple healthy records at random but does not enforce specific percentage splits.
+
+### Q110: Best service for system metrics, dashboards, and alert notifications
+
+You are migrating from an on-premises data center to AWS. You need a monitoring system with system metrics such as CPU usage, access logs, dashboards, and alert notifications. In addition, you need to monitor AWS account-specific failures and notifications. Which service is BEST for this use case?
+
+- A. Amazon CloudWatch
+- B. AWS CloudTrail
+- C. AWS Health
+- D. AWS Health Dashboard
+
+**Answer: A**
+
+Amazon CloudWatch collects system metrics (such as CPU usage), ingests logs, builds dashboards, and sends alert notifications through alarms — covering the core monitoring requirements. It can also receive AWS account events to surface failures and notifications. CloudTrail (B) records API activity for auditing, not metrics/dashboards. AWS Health (C) and the AWS Health Dashboard (D) report on service/account health events only and don't provide system metrics or custom dashboards.
+
+### Q111: First resource to review when an uploaded image isn't processed in a serverless lab
+
+A student is running the Build Serverless Architecture lab and is testing their architecture with a .jpeg file. Reviewing the web folder on the Amazon Simple Storage Service (Amazon S3) bucket, the student notices there is no .jpeg file. Which AWS resource should the student review first to solve this?
+
+- A. AWS Lambda Web Function
+- B. Amazon Simple Notification Service (Amazon SNS) topic
+- C. AWS Lambda Mobile Function
+- D. Amazon Simple Queue Service (Amazon SQS) queue
+
+**Answer: A**
+
+In this serverless image-processing architecture, the Lambda Web Function is responsible for processing the uploaded image and writing the result (the .jpeg) into the web folder. If the file is missing, the Lambda Web Function is the first place to investigate for errors. SNS (B) and SQS (D) handle messaging/decoupling, not the file transformation, and the Lambda Mobile Function (C) is part of a different path in the lab.
+
+### Q112: Efficiently restricting services across hundreds of accounts in many departments
+
+Your organization has hundreds of accounts across many departments and needs to apply a restriction on specific services. Which of the following is an efficient way to implement the administration requirements?
+
+- A. Assign AWS accounts to individual Organizational Units (OUs) in AWS Organizations and apply an Identity and Access Management (IAM) Policy to each OU.
+- B. Assign the AWS accounts to Organizational Units (OUs) based on their departments in AWS Organizations and apply a service control policy at the OU level.
+- C. Assign AWS accounts to Organizational Units (OUs) based on their departments in AWS Organizations and apply an Identity and Access Management (IAM) Policy at the root.
+- D. Assign AWS accounts to individual Organizational Units (OUs) in AWS Organizations and apply a service control policy to each OU.
+
+**Answer: B**
+
+Grouping accounts into OUs by department and attaching a service control policy (SCP) at the OU level lets you restrict specific services for whole groups of accounts at once — the most efficient approach for hundreds of accounts. SCPs (not IAM policies) are the AWS Organizations mechanism for restricting services across accounts, which eliminates A and C. Applying SCPs to individual OUs per account (D) defeats the efficiency of grouping by department.
+
+### Q113: Required VPC components for a public web tier and a private database tier (Select TWO)
+
+You are a Solutions Architect designing the architecture of the virtual private clouds (VPCs) for a web application using Amazon Elastic Compute Cloud (Amazon EC2) instances. The application consists of a web tier and a database tier. The web tier needs to be accessible to internet based clients; however, the database tier needs to be accessible to the web tier instances only. Which of the following are required to make this solution work and follow best practices? (Select TWO.)
+
+- A. Create an internet gateway and attach it to the VPC.
+- B. Create a Security Group for the web tier and a Security Group for the database tier.
+- C. Create a public and private subnet for the web tier and another public and private subnet for the database tier.
+- D. Create a NAT gateway and attach it to a public subnet.
+- E. Create one VPC for the web tier and one VPC for the database tier.
+
+**Answer: A, B**
+
+An internet gateway attached to the VPC is required so internet-based clients can reach the public web tier. Separate security groups for the web and database tiers let you allow internet (HTTPS) traffic to the web tier while restricting the database tier to accept traffic only from the web tier's security group. A NAT gateway (D) provides outbound internet access for private instances, which isn't the requirement here. Splitting tiers across separate VPCs (E) adds unnecessary complexity, and the subnet layout in C is not the minimal required pair compared with the gateway and security groups.
+
+### Q114: Best services to ingest and process clickstream data for a recommendation engine (Select TWO)
+
+An ecommerce website wants to process clickstream from their visitors and needs to store stream data while processing through a recommendation engine. What are the BEST AWS services for this use case? (Select TWO.)
+
+- A. AWS Auto Scaling
+- B. Amazon Kinesis Data Streams
+- C. Amazon Kinesis Data Analytics
+- D. AWS Elastic Beanstalk
+
+**Answer: B, C**
+
+Amazon Kinesis Data Streams ingests and durably stores high-volume, real-time clickstream data. Amazon Kinesis Data Analytics processes that streaming data in real time so it can feed a recommendation engine. AWS Auto Scaling (A) adjusts compute capacity but doesn't ingest or process streams. Elastic Beanstalk (D) deploys and runs applications but is not a streaming data ingestion/processing service.
+
 ## References
 
 - [AWS Solutions Architect Associate - Official Exam Guide](https://aws.amazon.com/certification/certified-solutions-architect-associate/)
