@@ -1826,6 +1826,112 @@ An ecommerce website wants to process clickstream from their visitors and needs 
 
 Amazon Kinesis Data Streams ingests and durably stores high-volume, real-time clickstream data. Amazon Kinesis Data Analytics processes that streaming data in real time so it can feed a recommendation engine. AWS Auto Scaling (A) adjusts compute capacity but doesn't ingest or process streams. Elastic Beanstalk (D) deploys and runs applications but is not a streaming data ingestion/processing service.
 
+### Q115: Factors to consider when picking an AWS Region (Select TWO)
+
+What are the factors to consider when picking an AWS Region? (Select TWO.)
+
+- A. Latency to end users
+- B. Local data regulations
+- C. Operating system requirements
+- D. Support for hybrid networking
+- E. Programming language of your application
+
+**Answer: A, B**
+
+Latency to end users drives Region choice because placing workloads closer to users reduces round-trip time. Local data regulations (data sovereignty/compliance) can legally require data to stay within a specific country or jurisdiction, dictating which Region you must use. Operating system requirements (C), hybrid networking support (D), and the application's programming language (E) are available across all Regions and are not differentiating factors when selecting one. (Service availability and pricing are also real factors but are not among the listed options.)
+
+### Q116: Scalable connectivity for hundreds of VPCs with an uncertain future count
+
+Your organization has grown very quickly and has applications deployed using hundreds of isolated virtual private clouds (VPCs). Now there is a need for connectivity between many VPCs. The company is uncertain how many future VPCs will be connected and is concerned about scalability of the chosen solution. As the Solutions Architect, which solution would you advise for them?
+
+- A. AWS Site-to-Site VPN
+- B. AWS Direct Connect
+- C. VPC peering connections
+- D. AWS Transit Gateway
+
+**Answer: D**
+
+AWS Transit Gateway acts as a central hub that connects thousands of VPCs (and on-premises networks) through a single gateway, scaling cleanly as new VPCs are added and supporting transitive routing. VPC peering (C) is non-transitive and requires a full mesh — the number of connections grows quadratically, which does not scale to hundreds of VPCs. Site-to-Site VPN (A) and Direct Connect (B) are for connecting on-premises networks to AWS, not for scalable VPC-to-VPC connectivity.
+
+### Q117: Benefits of using the AWS CDK with AWS CloudFormation (Select TWO)
+
+Which of the following are benefits of using AWS Cloud Development Kit (AWS CDK) with AWS CloudFormation? (Select TWO.)
+
+- A. Components are limited to a single user.
+- B. Developers can use common programming languages.
+- C. Bulk discounts are automatically applied to resource usage.
+- D. Using AWS Cloud Development Kit (AWS CDK) does not require an AWS account or credentials.
+- E. Developers can call preconfigured resources with proven defaults.
+
+**Answer: B, E**
+
+The AWS CDK lets developers define infrastructure using familiar programming languages (TypeScript, Python, Java, C#, Go) instead of writing raw CloudFormation templates. It also provides constructs — preconfigured, reusable components with sensible defaults and AWS best practices baked in. CDK components can be shared, not limited to a single user (A). CDK does not change pricing or apply bulk discounts (C). Like any tool that deploys to AWS, it still requires an AWS account and credentials (D).
+
+### Q118: Recommended service to deploy containers with limited operations knowledge
+
+For customers that want to deploy containers on AWS, but do not have enough operations or deployment strategy knowledge, which service should you recommend?
+
+- A. Amazon Elastic Compute Cloud (Amazon EC2)
+- B. AWS Fargate
+- C. Amazon Elastic Kubernetes Service (Amazon EKS)
+- D. Amazon Elastic Container Service (Amazon ECS)
+
+**Answer: B**
+
+AWS Fargate is a serverless compute engine for containers that removes the need to provision, patch, and manage the underlying servers or capacity — ideal for teams without deep operations or deployment expertise. Running containers on EC2 (A) requires managing the instances yourself. EKS (C) and ECS (D) are orchestration services, but with the EC2 launch type you still manage the cluster infrastructure; Fargate abstracts that away entirely.
+
+### Q119: Consolidating backups across EC2, EFS, and RDS into one place
+
+You have decided to consolidate backup in your organization. You currently have Amazon Elastic Compute Cloud (Amazon EC2), Amazon Elastic File System (Amazon EFS), and Amazon Relational Database Service (Amazon RDS) services running in your environment. What AWS service can you use to consolidate all backups to one place?
+
+- A. AWS Backup
+- B. AWS Elastic Beanstalk
+- C. AWS S3
+- D. AWS Secrets Manager
+
+**Answer: A**
+
+AWS Backup is a fully managed service that centralizes and automates backups across AWS services — including EC2, EFS, and RDS — from a single console with unified backup policies. Elastic Beanstalk (B) deploys and runs applications, not backups. S3 (C) is object storage and would require building custom backup logic per service. Secrets Manager (D) stores and rotates secrets, not backups.
+
+### Q120: Disaster recovery strategy that keeps only part of the stack running
+
+While working on your disaster recovery plan (DR) you have decided to create a backup stack on AWS. Unfortunately, you need to keep some of the stack running but do not have the budget to keep the entire stack running. What type of recovery strategy is this?
+
+- A. Backup and restore
+- B. Multi-site active/active
+- C. Pilot light
+- D. AWS Snowball Edge Compute Optimized
+
+**Answer: C**
+
+Pilot light keeps the core, critical components of the stack running (such as the database) while the rest stays switched off until needed — matching the requirement to keep only part of the stack running on a limited budget. Backup and restore (A) keeps nothing running and rebuilds from backups (highest RTO). Multi-site active/active (B) keeps the entire stack running in parallel (highest cost). Snowball Edge Compute Optimized (D) is a data-transfer/edge-compute device, not a DR strategy.
+
+### Q121: Compute purchase option with a commitment that is flexible across instance families
+
+Which compute purchase option includes a 1-year or 3-year commitment and is also flexible to use across Amazon Elastic Compute Cloud (Amazon EC2) instance families?
+
+- A. EC2 Instance Savings Plans
+- B. On-Demand Instances
+- C. EC2 Spot Instances
+- D. Compute Savings Plans
+
+**Answer: D**
+
+Compute Savings Plans offer a 1-year or 3-year commitment and the most flexibility — discounts apply automatically across any instance family, size, Region, OS, and tenancy, and even to Fargate and Lambda. EC2 Instance Savings Plans (A) also require a commitment but are locked to a specific instance family in a chosen Region. On-Demand (B) has no commitment and no discount. Spot Instances (C) have no commitment and can be interrupted by AWS.
+
+### Q122: Shared file system for two Linux applications in different Availability Zones
+
+You have two Linux applications in different Availability Zones that must share a common file system. Which of the following is the best solution for this use case?
+
+- A. AWS Storage Gateway
+- B. Amazon FSx for Windows File Server
+- C. Amazon Elastic File System (Amazon EFS)
+- D. Amazon Simple Storage Service (Amazon S3)
+
+**Answer: C**
+
+Amazon EFS is a fully managed NFS file system for Linux that can be mounted concurrently by instances across multiple Availability Zones, making it ideal for sharing a common file system between the two applications. FSx for Windows File Server (B) serves Windows/SMB workloads, not Linux. S3 (D) is object storage and cannot be natively mounted as a shared file system. Storage Gateway (A) is for hybrid on-premises-to-AWS storage integration, not multi-AZ shared file access within AWS.
+
 ## References
 
 - [AWS Solutions Architect Associate - Official Exam Guide](https://aws.amazon.com/certification/certified-solutions-architect-associate/)
