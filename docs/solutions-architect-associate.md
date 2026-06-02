@@ -11,6 +11,13 @@ Notes for the AWS Solutions Architect Associate certification exam.
 
 - [General Concepts](#aws-solutions-architect-associate---general-concepts)
   - [AWS Infrastructure](#aws-infrastructure)
+  - [AWS Data Migration Tools](#aws-data-migration-tools)
+  - [Amazon S3 Storage Classes](#amazon-s3-storage-classes)
+  - [VPC Endpoints](#vpc-endpoints)
+  - [VPC Peering](#vpc-peering)
+  - [Hybrid Networking (AWS Site-to-Site VPN)](#hybrid-networking-aws-site-to-site-vpn)
+  - [AWS Transit Gateway](#aws-transit-gateway)
+  - [Data Ingestion Patterns](#data-ingestion-patterns)
 - [Questions](#questions)
 - [References](#references)
 
@@ -93,6 +100,76 @@ S3 offers multiple storage classes ranging from high-cost frequent-access to low
 - Cost decreases from Standard → Deep Archive
 - Retrieval time increases from Standard → Deep Archive
 - S3 Intelligent-Tiering automatically moves data between access tiers based on usage patterns with no retrieval fees
+
+### VPC Endpoints
+
+A VPC endpoint lets resources in a VPC privately connect to supported AWS services without an internet gateway, NAT device, VPN connection, or Direct Connect. Traffic stays on the AWS network and never traverses the public internet. There are two types:
+
+- **Gateway endpoint** — A target you add to your route tables for traffic destined to **Amazon S3** and **Amazon DynamoDB** (the only two services supported). There is no additional charge. You control access with endpoint policies and route table entries.
+- **Interface endpoint (AWS PrivateLink)** — An elastic network interface (ENI) with a private IP address in your subnet that serves as the entry point for traffic to a supported service. It is used for most AWS services (and your own/third-party services exposed via PrivateLink). Interface endpoints are billed per hour and per GB of data processed.
+
+Quick comparison:
+
+| | Gateway endpoint | Interface endpoint |
+| --- | --- | --- |
+| **Supported services** | S3 and DynamoDB only | Most AWS services + PrivateLink services |
+| **Mechanism** | Route table entry | ENI with private IP |
+| **Cost** | Free | Per hour + per GB |
+
+![VPC endpoints — gateway and interface endpoints](https://github.com/user-attachments/assets/dfe3ee2e-23db-47c4-8a26-828099c3dec6)
+
+### VPC Peering
+
+A VPC peering connection is a **one-to-one** networking relationship between two VPCs that lets you route traffic between them using private IP addresses. The VPCs can be in different accounts and different Regions (inter-Region peering).
+
+- With peering you can **bypass the internet gateway/virtual private gateway**, get **highly available** connections (redundant and AWS-managed), **avoid bandwidth bottlenecks** (inter-Region traffic is encrypted and stays on the AWS backbone), and use **private IP addresses** to route traffic.
+- **Limitations:** there is a limit on active and pending connections per VPC; you can have only **one** peering connection between the same two VPCs; the maximum transmission unit (MTU) across a connection is **1,500 bytes**.
+- Peering is **non-transitive** — if VPC A peers with B and B peers with C, A cannot reach C through B. A direct A–C peering connection is required.
+- A common pattern is a **shared services VPC** that many application VPCs peer with. For connecting every VPC to every other VPC you need a **full mesh** of one-to-one connections, which grows quadratically and increases points of failure and monitoring overhead — for many VPCs, AWS Transit Gateway is preferred.
+
+![VPC peering — route tables, non-transitive peering, and full mesh](https://github.com/user-attachments/assets/430cabb5-7bca-4f19-b0b3-bb91f3514868)
+
+### Hybrid Networking (AWS Site-to-Site VPN)
+
+An AWS Site-to-Site VPN connection offers two encrypted VPN tunnels between a **virtual private gateway** (or a **transit gateway**) on the AWS side and a **customer gateway** on the on-premises side. It has two endpoints:
+
+- A **virtual private gateway** is the VPN concentrator on the AWS side of the connection.
+- A **customer gateway** is a resource you create in AWS that represents the physical or software device on your on-premises network; you provide its public IP and configuration.
+- Routing can be **static** or **dynamic**. Dynamic routing uses **Border Gateway Protocol (BGP)** so routes are advertised automatically.
+
+For consistent, dedicated bandwidth between on-premises and AWS, **AWS Direct Connect** is preferred over a Site-to-Site VPN (which runs over the public internet).
+
+![AWS Site-to-Site VPN — customer gateway and virtual private gateway endpoints](https://github.com/user-attachments/assets/7869c9e5-0034-4d95-b7c2-de7df160d91f)
+
+### AWS Transit Gateway
+
+AWS Transit Gateway acts as a **hub** that controls how traffic is routed among all connected networks, which act as **spokes**. This hub-and-spoke model simplifies management and reduces operational cost because each network connects only to the transit gateway rather than to every other network. Any new VPC connected to the transit gateway is automatically reachable by every other connected network — scaling cleanly to thousands of VPCs and on-premises networks.
+
+- **Components:** a transit gateway is made up of **attachments** and **route tables**. An *attachment* is a source and destination of packets; you can attach a **VPC**, **VPN connection**, **Direct Connect gateway**, **Transit Gateway Connect**, or a **peering connection** (resources must be in the same Region as the transit gateway).
+- **Setup / sharing:** a transit gateway works across AWS accounts. You can share it with other accounts using **AWS Resource Access Manager (RAM)**; the other account owner can then attach their VPCs, and either account can delete the attachment.
+- Unlike VPC peering, transit gateway routing is **transitive**, so connected networks can reach each other through the hub.
+
+![AWS Transit Gateway — hub-and-spoke model and components](https://github.com/user-attachments/assets/cfad4f48-d224-4930-88f1-5f39bb2ac50b)
+
+### Data Ingestion Patterns
+
+Data ingestion patterns are commonly grouped by whether the data sources share the same format/engine (**homogeneous**) or differ (**heterogeneous**):
+
+- **Homogeneous** — sources and targets use the same data engine/format. Typical services:
+  - **Amazon EMR** — big data processing (Spark, Hadoop)
+  - **Amazon Athena** — serverless SQL queries over S3
+  - **Amazon RDS** — relational databases
+  - **Amazon S3** — object storage / data lake
+- **Heterogeneous** — combining and transforming data from differing sources. Typical services:
+  - **Amazon Redshift** — data warehousing/analytics
+  - **Amazon Kinesis** — real-time streaming ingestion
+  - **Amazon RDS** — relational databases
+  - **Amazon S3** — object storage / data lake
+  - **AWS Glue** — serverless ETL to discover, transform, and load data
+
+In practice, streaming data is captured with Kinesis, landed in an S3 data lake, transformed with Glue or EMR, queried with Athena, and analyzed in Redshift.
+
+![Data ingestion patterns — homogeneous vs heterogeneous](https://github.com/user-attachments/assets/8711f4c1-950d-4d9f-9fb7-269897fc86a0)
 
 ## Questions
 
@@ -1931,6 +2008,307 @@ You have two Linux applications in different Availability Zones that must share 
 **Answer: C**
 
 Amazon EFS is a fully managed NFS file system for Linux that can be mounted concurrently by instances across multiple Availability Zones, making it ideal for sharing a common file system between the two applications. FSx for Windows File Server (B) serves Windows/SMB workloads, not Linux. S3 (D) is object storage and cannot be natively mounted as a shared file system. Storage Gateway (A) is for hybrid on-premises-to-AWS storage integration, not multi-AZ shared file access within AWS.
+
+### Q123: Cost-effective scaling for a video processing workload
+
+A company has developed an application that processes photos and videos. When users upload files, a job processes them. The job can take up to 1 hour to process a long video. The company uses Amazon EC2 On-Demand instances to serve web servers and processing jobs. The processing layer must be able to scale, and during peak hours the systems are at full capacity. What should a solutions architect do so that the application will process all the jobs in the MOST cost-effective manner?
+
+- A. Use a larger instance size in the Auto Scaling groups of the web layer and the processing layer.
+- B. Use Spot Instances for the Auto Scaling groups of the web layer and the processing layer.
+- C. Use an Amazon Simple Queue Service (Amazon SQS) standard queue between the web layer and the processing layer. Use a custom queue metric to scale the Auto Scaling group in the processing layer.
+- D. Use AWS Lambda functions instead of EC2 instances and Auto Scaling groups. Increase the service quota so that sufficient concurrent functions can run at the same time.
+
+**Answer: C**
+
+An SQS queue decouples the web layer from the processing layer so that jobs are buffered and never lost during peak demand. Scaling the processing Auto Scaling group on a custom queue-depth metric (such as the number of messages waiting) adds capacity only when there is a backlog and removes it when the queue drains, which is the most cost-effective fit. A larger instance size (A) raises cost continuously without addressing the bursty pattern. Spot Instances (B) can be reclaimed mid-job, which is risky for tasks that take up to an hour. Lambda (D) has a 15-minute execution limit, so it cannot run a 1-hour job.
+
+### Q124: Combining solutions to ingest spiky IoT sensor data into a data lake (Select TWO)
+
+A company is building a distributed application that sends sensor IoT data — including weather conditions and wind speed from wind turbines — to the AWS Cloud for further processing. The data is spiky and the application must be able to scale. The streaming data must be stored in a key-value database, then sent to a centralized data lake where it can be transformed, analyzed, and combined with diverse datasets to derive insights. Which combination of solutions accomplishes this with the LEAST operational overhead? (Select TWO.)
+
+- A. Configure Amazon Kinesis to deliver streaming data to an Amazon S3 data lake.
+- B. Use Amazon DocumentDB to store the IoT sensor data.
+- C. Write AWS Lambda functions to deliver streaming data to Amazon S3.
+- D. Use Amazon DynamoDB to store the IoT sensor data and turn on Kinesis Data Streams.
+- E. Use Amazon Kinesis to deliver streaming data to Amazon Redshift and turn on Amazon Redshift Spectrum.
+
+**Answer: A, D**
+
+DynamoDB is a fully managed, serverless key-value database that scales seamlessly with spiky traffic, and DynamoDB Streams/Kinesis Data Streams capture changes for downstream processing (D). Amazon Kinesis Data Firehose can then deliver the streaming data directly into an S3 data lake with no servers to manage (A). Writing custom Lambda functions (C) adds operational overhead compared with Kinesis's managed delivery. DocumentDB (B) is a document database, not the required key-value store, and isn't serverless. Redshift with Spectrum (E) is a data warehouse, not the S3 data lake described, and adds cluster management overhead.
+
+### Q125: Member accounts accessing a shared services VPC with the least operational overhead
+
+A large international company has a management account in AWS Organizations and hundreds of VPCs across member accounts. A shared services VPC hosts an application that all the member accounts must reach. Communication among all the VPCs should be allowed. How can the member accounts access the shared services VPC with the LEAST operational overhead?
+
+- A. Create an Application Load Balancer with a target of the private IP address of the shared services VPC. Add a Certificate Authority Authorization (CAA) record for the ALB to Amazon Route 53. Point all requests for shared services in the VPC routing tables to that record.
+- B. Create a peering connection between each of the VPCs and the shared services VPC.
+- C. Create a Network Load Balancer across the Availability Zones in the shared services VPC. Create service consumer roles in IAM, and set endpoint connection acceptance to automatically accept. Create consumer endpoints in each division VPC and point to the Network Load Balancer.
+- D. Create a VPN connection between each of the VPCs and the shared services VPC.
+
+**Answer: C**
+
+A VPC endpoint service (AWS PrivateLink) backed by a Network Load Balancer lets the shared services VPC expose its application privately to hundreds of consumer VPCs across accounts, with auto-accepted endpoint connections to minimize manual approvals. This scales cleanly and keeps traffic on the AWS network. VPC peering (B) is non-transitive and requires a full mesh that grows quadratically — unmanageable for hundreds of VPCs. A VPN connection per VPC (D) has the same scaling and operational problem. The ALB/CAA approach (A) is not how cross-VPC private connectivity works (CAA records relate to certificate issuance, not routing).
+
+### Q126: Choosing connectivity for consistent bandwidth in a hybrid cloud
+
+Your organization is beginning a journey to the cloud and initially will implement a hybrid cloud infrastructure. The primary concern is consistency of bandwidth between the on-premises resources and AWS resources. Which option would you recommend for connectivity?
+
+- A. Virtual Private Cloud (VPC) Peering Connections
+- B. AWS Transit Gateway
+- C. AWS Direct Connect
+- D. AWS Site-to-Site VPN
+
+**Answer: C**
+
+AWS Direct Connect provides a dedicated, private physical connection between on-premises and AWS, delivering consistent, predictable bandwidth and latency — exactly the concern stated. A Site-to-Site VPN (D) runs over the public internet, so bandwidth and latency vary. VPC Peering (A) connects VPCs to each other, not on-premises to AWS. Transit Gateway (B) is a routing hub for many VPCs and VPNs; it does not by itself provide the dedicated, consistent bandwidth link to on-premises.
+
+### Q127: Disaster recovery model with an RTO in minutes at the lowest cost
+
+Which disaster recovery model offers an RTO in minutes at the lowest cost?
+
+- A. Fully working low-capacity standby
+- B. Pilot light
+- C. Backup and restore
+- D. Multi-site active/active
+
+**Answer: B**
+
+Pilot light keeps only the core elements (such as a replicated database) running while the rest of the environment is pre-provisioned but switched off, so it can be scaled up within minutes during failover — giving an RTO in minutes at low cost. A fully working low-capacity standby (warm standby, A) runs continuously and costs more. Backup and restore (C) is the cheapest but has the slowest RTO (hours). Multi-site active/active (D) gives the lowest RTO but is the most expensive.
+
+### Q128: Metric that defines how often data must be backed up
+
+Which metric defines how often data must be backed up?
+
+- A. RTO
+- B. RPO
+- C. Available storage
+- D. Amount of data
+
+**Answer: B**
+
+Recovery Point Objective (RPO) is the maximum acceptable amount of data loss measured in time, which directly determines how frequently backups must be taken. Recovery Time Objective (RTO, A) defines how quickly a system must be restored after a disruption, not backup frequency. Available storage (C) and amount of data (D) are capacity considerations, not recovery metrics.
+
+### Q129: Features of AWS Backup (Select THREE)
+
+Which of the following are features of AWS Backup? (Select THREE.)
+
+- A. Encrypted backups
+- B. Works across every AWS service
+- C. Works across multiple services
+- D. Automated failover to read replicas
+- E. Incremental backups
+- F. Automated machine conversion
+
+**Answer: A, C, E**
+
+AWS Backup centralizes and automates data protection: it encrypts backups (A) using AWS KMS, works across multiple supported AWS services such as EBS, EFS, RDS, DynamoDB, and Storage Gateway (C), and performs incremental backups so only changed data is stored after the first full backup (E). It does not work across *every* AWS service (B) — only supported ones. Automated failover to read replicas (D) is an RDS high-availability feature, not a backup feature. Automated machine conversion (F) relates to migration tooling, not AWS Backup.
+
+### Q130: Making an existing RDS DB instance highly available with minimal RTO
+
+What is the best way to make an existing Amazon RDS DB instance highly available and minimize your RTO?
+
+- A. Run a secondary copy of your DB instance in another Region.
+- B. Run a Multi-AZ DB instance in the same Region.
+- C. Create a read replica in another Region.
+- D. Create a read replica in the same Region.
+
+**Answer: B**
+
+A Multi-AZ deployment maintains a synchronous standby replica in a different Availability Zone within the same Region and automatically fails over to it, providing high availability with an RTO of about a minute or two. A secondary copy in another Region (A) is a disaster recovery pattern with higher RTO and complexity. Read replicas (C, D) are for scaling read traffic and replicate asynchronously; promoting one is a manual process that does not provide automatic failover.
+
+### Q131: Querying DynamoDB attributes that are not key columns
+
+An existing application built on Amazon DynamoDB needs to query attributes that are not defined in key columns. Which of the following will accommodate the change most efficiently?
+
+- A. No change is required since you can query any column on DynamoDB.
+- B. Build a local secondary index.
+- C. Build a global secondary index.
+- D. Create another DynamoDB table, define the required keys, and then copy the data to the new table.
+
+**Answer: C**
+
+A global secondary index (GSI) lets you query a table using an alternate partition key (and optional sort key) that differs from the base table's keys, which is exactly what's needed to query non-key attributes efficiently on an existing table. DynamoDB cannot efficiently query arbitrary attributes without an index (A is false). A local secondary index (B) must share the same partition key as the base table and can only be created at table creation time, so it can't be added to an existing table. Creating a new table and copying data (D) is far more operational effort than adding a GSI.
+
+### Q132: Static public IP that persists across stop and start
+
+You are deploying an application into an AWS virtual private cloud (VPC). Internet hosts must connect to a static public IP address that is persistent across stop and start. Which of the following options should be used?
+
+- A. An Elastic IP address
+- B. A public IP address
+- C. A private IP address
+- D. A NAT gateway
+
+**Answer: A**
+
+An Elastic IP address is a static public IPv4 address that you allocate to your account and associate with an instance; it remains the same across stops and starts, satisfying the persistent-address requirement. A default public IP address (B) is released and reassigned when an instance is stopped and started, so it is not persistent. A private IP address (C) is not reachable from internet hosts. A NAT gateway (D) enables outbound internet access for private instances; it is not a static inbound address for the application.
+
+### Q133: What a connection to a transit gateway is called
+
+What is a connection to a transit gateway called?
+
+- A. Virtual Private Network (VPN)
+- B. Attachment
+- C. Route
+- D. Virtual Private Cloud (VPC)
+
+**Answer: B**
+
+In AWS Transit Gateway terminology, each connection from a VPC, VPN, Direct Connect gateway, or peered transit gateway is called an *attachment*. A VPN (A) is one type of resource you attach, not the generic term for the connection. A route (C) is an entry in a route table that directs traffic, not the connection itself. A VPC (D) is a resource that you attach to the transit gateway via an attachment.
+
+### Q134: Components of an AWS Site-to-Site VPN connection (Select TWO)
+
+What are the components of an AWS Site-to-Site VPN connection? (Select TWO.)
+
+- A. Customer gateway device
+- B. Interface endpoint
+- C. Virtual private gateway
+- D. Virtual Private Cloud (VPC) peering connection
+- E. Gateway endpoint
+
+**Answer: A, C**
+
+A Site-to-Site VPN connects your on-premises network to a VPC using a customer gateway device on the on-premises side (A) and a virtual private gateway (or transit gateway) on the AWS side (C) to terminate the encrypted tunnels. Interface endpoints (B) and gateway endpoints (E) are VPC endpoint types for privately reaching AWS services, unrelated to VPN. A VPC peering connection (D) links two VPCs and is not part of a Site-to-Site VPN.
+
+### Q135: True statements about VPC peering connections (Select TWO)
+
+What is TRUE about Virtual Private Cloud (VPC) peering connections? (Select TWO.)
+
+- A. Connections are one-to-many.
+- B. Connections are one-to-one.
+- C. Connections require a transit gateway.
+- D. Connections can span accounts.
+- E. Connections are transitive.
+
+**Answer: B, D**
+
+A VPC peering connection is a one-to-one link between exactly two VPCs (B), and the two VPCs can belong to different AWS accounts — and even different Regions (D). Peering is not one-to-many (A); each pair needs its own connection. It does not require a transit gateway (C) — peering is a direct relationship. Peering is non-transitive (E), so traffic cannot flow through an intermediate VPC to reach a third one.
+
+### Q136: SQS queue type that provides at-least-once delivery
+
+Which type of Amazon Simple Queue Service (Amazon SQS) queue provides at-least-once delivery?
+
+- A. First in, first out (FIFO) queue
+- B. Standard queue
+- C. Dead-letter queue
+- D. Long polling
+
+**Answer: B**
+
+Standard queues guarantee at-least-once delivery, which means a message may occasionally be delivered more than once, in exchange for nearly unlimited throughput and best-effort ordering. FIFO queues (A) provide exactly-once processing and strict ordering, not at-least-once. A dead-letter queue (C) is a destination for messages that can't be processed successfully, not a delivery model. Long polling (D) is a message-retrieval technique, not a queue type.
+
+### Q137: Advantage of long polling over short polling in SQS
+
+What is an advantage of long polling compared to short polling while using Amazon Simple Queue Service (Amazon SQS)?
+
+- A. Long polling provides an immediate response from a ReceiveMessage call.
+- B. Long polling is more stable when using a single thread to poll multiple queues.
+- C. Long polling reduces the cost of using Amazon SQS by reducing the number of empty responses and false empty responses.
+- D. Long polling reduces cost by only sampling a subset of Amazon SQS servers.
+
+**Answer: C**
+
+Long polling waits until a message is available (or the timeout expires) before responding, which eliminates most empty responses and avoids false empty responses by querying all SQS servers. Fewer empty `ReceiveMessage` calls mean lower request costs. An immediate response (A) describes short polling, not long polling. Long polling is not about single-thread stability (B). Sampling only a subset of servers (D) describes short polling, which is what causes false empty responses.
+
+### Q138: A feature of Amazon Simple Notification Service (Amazon SNS)
+
+What is a feature of Amazon Simple Notification Service (Amazon SNS)?
+
+- A. Amazon SNS exchanges messages through a polling model.
+- B. Amazon SNS can send messages to distributed components of applications without requiring each component to be concurrently available.
+- C. Amazon SNS can push messages to multiple subscribers.
+- D. Amazon SNS keeps messages persistent.
+
+**Answer: C**
+
+Amazon SNS is a publish/subscribe (pub/sub) service that pushes messages to multiple subscribers (such as SQS queues, Lambda functions, HTTP endpoints, and email) at once. It uses a push model, not polling (A) — polling describes SQS. Decoupling components that don't need to be concurrently available (B) and keeping messages persistent in a queue (D) describe Amazon SQS, not SNS.
+
+### Q139: Potential benefits of an Amazon CloudFront distribution (Select TWO)
+
+What are the potential benefits of implementing an Amazon CloudFront distribution? (Select TWO.)
+
+- A. Increased application security
+- B. Two global static IP addresses
+- C. Automatic redundancy for all application content
+- D. Reduced latency for access to application content
+- E. On-premises data caching
+
+**Answer: A, D**
+
+CloudFront caches content at edge locations close to users, reducing latency for accessing application content (D), and it increases application security by integrating with AWS WAF, AWS Shield, and HTTPS/TLS at the edge (A). Two global static IP addresses (B) is a feature of AWS Global Accelerator, not CloudFront. CloudFront caches content but does not provide automatic redundancy for *all* application content (C). It caches at AWS edge locations, not on-premises (E).
+
+### Q140: Benefit of AWS Outposts servers versus an Outposts rack
+
+What is a benefit of choosing AWS Outposts servers when compared to an Outposts rack?
+
+- A. More AWS services are available on Outposts servers
+- B. Pool compute and storage capacity between multiple Outposts servers
+- C. A smaller-sized device can be placed in your own rack
+- D. You don't need to host your Outposts servers in a data center
+
+**Answer: C**
+
+Outposts servers are individual 1U or 2U devices that fit into your existing rack, making them ideal for smaller spaces such as retail stores or branch offices where a full Outposts rack won't fit (C). Outposts racks actually support more AWS services and larger capacity (A is a rack benefit). Only racks let you pool compute and storage across multiple units (B). Both form factors still require a suitable on-premises facility with power, cooling, and network (D is false).
+
+### Q141: Preventing duplicate processing of records from a queue
+
+An API receives a high volume of sensor data. The data is written to a queue before being processed to produce trend analysis and forecasting reports. With the current architecture, some data records are being received and processed more than once. How can a solutions architect modify the architecture to ensure that duplicate records are not processed?
+
+- A. Configure the API to send the records to Amazon Kinesis Data Streams.
+- B. Configure the API to send the records to Amazon Kinesis Data Firehose.
+- C. Configure the API to send the records to Amazon Simple Notification Service (Amazon SNS).
+- D. Configure the API to send the records to an Amazon Simple Queue Service (Amazon SQS) FIFO queue.
+
+**Answer: D**
+
+An SQS FIFO queue provides exactly-once processing and deduplication (using a deduplication ID within a 5-minute interval), which guarantees that duplicate records are not processed. SQS standard queues, Kinesis Data Streams (A), and Kinesis Data Firehose (B) all provide at-least-once delivery, so consumers can see duplicates. SNS (C) is a pub/sub push service that also delivers at least once and does not deduplicate.
+
+### Q142: DNS failover to a static website hosted on Amazon S3
+
+Which AWS service can you implement to create a DNS failover to a static website hosted on Amazon S3?
+
+**Answer: Amazon Route 53 with the failover routing policy**
+
+Route 53 failover routing uses health checks on the primary endpoint and automatically redirects DNS queries to a secondary resource — such as a static website hosted in an S3 bucket — when the primary becomes unhealthy. This provides DNS-level failover for high availability.
+
+### Q143: S3 storage class for cold data
+
+What Amazon S3 storage class would you choose to store cold data?
+
+**Answer: Amazon S3 Glacier**
+
+S3 Glacier storage classes are purpose-built for cold (rarely accessed) archival data at the lowest cost. Depending on retrieval needs you choose Glacier Instant Retrieval, Glacier Flexible Retrieval, or Glacier Deep Archive — all far cheaper than S3 Standard for data that is seldom accessed.
+
+### Q144: Parallel file system for frequently accessed data
+
+What storage solution would you choose if you needed a parallel file system to store frequently accessed data?
+
+**Answer: Amazon FSx for Lustre**
+
+Amazon FSx for Lustre is a fully managed, high-performance parallel file system designed for compute-intensive workloads (HPC, machine learning, media processing) that need fast access to frequently used data with high throughput and low latency.
+
+### Q145: Synchronous data replication across Availability Zones for Amazon RDS
+
+If you need to design and implement synchronous data replication across Availability Zones for your Amazon RDS instances, what is the best solution?
+
+**Answer: Multi-AZ deployment**
+
+An RDS Multi-AZ deployment synchronously replicates data to a standby instance in a different Availability Zone and automatically fails over to it, providing high availability and durability within a Region.
+
+### Q146: Asynchronous data replication to an Amazon RDS instance in another Region
+
+If you need to design and implement asynchronous data replication to another Amazon RDS instance in another AWS Region, what is the best solution?
+
+**Answer: Add a read replica (cross-Region read replica)**
+
+RDS read replicas use asynchronous replication and can be created in another AWS Region. They offload read traffic and can be promoted to a standalone database, supporting cross-Region scaling and disaster recovery.
+
+### Q147: Relational database for an RTO of 60 seconds and RPO of 1 second
+
+You need to create a disaster recovery plan for your relational database with an RTO of 60 seconds and an RPO of 1 second. What Amazon RDS database would be the best choice?
+
+**Answer: Amazon Aurora Global Database**
+
+Amazon Aurora Global Database spans a single Aurora database across multiple AWS Regions using storage-based replication with typical latency of less than 1 second (meeting the 1-second RPO), and it can promote a secondary Region in well under a minute (meeting the 60-second RTO). This makes it ideal for low-RPO, low-RTO cross-Region disaster recovery of relational data.
 
 ## References
 
