@@ -18,6 +18,7 @@ Notes for the AWS Solutions Architect Associate certification exam.
   - [Hybrid Networking (AWS Site-to-Site VPN)](#hybrid-networking-aws-site-to-site-vpn)
   - [AWS Transit Gateway](#aws-transit-gateway)
   - [Data Ingestion Patterns](#data-ingestion-patterns)
+  - [Backup & Recovery](#backup--recovery)
 - [Questions](#questions)
 - [References](#references)
 
@@ -170,6 +171,28 @@ Data ingestion patterns are commonly grouped by whether the data sources share t
 In practice, streaming data is captured with Kinesis, landed in an S3 data lake, transformed with Glue or EMR, queried with Athena, and analyzed in Redshift.
 
 ![Data ingestion patterns — homogeneous vs heterogeneous](https://github.com/user-attachments/assets/8711f4c1-950d-4d9f-9fb7-269897fc86a0)
+
+### Backup & Recovery
+
+Backup and recovery planning is driven by two key metrics and a set of disaster recovery (DR) strategies that trade cost against speed of recovery.
+
+#### Recovery Point Objective (RPO) and Recovery Time Objective (RTO)
+
+- **Recovery Point Objective (RPO)** is the acceptable amount of **data loss measured in time**. It answers *"how much data can we afford to lose?"* — i.e., how far back the last usable backup must be. Example: if a disaster occurs at 1:00 p.m. and the RPO is 12 hours, the system must recover all data that was in the system before 1:00 a.m. (a 12-hour data loss), so backups must run at least every 12 hours.
+- **Recovery Time Objective (RTO)** is the acceptable amount of **time to restore service** after a disruption, as defined by the operational level agreement (OLA). It answers *"how quickly must we be back online?"* Example: if a disaster occurs at 1:00 p.m. and the RTO is 1 hour, the DR process must restore the business to the acceptable service level by 2:00 p.m.
+
+![RPO and RTO measured against the moment of disaster](https://github.com/user-attachments/assets/8373672b-7fbc-4a43-9bb3-c54d841b1474)
+
+#### Disaster Recovery Strategies
+
+Ordered from lowest cost / slowest recovery to highest cost / fastest recovery:
+
+- **Backup and restore** — Backups are created in the same Region as the source and also copied to another Region, giving protection from a Region-wide disaster. It is the cheapest option but has the **highest RTO**, since the environment must be provisioned and restored from backups before service resumes.
+- **Pilot light** — Core data is **live** (data stores and databases are kept up to date via replication to the recovery Region), but the services are **off**. Basic infrastructure such as Elastic Load Balancing and Amazon EC2 Auto Scaling is in place, with the compute/functional elements switched "off" until failover, when they are started and scaled up.
+- **Warm standby (fully working low-capacity standby)** — A fully working deployment runs continuously at **reduced capacity** that can handle requests but not full production traffic. During failover the infrastructure must scale up to meet production needs. Faster RTO than pilot light at higher cost.
+- **Multi-site active/active** — Two or more Regions **actively serve requests**. Failover consists of re-routing requests away from a failed Region; data is replicated across Regions and is actively used to read/write in each. This gives the **lowest RTO** at the **highest cost**, using routing patterns (latency-based, geolocation, or weighted) to direct traffic.
+
+![Disaster recovery strategies — backup and restore, pilot light, warm standby, and multi-site active/active](https://github.com/user-attachments/assets/43ae5d22-102d-4827-bed8-095e250c9712)
 
 ## Questions
 
