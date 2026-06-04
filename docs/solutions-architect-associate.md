@@ -15,7 +15,7 @@ Notes for the AWS Solutions Architect Associate certification exam.
   - [Amazon S3 Storage Classes](#amazon-s3-storage-classes)
   - [VPC Endpoints](#vpc-endpoints)
   - [VPC Peering](#vpc-peering)
-  - [Hybrid Networking (AWS Site-to-Site VPN)](#hybrid-networking-aws-site-to-site-vpn)
+  - [Hybrid Networking (Site-to-Site VPN & Direct Connect)](#hybrid-networking-site-to-site-vpn--direct-connect)
   - [AWS Transit Gateway](#aws-transit-gateway)
   - [Data Ingestion Patterns](#data-ingestion-patterns)
   - [Backup & Recovery](#backup--recovery)
@@ -130,7 +130,9 @@ A VPC peering connection is a **one-to-one** networking relationship between two
 
 ![VPC peering — route tables, non-transitive peering, and full mesh](https://github.com/user-attachments/assets/430cabb5-7bca-4f19-b0b3-bb91f3514868)
 
-### Hybrid Networking (AWS Site-to-Site VPN)
+### Hybrid Networking (Site-to-Site VPN & Direct Connect)
+
+#### AWS Site-to-Site VPN
 
 An AWS Site-to-Site VPN connection offers two encrypted VPN tunnels between a **virtual private gateway** (or a **transit gateway**) on the AWS side and a **customer gateway** on the on-premises side. It has two endpoints:
 
@@ -141,6 +143,24 @@ An AWS Site-to-Site VPN connection offers two encrypted VPN tunnels between a **
 For consistent, dedicated bandwidth between on-premises and AWS, **AWS Direct Connect** is preferred over a Site-to-Site VPN (which runs over the public internet).
 
 ![AWS Site-to-Site VPN — customer gateway and virtual private gateway endpoints](https://github.com/user-attachments/assets/7869c9e5-0034-4d95-b7c2-de7df160d91f)
+
+#### AWS Direct Connect
+
+AWS Direct Connect (DX) is a **dedicated, private physical connection** between your on-premises data center and AWS, giving consistent bandwidth and lower, more predictable latency than a VPN over the public internet.
+
+- A **virtual interface (VIF)** runs on top of a DX connection: **private VIF** (reach a VPC), **public VIF** (reach public AWS services), **transit VIF** (reach a transit gateway).
+- DX traffic is **not encrypted** on its own — add a **Site-to-Site VPN over DX** when you need encryption.
+
+**Resiliency** — multiple VIFs share one physical link, so true high availability needs multiple *connections*, ideally at *multiple locations*:
+
+| Resiliency | Setup |
+| --- | --- |
+| Low (dev) | Single DX connection at one DX location |
+| High | Connections at **multiple DX locations** |
+| Maximum | Multiple DX locations, each with connections to separate devices |
+| Backup | A Site-to-Site VPN as failover for the DX connection |
+
+> Exam tip (Q62): highest resiliency comes from connections at **multiple DX locations** — not extra VIFs on one link (shared physical failure) or a VPN on a single DX (still one connection).
 
 ### AWS Transit Gateway
 
