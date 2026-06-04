@@ -139,8 +139,11 @@ An AWS Site-to-Site VPN connection offers two encrypted VPN tunnels between a **
 - A **virtual private gateway** is the VPN concentrator on the AWS side of the connection.
 - A **customer gateway** is a resource you create in AWS that represents the physical or software device on your on-premises network; you provide its public IP and configuration.
 - Routing can be **static** or **dynamic**. Dynamic routing uses **Border Gateway Protocol (BGP)** so routes are advertised automatically.
+- **Throughput:** a single VPN tunnel is capped at **~1.25 Gbps**. Adding tunnels to one VPN connection only provides **failover**, not more bandwidth. To scale throughput, attach the VPNs to an **AWS Transit Gateway** with **Equal Cost Multipath (ECMP)** routing, which aggregates bandwidth across multiple tunnels — a virtual private gateway cannot do this.
 
 For consistent, dedicated bandwidth between on-premises and AWS, **AWS Direct Connect** is preferred over a Site-to-Site VPN (which runs over the public internet).
+
+> Note: Both Site-to-Site VPN and Direct Connect (via a transit VIF) can attach to an **AWS Transit Gateway** to reach many VPCs through a single hub — see [AWS Transit Gateway](#aws-transit-gateway).
 
 ![AWS Site-to-Site VPN — customer gateway and virtual private gateway endpoints](https://github.com/user-attachments/assets/7869c9e5-0034-4d95-b7c2-de7df160d91f)
 
@@ -169,6 +172,7 @@ AWS Transit Gateway acts as a **hub** that controls how traffic is routed among 
 - **Components:** a transit gateway is made up of **attachments** and **route tables**. An *attachment* is a source and destination of packets; you can attach a **VPC**, **VPN connection**, **Direct Connect gateway**, **Transit Gateway Connect**, or a **peering connection** (resources must be in the same Region as the transit gateway).
 - **Setup / sharing:** a transit gateway works across AWS accounts. You can share it with other accounts using **AWS Resource Access Manager (RAM)**; the other account owner can then attach their VPCs, and either account can delete the attachment.
 - Unlike VPC peering, transit gateway routing is **transitive**, so connected networks can reach each other through the hub.
+- **VPN bandwidth aggregation:** a transit gateway supports **Equal Cost Multipath (ECMP)** routing, which combines the throughput of multiple Site-to-Site VPN tunnels (each capped at ~1.25 Gbps) to scale hybrid connectivity beyond a single tunnel — something a virtual private gateway cannot do (see [Hybrid Networking](#hybrid-networking-site-to-site-vpn--direct-connect)).
 
 ![AWS Transit Gateway — hub-and-spoke model and components](https://github.com/user-attachments/assets/cfad4f48-d224-4930-88f1-5f39bb2ac50b)
 
