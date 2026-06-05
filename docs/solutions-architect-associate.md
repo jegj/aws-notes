@@ -19,6 +19,7 @@ Notes for the AWS Solutions Architect Associate certification exam.
   - [AWS Transit Gateway](#aws-transit-gateway)
   - [Data Ingestion Patterns](#data-ingestion-patterns)
   - [Backup & Recovery](#backup--recovery)
+  - [DynamoDB Global Tables](#dynamodb-global-tables)
 - [Questions](#questions)
 - [References](#references)
 
@@ -217,6 +218,19 @@ Ordered from lowest cost / slowest recovery to highest cost / fastest recovery:
 - **Multi-site active/active** — Two or more Regions **actively serve requests**. Failover consists of re-routing requests away from a failed Region; data is replicated across Regions and is actively used to read/write in each. This gives the **lowest RTO** at the **highest cost**, using routing patterns (latency-based, geolocation, or weighted) to direct traffic.
 
 ![Disaster recovery strategies — backup and restore, pilot light, warm standby, and multi-site active/active](https://github.com/user-attachments/assets/43ae5d22-102d-4827-bed8-095e250c9712)
+
+### DynamoDB Global Tables
+
+Amazon DynamoDB global tables provide a **fully managed, multi-Region, multi-active** database. DynamoDB automatically replicates your table to other AWS Regions you choose, and every replica can serve both **reads and writes** (active-active).
+
+- **Multi-active replication:** applications read and write to the **nearest Region**, lowering latency for globally distributed users. Changes propagate to the other replicas asynchronously, typically within **a second**.
+- **High availability / disaster recovery:** because data lives in multiple Regions, the table survives a full Region outage with an **RTO and RPO close to zero** — failover is just routing traffic to a healthy Region.
+- **Conflict resolution:** concurrent writes to the same item in different Regions are resolved with a **last-writer-wins** policy (based on timestamp).
+- **Requirements:** each table must have **DynamoDB Streams enabled** and identical table definitions (keys, indexes) across Regions.
+
+**When to use:** globally distributed apps needing low-latency local access, or relational/NoSQL workloads that require Region-level resilience without building your own replication.
+
+> Exam tip: if a question asks for a database with low-latency access across multiple Regions and/or multi-Region disaster recovery for DynamoDB, the answer is **global tables**.
 
 ## Questions
 
