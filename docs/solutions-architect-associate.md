@@ -20,6 +20,10 @@ Notes for the AWS Solutions Architect Associate certification exam.
   - [Data Ingestion Patterns](#data-ingestion-patterns)
   - [Backup & Recovery](#backup--recovery)
   - [DynamoDB Global Tables](#dynamodb-global-tables)
+  - [Route 53 Routing Policies](#route-53-routing-policies)
+  - [AWS Organizations, OUs & Service Control Policies (SCPs)](#aws-organizations-ous--service-control-policies-scps)
+  - [Internet Gateway vs. NAT Gateway](#internet-gateway-vs-nat-gateway)
+  - [EC2 Instance Savings Plans vs. Compute Savings Plans](#ec2-instance-savings-plans-vs-compute-savings-plans)
 - [Questions](#questions)
 - [References](#references)
 
@@ -231,6 +235,75 @@ Amazon DynamoDB global tables provide a **fully managed, multi-Region, multi-act
 **When to use:** globally distributed apps needing low-latency local access, or relational/NoSQL workloads that require Region-level resilience without building your own replication.
 
 > Exam tip: if a question asks for a database with low-latency access across multiple Regions and/or multi-Region disaster recovery for DynamoDB, the answer is **global tables**.
+
+### Route 53 Routing Policies
+
+Amazon Route 53 is AWS's managed DNS service. A **routing policy** decides how Route 53 answers DNS queries for a record. Pick the policy by *what drives the decision* — percentage, location, latency, health, or nothing.
+
+| Policy | Use it when you want to… |
+| --- | --- |
+| **Simple** | Return a single record for a domain (no special logic). |
+| **Weighted** | Split traffic by **percentage** across resources (e.g., 80/20) — useful for A/B testing or blue-green and canary releases. |
+| **Latency-based** | Send users to the Region that gives them the **lowest latency**. |
+| **Failover** | Route to a primary resource and **fail over** to a standby when a health check fails (active-passive). |
+| **Geolocation** | Route based on the **user's location** (continent/country/state) — for content localization or compliance. |
+| **Geoproximity** | Route based on the **geographic distance** between users and resources, with an adjustable **bias** to shift traffic. |
+| **Multivalue answer** | Return **multiple healthy records** (up to 8) at random — DNS-level health checking and simple load spreading. |
+
+- **Health checks** can be attached to most policies (notably failover and multivalue) so unhealthy endpoints are removed from responses.
+- **Weighted vs. percentage routing:** only **weighted** routing enforces a fixed split like 80/20. Geolocation/geoproximity route by *where users are*, not by a percentage.
+- **Geolocation vs. geoproximity:** geolocation matches the user's mapped location; geoproximity is distance-based and lets you bias traffic toward or away from a Region.
+
+> Exam tip (Q106): to split traffic by a fixed percentage across Regions (e.g., 80% / 20%), choose **weighted routing** — geolocation and geoproximity route by location, not percentage.
+
+### AWS Organizations, OUs & Service Control Policies (SCPs)
+
+**AWS Organizations** lets you centrally manage and govern many AWS accounts. Accounts are grouped into a hierarchy of **Organizational Units (OUs)**, and **Service Control Policies (SCPs)** set the maximum permissions (guardrails) for those accounts.
+
+- **Organization structure:** a **management account** sits at the **root**, under which you create **OUs** (which can nest) and place member accounts — typically grouped by **department, environment, or function**.
+- **Service Control Policies (SCPs):** policies that define the **permission boundary** for accounts. An SCP attached to an OU applies to **every account in that OU** (and nested OUs), so you restrict a service for a whole group in one place.
+- **SCPs vs. IAM policies — key distinction:**
+  - **SCPs** set the **maximum** allowed permissions across whole accounts/OUs; they **never grant** access on their own.
+  - **IAM policies** grant permissions to individual users/roles **within** an account.
+  - Effective permissions = the **intersection** of SCPs and IAM policies. An action must be allowed by both.
+- **Other benefits:** consolidated billing, and central management of services like AWS CloudTrail, Config, and Backup across the organization.
+
+> Exam tip (Q109): to restrict specific services across hundreds of accounts efficiently, group accounts into **OUs by department** and attach a **service control policy at the OU level** — not IAM policies (which work inside a single account) and not one SCP per account (which defeats grouping).
+
+### Internet Gateway vs. NAT Gateway
+
+Both connect a VPC to the internet, but they serve opposite directions of traffic.
+
+| | **Internet Gateway (IGW)** | **NAT Gateway** |
+| --- | --- | --- |
+| **Purpose** | Lets resources in **public subnets** send and receive traffic **to/from the internet** (inbound + outbound) | Lets resources in **private subnets** make **outbound-only** connections to the internet |
+| **Direction** | Bidirectional (can be reached from the internet) | Outbound only — the internet **cannot initiate** connections back |
+| **Attached to** | The **VPC** (one per VPC) | A **public subnet**, with an Elastic IP |
+| **Typical use** | Public web/ALB tier that clients reach directly | Private app/DB tier that needs updates, patches, or to call external APIs while staying unreachable |
+
+- A subnet is "**public**" when its route table sends `0.0.0.0/0` to an **internet gateway**; it's "**private**" when it has no such route (or routes `0.0.0.0/0` to a **NAT gateway**).
+- The NAT gateway itself lives in a **public subnet** (so its own route to the internet is via the IGW) and is referenced by the **private** subnets' route tables.
+- For AZ-fault-tolerant outbound access, deploy **one NAT gateway per Availability Zone**.
+
+> Exam tip (Q110): to let internet clients reach a public web tier you need an **internet gateway** attached to the VPC. A **NAT gateway** is only for giving *private* instances **outbound** internet access — it does not make them reachable from the internet.
+
+### EC2 Instance Savings Plans vs. Compute Savings Plans
+
+**Savings Plans** give you discounted pricing (up to ~72% vs. On-Demand) in exchange for a commitment to a consistent amount of compute usage (measured in **$/hour**) for a **1-year or 3-year** term. There are two flavors, and the trade-off is **flexibility vs. discount**.
+
+| | **EC2 Instance Savings Plans** | **Compute Savings Plans** |
+| --- | --- | --- |
+| **Commitment** | 1 or 3 years | 1 or 3 years |
+| **Discount** | **Highest** (similar to Standard Reserved Instances) | Slightly lower, but still large |
+| **Locked to** | A specific **instance family** in a chosen **Region** (e.g., M5 in us-east-1) | Nothing — applies automatically |
+| **Flexible across** | Instance **size**, OS, and tenancy *within that family/Region* | **Any** instance family, size, Region, OS, and tenancy |
+| **Also covers** | EC2 only | EC2 **plus AWS Fargate and AWS Lambda** |
+
+- Choose **EC2 Instance Savings Plans** when your workload is **stable and predictable** on a known instance family/Region and you want the **deepest discount**.
+- Choose **Compute Savings Plans** when you want **maximum flexibility** — you may change instance families/Regions or run containers/serverless — accepting a slightly smaller discount.
+- Compared with **Reserved Instances**, Savings Plans are simpler (commit to a dollar amount, not specific instance reservations).
+
+> Exam tip (Q118): a commitment (1 or 3 years) that stays **flexible across instance families** points to **Compute Savings Plans**. If it's locked to one family/Region for a bigger discount, that's an **EC2 Instance Savings Plan**.
 
 ## Questions
 
@@ -1870,29 +1943,7 @@ What should a solutions architect do to optimize utilization MOST cost-effective
 Aurora Serverless automatically scales capacity up and down based on demand and pauses when idle, so the company pays only for the capacity consumed during the brief periods of use — ideal for a blog accessed only a few minutes several times a day. Auto Scaling (A) adds read replicas but the always-on base instance continues to incur On-Demand charges during idle periods. Aurora parallel query (B) accelerates analytic queries but doesn't reduce idle cost. An Aurora global database (C) adds cross-Region replication, increasing cost rather than reducing it.
 </details>
 
-### Q86: Modernizing a self-managed PostgreSQL hospital app to reduce operational overhead (Select TWO)
-
-A hospital is migrating from another cloud provider to AWS and wants to modernize as they migrate. The hospital has containerized applications that run on Amazon EC2 instances. During spikes caused by increases in patient visits, the communications from the applications to the central database increase substantially. As a result, the hospital currently has the applications try to write to the central database one at a time. If that write fails, the application retries on a dedicated self-managed PostgreSQL database for the hospital IT team on premises. Each of the PostgreSQL databases then sends batch information back to the central database.
-
-The hospital is asking for recommendations on migrating or refactoring the database while process to lower operational overhead.
-
-What should the solutions architect recommend? (Select TWO.)
-
-- A. Migrate the containerized applications to AWS Fargate.
-- B. Migrate the local databases to Amazon Aurora Serverless PostgreSQL-Compatible Edition.
-- C. Migrate the PostgreSQL databases to an Amazon RDS instance with a read replica that replaces each of the local databases.
-- D. Refactor the application to use an Amazon Simple Queue Service (Amazon SQS) queue instead of the local PostgreSQL databases.
-- E. Refactor the local database to use an Amazon ElastiCache lazy loading cache in front of the database.
-
-<details>
-<summary>Show answer</summary>
-
-**Answer: A, B**
-
-Moving the containers to AWS Fargate removes the need to provision and manage EC2 instances, cutting operational overhead. Aurora Serverless PostgreSQL-Compatible Edition automatically scales database capacity up and down to absorb the spikes during patient-visit increases, so the team no longer manages self-managed PostgreSQL servers. Replacing the local databases with RDS read replicas (C) still requires managing instances and read replicas can't accept writes. Refactoring to SQS (D) changes application behavior but doesn't reduce the database operational burden. An ElastiCache cache (E) speeds reads but the team would still self-manage the underlying PostgreSQL database.
-</details>
-
-### Q87: Most cost-effective compute for a short, low-memory prediction process
+### Q86: Most cost-effective compute for a short, low-memory prediction process
 
 A prediction process requires access to a trained model that is stored in an Amazon S3 bucket. The process takes a few seconds to process an image and make a prediction. The process is not overly resource-intensive, does not require any specialized hardware, and takes less than 512 MB of memory to run.
 
@@ -1911,7 +1962,7 @@ What is the MOST cost-effective compute solution for this use case?
 Lambda runs code without provisioning or managing servers and charges only for the compute time consumed, with no charge when idle — ideal for a short (seconds), low-memory (<512 MB), non-specialized task. ECS (A), Beanstalk (C), and Spot Instances (B) all rely on EC2 instances that incur cost while running and add management overhead, making them more expensive for this lightweight, intermittent workload. Spot Instances are also unsuitable as a service backend because capacity is not guaranteed.
 </details>
 
-### Q88: Most cost-effective storage for archived audit data retrievable next business day
+### Q87: Most cost-effective storage for archived audit data retrievable next business day
 
 A company is using an Amazon S3 bucket to store archived data for audits. The company needs long-term storage for the data. The data is rarely accessed and must be available for retrieval the next business day.
 
@@ -1932,7 +1983,7 @@ Which solution will meet these requirements?
 S3 Glacier Flexible Retrieval is built for long-term archival of rarely accessed data and its standard retrieval (3–5 hours) easily satisfies a next-business-day requirement at a much lower storage cost than the other options. EBS on EC2 (A) is expensive block storage that must stay running. S3 Standard-IA (C) costs more than Glacier for archival data that is essentially never read. Copying to another Region (D) increases cost and addresses replication, not archival savings.
 </details>
 
-### Q89: Automating EBS snapshot lifecycle with least effort (Select TWO)
+### Q88: Automating EBS snapshot lifecycle with least effort (Select TWO)
 
 After reviewing the cost optimization checks in AWS Trusted Advisor, a team finds that it has 10,000 Amazon Elastic Block Store (Amazon EBS) snapshots in its account that are more than 30 days old. The team has determined that it needs to implement better governance for the lifecycle of its resources.
 
@@ -1952,7 +2003,7 @@ Which actions should the team take to automate the lifecycle management of the E
 Amazon Data Lifecycle Manager is purpose-built to automate creation, retention, and deletion of EBS snapshots through simple policies. AWS Backup centrally automates and schedules backup/retention lifecycles across services including EBS. Both require minimal effort. Copying snapshots to S3 (B) is manual and S3 lifecycle rules don't act on EBS snapshots. EventBridge + Step Functions (D) and Systems Manager scripting (E) require building and maintaining custom automation — far more effort.
 </details>
 
-### Q90: Lifecycle policy for images accessed for 30 days then rarely, with millisecond access
+### Q89: Lifecycle policy for images accessed for 30 days then rarely, with millisecond access
 
 A company's application gives users the ability to upload image files to an Amazon S3 bucket. These files are accessed frequently for the first 30 days. After 30 days, these files are rarely accessed. However, the files need to be durably stored and available within milliseconds upon request. A solutions architect needs to configure a lifecycle policy that minimizes the overall cost while meeting the application requirements.
 
@@ -1971,7 +2022,7 @@ Which solution will meet these requirements?
 S3 Standard-IA delivers millisecond retrieval and stores data redundantly across multiple Availability Zones at a lower cost than S3 Standard — perfect for infrequently accessed files that still must be returned within milliseconds. Glacier Flexible Retrieval (B) and Glacier Deep Archive (C) require minutes to hours for retrieval, violating the millisecond requirement. S3 One Zone-IA (D) gives millisecond access but stores data in a single AZ, reducing durability against AZ loss.
 </details>
 
-### Q91: Charging departments for a shared analytics environment with least effort
+### Q90: Charging departments for a shared analytics environment with least effort
 
 A company is deploying an environment for a new data processing application. The application will be frequently accessed by 20 different departments across the globe seeking to run analytics. The company plans to charge each department for the cost of that department's access.
 
@@ -1990,7 +2041,7 @@ Which solution will meet these requirements with the LEAST effort?
 Amazon Athena lets you query data directly in Amazon S3, and workgroups are purpose-built to separate users/teams and track and allocate query costs per group with minimal setup. Aurora global databases (A) and RDS read replicas (B) are built for transactional workloads, not analytics, and spinning up per-department copies adds cost and effort. Redshift clusters per department (C) duplicate infrastructure and add significant cost and management overhead.
 </details>
 
-### Q92: Removing EC2 Spot Instances after a demonstration
+### Q91: Removing EC2 Spot Instances after a demonstration
 
 A company used Amazon EC2 Spot Instances for a demonstration that is now complete. A solutions architect must remove the Spot Instances to stop them from incurring cost.
 
@@ -2009,7 +2060,7 @@ What should the solutions architect do to meet this requirement?
 To stop Spot Instances from incurring cost you must first cancel the Spot request so it cannot launch replacements, and then terminate the running Spot Instances. Canceling the request only (B) leaves running instances incurring cost. Terminating instances only (C), or terminating before canceling (D), can cause the still-active request to launch new instances to maintain target capacity. The correct order is cancel the request, then terminate the instances.
 </details>
 
-### Q93: Database tier requiring full OS control and high availability
+### Q92: Database tier requiring full OS control and high availability
 
 A financial services company is migrating its multi-tier web application to AWS. The application architecture consists of a fleet of web servers, application servers, and an Oracle database. The company must have full control over the database's underlying operating system. The database must be highly available.
 
@@ -2028,7 +2079,7 @@ Which approach should a solutions architect use for the database tier to meet th
 Full control over the underlying operating system rules out Amazon RDS, which is a managed service that does not grant OS access — eliminating options A and B. Running Oracle on self-managed EC2 instances gives the company OS-level control, and deploying across two Availability Zones in a cluster provides high availability. A single-AZ deployment (D) cannot survive an Availability Zone failure, so it does not meet the high-availability requirement.
 </details>
 
-### Q94: DR strategy with seconds RPO, minutes RTO, and a scaled-down running environment
+### Q93: DR strategy with seconds RPO, minutes RTO, and a scaled-down running environment
 
 A solutions architect must create a disaster recovery (DR) solution for a company's business-critical applications. The DR site must reside in a different AWS Region than the primary site. The solution requires a recovery point objective (RPO) in seconds and a recovery time objective (RTO) in minutes. The solution also requires the deployment of a completely functional but scaled-down version of the applications.
 
@@ -2047,26 +2098,7 @@ Which DR strategy will meet these requirements?
 Warm standby keeps a fully functional but scaled-down copy of the environment always running in the DR Region, enabling an RPO in seconds and an RTO in minutes by simply scaling up when failover occurs. Multi-site active-active (A) also meets the RTO/RPO but runs a full-scale environment, which is more than "scaled-down" and the most expensive. Backup and restore (B) has RTO/RPO in hours. Pilot light (C) keeps only core services running (not a "completely functional" version), so bringing up the full application takes longer.
 </details>
 
-### Q95: Highly available relational database when OS-level permission is required
-
-A company requires operating system permission on a relational database server.
-
-What should a solutions architect suggest as a configuration for a highly available database architecture?
-
-- A. Multiple Amazon EC2 instances in a database replication configuration that uses two Availability Zones
-- B. A database installed on a single Amazon EC2 instance in an Availability Zone
-- C. Amazon RDS in a Multi-AZ configuration with Provisioned IOPS
-- D. Multiple Amazon EC2 instances in a replication configuration that uses a placement group
-
-<details>
-<summary>Show answer</summary>
-
-**Answer: A**
-
-The requirement for operating system permission rules out Amazon RDS, which is fully managed and does not grant OS access — eliminating C. High availability requires spanning two Availability Zones, so a single instance (B) cannot survive an AZ failure. A placement group (D) clusters instances within a single AZ to reduce latency, which actually reduces availability. Running the database on EC2 instances replicated across two Availability Zones gives both OS control and high availability.
-</details>
-
-### Q96: Highly available MySQL database that maximizes ease of management
+### Q94: Highly available MySQL database that maximizes ease of management
 
 A company is deploying a production portal application on AWS. The database tier runs on a MySQL database. The company requires a highly available database solution that maximizes ease of management.
 
@@ -2085,7 +2117,7 @@ How can the company meet these requirements?
 Amazon RDS is a managed service that maximizes ease of management, and a Multi-AZ deployment provides high availability by automatically failing over to a standby in another Availability Zone. Self-managing MySQL on EC2 (A) maximizes operational effort, the opposite of the requirement. RDS Single-AZ (B) is easy to manage but not highly available. DynamoDB (D) is a NoSQL database and is not compatible with the existing MySQL (relational) workload.
 </details>
 
-### Q97: Resilient, highly scalable architecture for a fast-growing gaming application
+### Q95: Resilient, highly scalable architecture for a fast-growing gaming application
 
 A gaming company is experiencing exponential growth. On multiple occasions, customers have been unable to access resources. To keep up with the increased demand, management is considering deploying a cloud-based solution. The company wants a solution that can match the on-premises resilience of multiple data centers and is robust enough to withstand the increased growth in usage.
 
@@ -2104,26 +2136,7 @@ Which configuration should a solutions architect implement to meet these require
 An Application Load Balancer fronting an EC2 Auto Scaling group across two Availability Zones provides both resilience (multiple AZs mirror multiple on-premises data centers) and elastic scaling to absorb growth. A Network Load Balancer (A) is for extreme TCP/UDP performance and is less suited to this web-facing application. Peered VPCs (C) add complexity without an autoscaling/load-balancing front end. An ALB cannot span two AWS Regions (D) — load balancers are Regional — so that option is not valid.
 </details>
 
-### Q98: Decoupling service that processes requests in the order received
-
-A company is migrating its on-premises application to AWS and refactoring the application's design. The design will consist of frontend Amazon EC2 instances that receive requests, backend EC2 instances that process the requests, and a message-queuing service that addresses decoupling the application. A solutions architect has been informed that a key aspect of the application is that requests are processed in the order in which they are received.
-
-Which AWS service should the solutions architect use to decouple the application?
-
-- A. Amazon Simple Queue Service (Amazon SQS) FIFO queue
-- B. Amazon Simple Queue Service (Amazon SQS) standard queue
-- C. Amazon Simple Notification Service (Amazon SNS)
-- D. Amazon Kinesis
-
-<details>
-<summary>Show answer</summary>
-
-**Answer: A**
-
-An SQS FIFO (first-in-first-out) queue guarantees that messages are processed exactly once and strictly in the order they are received, which is the key requirement. An SQS standard queue (B) offers best-effort ordering only. SNS (C) is a pub/sub notification service, not an ordered work queue. Kinesis (D) maintains order within a shard but is built for streaming/analytics, not simple request decoupling between application tiers.
-</details>
-
-### Q99: Cost-effective, highly available data store protected from accidental deletion
+### Q96: Cost-effective, highly available data store protected from accidental deletion
 
 A solutions architect must create a data store location that will be able to handle different file formats of unknown sizes. The data must be highly available and protected from being accidentally deleted.
 
@@ -2142,7 +2155,7 @@ What solution meets the requirements and is the MOST cost-effective?
 Amazon S3 is object storage ideal for arbitrary file formats of any size and is highly durable and available across multiple Availability Zones by default. Enabling object versioning protects against accidental deletion or overwrite at minimal extra cost. Cross-Region Replication (A) adds cost mainly for regional resilience, which isn't required here. DynamoDB (B) and RDS (C) are structured databases unsuited to storing arbitrary files and cost more for this use case.
 </details>
 
-### Q100: Centrally automating SSL/TLS certificate deployment and management
+### Q97: Centrally automating SSL/TLS certificate deployment and management
 
 A SysOps administrator wants to automate the deployment of new SSL/TLS certificates to web servers. The administrator wants a centralized way to keep track of and manage the deployed certificates.
 
@@ -2161,7 +2174,7 @@ Which AWS service can the administrator use to meet these requirements?
 AWS Certificate Manager provisions, manages, deploys, and automatically renews public and private SSL/TLS certificates from a central place, removing the manual work of purchasing, uploading, and renewing them. KMS (A) manages encryption keys, not SSL/TLS certificates. Run Command (B) can push a one-time deployment but does not provide ongoing certificate management. Parameter Store (D) stores configuration data and secrets but cannot manage SSL/TLS certificates.
 </details>
 
-### Q101: Identifying the destination of malicious network traffic from an EC2 instance
+### Q98: Identifying the destination of malicious network traffic from an EC2 instance
 
 A solutions architect notices an abnormal amount of network traffic coming from an Amazon EC2 instance. The traffic is determined to be malicious, and the destination needs to be determined.
 
@@ -2180,7 +2193,7 @@ What tool can the solutions architect use to identify the destination of the mal
 VPC Flow Logs capture information about the IP traffic going to and from network interfaces in a VPC, including source and destination IP addresses and ports — exactly what is needed to identify where the malicious traffic is going. CloudTrail (A) records API calls, not network packet flows. The AWS Health Dashboard (C) reports AWS service health. CloudWatch (D) collects metrics and application logs but does not, by itself, record network traffic destinations.
 </details>
 
-### Q102: Securing a three-tier VPC architecture with HTTPS-only web access (Select TWO)
+### Q99: Securing a three-tier VPC architecture with HTTPS-only web access (Select TWO)
 
 A solutions architect needs to design a secure environment for AWS resources that are being deployed to Amazon EC2 instances in a VPC. The solution should support a three-tier architecture that consists of web servers, application servers, and a database cluster. The VPC needs to allow resources in the web tier to be accessible from the internet over only the HTTPS protocol.
 
@@ -2200,7 +2213,7 @@ Which combination of actions would meet these requirements? (Select TWO.)
 An internet gateway with public subnets for the web tier and private subnets for the application and database tiers correctly isolates the back-end tiers from direct internet access. Security groups that allow only HTTPS from the internet to the web tier, only web-tier traffic to the application tier, and only application-tier traffic to the database enforce least-privilege flow between tiers. Option D allows all traffic to the web tier (not HTTPS-only). A virtual private gateway (C) is for VPN connectivity, not internet access, and placing the application tier in public subnets reduces security. API Gateway (A) does not provide the EC2 three-tier network isolation described.
 </details>
 
-### Q103: Minimizing data transfer cost for a global static website on S3
+### Q100: Minimizing data transfer cost for a global static website on S3
 
 A company will host a static website within an Amazon S3 bucket. The website will serve millions of users globally, and the company wants to minimize data transfer costs.
 
@@ -2219,7 +2232,7 @@ What should a solutions architect do to ensure costs are kept to a minimum?
 Amazon CloudFront caches the static content at edge locations close to users worldwide, reducing the volume of data served directly from S3 and lowering data transfer costs while improving performance. Auto Scaling (A) and EC2 instances (C) don't apply to static content served from S3 and add cost. Cross-Region Replication (B) duplicates storage and adds replication cost without reducing data transfer for global users.
 </details>
 
-### Q104: Cost-effective secure login to EC2 instances in a private subnet
+### Q101: Cost-effective secure login to EC2 instances in a private subnet
 
 A company is developing an application that runs on Amazon EC2 instances in a private subnet. The EC2 instances use a NAT gateway to access the internet. A solutions architect must provide a secure option so that developers can log in to the instances.
 
@@ -2238,7 +2251,7 @@ Which solution meets these requirements MOST cost-effectively?
 AWS Systems Manager Session Manager provides secure, auditable shell access to private EC2 instances without opening inbound ports or running extra infrastructure, and there is no additional charge for the service — making it the most cost-effective and secure option. A bastion host (B) requires a continuously running EC2 instance and incurs cost. A NAT gateway (C) only enables outbound internet access and cannot be used for inbound login. Site-to-Site VPN (D) is for connecting networks and adds cost and complexity not warranted here.
 </details>
 
-### Q105: Cost-effective microservices with no infrastructure management, scaling, and DDoS protection
+### Q102: Cost-effective microservices with no infrastructure management, scaling, and DDoS protection
 
 A startup company is looking for a solution to cost-effectively run and access microservices without the operational overhead of managing infrastructure. The solution needs to be able to scale quickly to accommodate rapid changes in the volume of requests and protect against common DDoS attacks.
 
@@ -2257,7 +2270,7 @@ What is the MOST cost-effective solution that meets these requirements?
 AWS Lambda removes infrastructure management entirely and scales automatically with request volume, while you pay only for execution time. Fronting it with Amazon API Gateway provides a managed entry point that integrates with AWS Shield Standard for common DDoS protection. Elastic Beanstalk (A), EC2 Auto Scaling (C), and ECS on EC2 (D) all rely on EC2 instances that incur cost while idle and require more operational management, making them less cost-effective for spiky microservice traffic.
 </details>
 
-### Q106: Shared file storage for Windows servers integrated with Active Directory
+### Q103: Shared file storage for Windows servers integrated with Active Directory
 
 A data processing facility wants to move a group of Microsoft Windows servers to the AWS Cloud. These servers require access to a shared file system that can integrate with the facility's existing Active Directory (AD) infrastructure for file and folder permissions. The solution needs to provide seamless support for shared files with AD users and groups located on premises. The solution must be highly available. The chosen solution should provide added security by supporting encryption at rest and in transit. Which storage solution would meet these requirements?
 
@@ -2274,7 +2287,7 @@ A data processing facility wants to move a group of Microsoft Windows servers to
 Amazon FSx for Windows File Server provides a fully managed native Windows SMB file system that integrates directly with Active Directory for file and folder permissions, supports Multi-AZ high availability, and offers encryption at rest and in transit. S3 File Gateway (A) presents S3 as a file share but is not a native Windows file system with AD-based NTFS permissions. EFS (C) supports only Linux/NFS, not Windows SMB. Mounting an S3 bucket on EC2 (D) is not a native shared Windows file system and lacks AD-integrated file permissions.
 </details>
 
-### Q107: API Gateway features for privacy, scale, and external customer security (Select THREE)
+### Q104: API Gateway features for privacy, scale, and external customer security (Select THREE)
 
 A new application is going to be reviewed by the architecture board. The main concerns about required API implementation are as follows:
 
@@ -2299,7 +2312,7 @@ Which of the following Amazon API Gateway features alleviate these concerns? (Se
 A private endpoint keeps internal APIs reachable only from within the VPC, protecting the privacy of internal information. DDoS protection and throttling let API Gateway absorb and rate-limit millions of concurrent calls. An edge-optimized endpoint routes requests through the Amazon CloudFront network, improving security and latency for geographically distributed external customers. AWS Lambda (C) is a compute backend, not an API Gateway feature. NAT (D) is a networking construct, not an API Gateway feature. API Gateway cache (E) improves performance/cost but doesn't directly address these three stated concerns.
 </details>
 
-### Q108: Fastest way to migrate large data given limited VPN bandwidth and a 3-week deadline
+### Q105: Fastest way to migrate large data given limited VPN bandwidth and a 3-week deadline
 
 You need to move a large amount of data from your data center to AWS in the next 3 weeks. You have a virtual private network (VPN) currently set up that provides 100 Mbps of bandwidth. Current saturation on the VPN is 75 percent, making it an untenable solution for your transfer. Which AWS service would be the FASTEST option for migrating the data within the 3-week timeframe?
 
@@ -2316,7 +2329,7 @@ You need to move a large amount of data from your data center to AWS in the next
 With the VPN already 75 percent saturated, transferring a large data set over the network within three weeks is impractical. AWS Snow Family devices let you physically ship the data to AWS, making them the fastest option under limited bandwidth. Storage Gateway (B) still relies on the constrained network link. AWS WAF (C) is a web application firewall and CloudFront (D) is a content delivery network — neither is a bulk data-migration service.
 </details>
 
-### Q109: Route 53 routing policy to split traffic 80/20 across two Regions
+### Q106: Route 53 routing policy to split traffic 80/20 across two Regions
 
 A network engineer wants to route 80 percent of web traffic to the ap-southeast-2 Region. The remaining 20 percent of traffic will be directed to the eu-west-1 Region. Which Route 53 routing policy is the best choice for this use case?
 
@@ -2334,7 +2347,7 @@ A network engineer wants to route 80 percent of web traffic to the ap-southeast-
 Weighted routing lets you assign relative weights to records so traffic is distributed by percentage — for example, 80 percent to one Region and 20 percent to another. Geoproximity (A) and geolocation (C) route based on the user's physical or geographic location, not fixed percentages. Simple routing (D) returns a single record with no traffic splitting. Multivalue answer routing (E) returns multiple healthy records at random but does not enforce specific percentage splits.
 </details>
 
-### Q110: Best service for system metrics, dashboards, and alert notifications
+### Q107: Best service for system metrics, dashboards, and alert notifications
 
 You are migrating from an on-premises data center to AWS. You need a monitoring system with system metrics such as CPU usage, access logs, dashboards, and alert notifications. In addition, you need to monitor AWS account-specific failures and notifications. Which service is BEST for this use case?
 
@@ -2351,7 +2364,7 @@ You are migrating from an on-premises data center to AWS. You need a monitoring 
 Amazon CloudWatch collects system metrics (such as CPU usage), ingests logs, builds dashboards, and sends alert notifications through alarms — covering the core monitoring requirements. It can also receive AWS account events to surface failures and notifications. CloudTrail (B) records API activity for auditing, not metrics/dashboards. AWS Health (C) and the AWS Health Dashboard (D) report on service/account health events only and don't provide system metrics or custom dashboards.
 </details>
 
-### Q111: First resource to review when an uploaded image isn't processed in a serverless lab
+### Q108: First resource to review when an uploaded image isn't processed in a serverless lab
 
 A student is running the Build Serverless Architecture lab and is testing their architecture with a .jpeg file. Reviewing the web folder on the Amazon Simple Storage Service (Amazon S3) bucket, the student notices there is no .jpeg file. Which AWS resource should the student review first to solve this?
 
@@ -2368,7 +2381,7 @@ A student is running the Build Serverless Architecture lab and is testing their 
 In this serverless image-processing architecture, the Lambda Web Function is responsible for processing the uploaded image and writing the result (the .jpeg) into the web folder. If the file is missing, the Lambda Web Function is the first place to investigate for errors. SNS (B) and SQS (D) handle messaging/decoupling, not the file transformation, and the Lambda Mobile Function (C) is part of a different path in the lab.
 </details>
 
-### Q112: Efficiently restricting services across hundreds of accounts in many departments
+### Q109: Efficiently restricting services across hundreds of accounts in many departments
 
 Your organization has hundreds of accounts across many departments and needs to apply a restriction on specific services. Which of the following is an efficient way to implement the administration requirements?
 
@@ -2385,7 +2398,7 @@ Your organization has hundreds of accounts across many departments and needs to 
 Grouping accounts into OUs by department and attaching a service control policy (SCP) at the OU level lets you restrict specific services for whole groups of accounts at once — the most efficient approach for hundreds of accounts. SCPs (not IAM policies) are the AWS Organizations mechanism for restricting services across accounts, which eliminates A and C. Applying SCPs to individual OUs per account (D) defeats the efficiency of grouping by department.
 </details>
 
-### Q113: Required VPC components for a public web tier and a private database tier (Select TWO)
+### Q110: Required VPC components for a public web tier and a private database tier (Select TWO)
 
 You are a Solutions Architect designing the architecture of the virtual private clouds (VPCs) for a web application using Amazon Elastic Compute Cloud (Amazon EC2) instances. The application consists of a web tier and a database tier. The web tier needs to be accessible to internet based clients; however, the database tier needs to be accessible to the web tier instances only. Which of the following are required to make this solution work and follow best practices? (Select TWO.)
 
@@ -2403,7 +2416,7 @@ You are a Solutions Architect designing the architecture of the virtual private 
 An internet gateway attached to the VPC is required so internet-based clients can reach the public web tier. Separate security groups for the web and database tiers let you allow internet (HTTPS) traffic to the web tier while restricting the database tier to accept traffic only from the web tier's security group. A NAT gateway (D) provides outbound internet access for private instances, which isn't the requirement here. Splitting tiers across separate VPCs (E) adds unnecessary complexity, and the subnet layout in C is not the minimal required pair compared with the gateway and security groups.
 </details>
 
-### Q114: Best services to ingest and process clickstream data for a recommendation engine (Select TWO)
+### Q111: Best services to ingest and process clickstream data for a recommendation engine (Select TWO)
 
 An ecommerce website wants to process clickstream from their visitors and needs to store stream data while processing through a recommendation engine. What are the BEST AWS services for this use case? (Select TWO.)
 
@@ -2420,7 +2433,7 @@ An ecommerce website wants to process clickstream from their visitors and needs 
 Amazon Kinesis Data Streams ingests and durably stores high-volume, real-time clickstream data. Amazon Kinesis Data Analytics processes that streaming data in real time so it can feed a recommendation engine. AWS Auto Scaling (A) adjusts compute capacity but doesn't ingest or process streams. Elastic Beanstalk (D) deploys and runs applications but is not a streaming data ingestion/processing service.
 </details>
 
-### Q115: Factors to consider when picking an AWS Region (Select TWO)
+### Q112: Factors to consider when picking an AWS Region (Select TWO)
 
 What are the factors to consider when picking an AWS Region? (Select TWO.)
 
@@ -2438,7 +2451,7 @@ What are the factors to consider when picking an AWS Region? (Select TWO.)
 Latency to end users drives Region choice because placing workloads closer to users reduces round-trip time. Local data regulations (data sovereignty/compliance) can legally require data to stay within a specific country or jurisdiction, dictating which Region you must use. Operating system requirements (C), hybrid networking support (D), and the application's programming language (E) are available across all Regions and are not differentiating factors when selecting one. (Service availability and pricing are also real factors but are not among the listed options.)
 </details>
 
-### Q116: Scalable connectivity for hundreds of VPCs with an uncertain future count
+### Q113: Scalable connectivity for hundreds of VPCs with an uncertain future count
 
 Your organization has grown very quickly and has applications deployed using hundreds of isolated virtual private clouds (VPCs). Now there is a need for connectivity between many VPCs. The company is uncertain how many future VPCs will be connected and is concerned about scalability of the chosen solution. As the Solutions Architect, which solution would you advise for them?
 
@@ -2455,7 +2468,7 @@ Your organization has grown very quickly and has applications deployed using hun
 AWS Transit Gateway acts as a central hub that connects thousands of VPCs (and on-premises networks) through a single gateway, scaling cleanly as new VPCs are added and supporting transitive routing. VPC peering (C) is non-transitive and requires a full mesh — the number of connections grows quadratically, which does not scale to hundreds of VPCs. Site-to-Site VPN (A) and Direct Connect (B) are for connecting on-premises networks to AWS, not for scalable VPC-to-VPC connectivity.
 </details>
 
-### Q117: Benefits of using the AWS CDK with AWS CloudFormation (Select TWO)
+### Q114: Benefits of using the AWS CDK with AWS CloudFormation (Select TWO)
 
 Which of the following are benefits of using AWS Cloud Development Kit (AWS CDK) with AWS CloudFormation? (Select TWO.)
 
@@ -2473,7 +2486,7 @@ Which of the following are benefits of using AWS Cloud Development Kit (AWS CDK)
 The AWS CDK lets developers define infrastructure using familiar programming languages (TypeScript, Python, Java, C#, Go) instead of writing raw CloudFormation templates. It also provides constructs — preconfigured, reusable components with sensible defaults and AWS best practices baked in. CDK components can be shared, not limited to a single user (A). CDK does not change pricing or apply bulk discounts (C). Like any tool that deploys to AWS, it still requires an AWS account and credentials (D).
 </details>
 
-### Q118: Recommended service to deploy containers with limited operations knowledge
+### Q115: Recommended service to deploy containers with limited operations knowledge
 
 For customers that want to deploy containers on AWS, but do not have enough operations or deployment strategy knowledge, which service should you recommend?
 
@@ -2490,7 +2503,7 @@ For customers that want to deploy containers on AWS, but do not have enough oper
 AWS Fargate is a serverless compute engine for containers that removes the need to provision, patch, and manage the underlying servers or capacity — ideal for teams without deep operations or deployment expertise. Running containers on EC2 (A) requires managing the instances yourself. EKS (C) and ECS (D) are orchestration services, but with the EC2 launch type you still manage the cluster infrastructure; Fargate abstracts that away entirely.
 </details>
 
-### Q119: Consolidating backups across EC2, EFS, and RDS into one place
+### Q116: Consolidating backups across EC2, EFS, and RDS into one place
 
 You have decided to consolidate backup in your organization. You currently have Amazon Elastic Compute Cloud (Amazon EC2), Amazon Elastic File System (Amazon EFS), and Amazon Relational Database Service (Amazon RDS) services running in your environment. What AWS service can you use to consolidate all backups to one place?
 
@@ -2507,7 +2520,7 @@ You have decided to consolidate backup in your organization. You currently have 
 AWS Backup is a fully managed service that centralizes and automates backups across AWS services — including EC2, EFS, and RDS — from a single console with unified backup policies. Elastic Beanstalk (B) deploys and runs applications, not backups. S3 (C) is object storage and would require building custom backup logic per service. Secrets Manager (D) stores and rotates secrets, not backups.
 </details>
 
-### Q120: Disaster recovery strategy that keeps only part of the stack running
+### Q117: Disaster recovery strategy that keeps only part of the stack running
 
 While working on your disaster recovery plan (DR) you have decided to create a backup stack on AWS. Unfortunately, you need to keep some of the stack running but do not have the budget to keep the entire stack running. What type of recovery strategy is this?
 
@@ -2524,7 +2537,7 @@ While working on your disaster recovery plan (DR) you have decided to create a b
 Pilot light keeps the core, critical components of the stack running (such as the database) while the rest stays switched off until needed — matching the requirement to keep only part of the stack running on a limited budget. Backup and restore (A) keeps nothing running and rebuilds from backups (highest RTO). Multi-site active/active (B) keeps the entire stack running in parallel (highest cost). Snowball Edge Compute Optimized (D) is a data-transfer/edge-compute device, not a DR strategy.
 </details>
 
-### Q121: Compute purchase option with a commitment that is flexible across instance families
+### Q118: Compute purchase option with a commitment that is flexible across instance families
 
 Which compute purchase option includes a 1-year or 3-year commitment and is also flexible to use across Amazon Elastic Compute Cloud (Amazon EC2) instance families?
 
@@ -2541,7 +2554,7 @@ Which compute purchase option includes a 1-year or 3-year commitment and is also
 Compute Savings Plans offer a 1-year or 3-year commitment and the most flexibility — discounts apply automatically across any instance family, size, Region, OS, and tenancy, and even to Fargate and Lambda. EC2 Instance Savings Plans (A) also require a commitment but are locked to a specific instance family in a chosen Region. On-Demand (B) has no commitment and no discount. Spot Instances (C) have no commitment and can be interrupted by AWS.
 </details>
 
-### Q122: Shared file system for two Linux applications in different Availability Zones
+### Q119: Shared file system for two Linux applications in different Availability Zones
 
 You have two Linux applications in different Availability Zones that must share a common file system. Which of the following is the best solution for this use case?
 
@@ -2558,7 +2571,7 @@ You have two Linux applications in different Availability Zones that must share 
 Amazon EFS is a fully managed NFS file system for Linux that can be mounted concurrently by instances across multiple Availability Zones, making it ideal for sharing a common file system between the two applications. FSx for Windows File Server (B) serves Windows/SMB workloads, not Linux. S3 (D) is object storage and cannot be natively mounted as a shared file system. Storage Gateway (A) is for hybrid on-premises-to-AWS storage integration, not multi-AZ shared file access within AWS.
 </details>
 
-### Q123: Cost-effective scaling for a video processing workload
+### Q120: Cost-effective scaling for a video processing workload
 
 A company has developed an application that processes photos and videos. When users upload files, a job processes them. The job can take up to 1 hour to process a long video. The company uses Amazon EC2 On-Demand instances to serve web servers and processing jobs. The processing layer must be able to scale, and during peak hours the systems are at full capacity. What should a solutions architect do so that the application will process all the jobs in the MOST cost-effective manner?
 
@@ -2575,7 +2588,7 @@ A company has developed an application that processes photos and videos. When us
 An SQS queue decouples the web layer from the processing layer so that jobs are buffered and never lost during peak demand. Scaling the processing Auto Scaling group on a custom queue-depth metric (such as the number of messages waiting) adds capacity only when there is a backlog and removes it when the queue drains, which is the most cost-effective fit. A larger instance size (A) raises cost continuously without addressing the bursty pattern. Spot Instances (B) can be reclaimed mid-job, which is risky for tasks that take up to an hour. Lambda (D) has a 15-minute execution limit, so it cannot run a 1-hour job.
 </details>
 
-### Q124: Combining solutions to ingest spiky IoT sensor data into a data lake (Select TWO)
+### Q121: Combining solutions to ingest spiky IoT sensor data into a data lake (Select TWO)
 
 A company is building a distributed application that sends sensor IoT data — including weather conditions and wind speed from wind turbines — to the AWS Cloud for further processing. The data is spiky and the application must be able to scale. The streaming data must be stored in a key-value database, then sent to a centralized data lake where it can be transformed, analyzed, and combined with diverse datasets to derive insights. Which combination of solutions accomplishes this with the LEAST operational overhead? (Select TWO.)
 
@@ -2593,7 +2606,7 @@ A company is building a distributed application that sends sensor IoT data — i
 DynamoDB is a fully managed, serverless key-value database that scales seamlessly with spiky traffic, and DynamoDB Streams/Kinesis Data Streams capture changes for downstream processing (D). Amazon Kinesis Data Firehose can then deliver the streaming data directly into an S3 data lake with no servers to manage (A). Writing custom Lambda functions (C) adds operational overhead compared with Kinesis's managed delivery. DocumentDB (B) is a document database, not the required key-value store, and isn't serverless. Redshift with Spectrum (E) is a data warehouse, not the S3 data lake described, and adds cluster management overhead.
 </details>
 
-### Q125: Member accounts accessing a shared services VPC with the least operational overhead
+### Q122: Member accounts accessing a shared services VPC with the least operational overhead
 
 A large international company has a management account in AWS Organizations and hundreds of VPCs across member accounts. A shared services VPC hosts an application that all the member accounts must reach. Communication among all the VPCs should be allowed. How can the member accounts access the shared services VPC with the LEAST operational overhead?
 
@@ -2610,7 +2623,7 @@ A large international company has a management account in AWS Organizations and 
 A VPC endpoint service (AWS PrivateLink) backed by a Network Load Balancer lets the shared services VPC expose its application privately to hundreds of consumer VPCs across accounts, with auto-accepted endpoint connections to minimize manual approvals. This scales cleanly and keeps traffic on the AWS network. VPC peering (B) is non-transitive and requires a full mesh that grows quadratically — unmanageable for hundreds of VPCs. A VPN connection per VPC (D) has the same scaling and operational problem. The ALB/CAA approach (A) is not how cross-VPC private connectivity works (CAA records relate to certificate issuance, not routing).
 </details>
 
-### Q126: Choosing connectivity for consistent bandwidth in a hybrid cloud
+### Q123: Choosing connectivity for consistent bandwidth in a hybrid cloud
 
 Your organization is beginning a journey to the cloud and initially will implement a hybrid cloud infrastructure. The primary concern is consistency of bandwidth between the on-premises resources and AWS resources. Which option would you recommend for connectivity?
 
@@ -2627,7 +2640,7 @@ Your organization is beginning a journey to the cloud and initially will impleme
 AWS Direct Connect provides a dedicated, private physical connection between on-premises and AWS, delivering consistent, predictable bandwidth and latency — exactly the concern stated. A Site-to-Site VPN (D) runs over the public internet, so bandwidth and latency vary. VPC Peering (A) connects VPCs to each other, not on-premises to AWS. Transit Gateway (B) is a routing hub for many VPCs and VPNs; it does not by itself provide the dedicated, consistent bandwidth link to on-premises.
 </details>
 
-### Q127: Disaster recovery model with an RTO in minutes at the lowest cost
+### Q124: Disaster recovery model with an RTO in minutes at the lowest cost
 
 Which disaster recovery model offers an RTO in minutes at the lowest cost?
 
@@ -2644,7 +2657,7 @@ Which disaster recovery model offers an RTO in minutes at the lowest cost?
 Pilot light keeps only the core elements (such as a replicated database) running while the rest of the environment is pre-provisioned but switched off, so it can be scaled up within minutes during failover — giving an RTO in minutes at low cost. A fully working low-capacity standby (warm standby, A) runs continuously and costs more. Backup and restore (C) is the cheapest but has the slowest RTO (hours). Multi-site active/active (D) gives the lowest RTO but is the most expensive.
 </details>
 
-### Q128: Metric that defines how often data must be backed up
+### Q125: Metric that defines how often data must be backed up
 
 Which metric defines how often data must be backed up?
 
@@ -2661,7 +2674,7 @@ Which metric defines how often data must be backed up?
 Recovery Point Objective (RPO) is the maximum acceptable amount of data loss measured in time, which directly determines how frequently backups must be taken. Recovery Time Objective (RTO, A) defines how quickly a system must be restored after a disruption, not backup frequency. Available storage (C) and amount of data (D) are capacity considerations, not recovery metrics.
 </details>
 
-### Q129: Features of AWS Backup (Select THREE)
+### Q126: Features of AWS Backup (Select THREE)
 
 Which of the following are features of AWS Backup? (Select THREE.)
 
@@ -2680,7 +2693,7 @@ Which of the following are features of AWS Backup? (Select THREE.)
 AWS Backup centralizes and automates data protection: it encrypts backups (A) using AWS KMS, works across multiple supported AWS services such as EBS, EFS, RDS, DynamoDB, and Storage Gateway (C), and performs incremental backups so only changed data is stored after the first full backup (E). It does not work across *every* AWS service (B) — only supported ones. Automated failover to read replicas (D) is an RDS high-availability feature, not a backup feature. Automated machine conversion (F) relates to migration tooling, not AWS Backup.
 </details>
 
-### Q130: Making an existing RDS DB instance highly available with minimal RTO
+### Q127: Making an existing RDS DB instance highly available with minimal RTO
 
 What is the best way to make an existing Amazon RDS DB instance highly available and minimize your RTO?
 
@@ -2697,7 +2710,7 @@ What is the best way to make an existing Amazon RDS DB instance highly available
 A Multi-AZ deployment maintains a synchronous standby replica in a different Availability Zone within the same Region and automatically fails over to it, providing high availability with an RTO of about a minute or two. A secondary copy in another Region (A) is a disaster recovery pattern with higher RTO and complexity. Read replicas (C, D) are for scaling read traffic and replicate asynchronously; promoting one is a manual process that does not provide automatic failover.
 </details>
 
-### Q131: Querying DynamoDB attributes that are not key columns
+### Q128: Querying DynamoDB attributes that are not key columns
 
 An existing application built on Amazon DynamoDB needs to query attributes that are not defined in key columns. Which of the following will accommodate the change most efficiently?
 
@@ -2714,7 +2727,7 @@ An existing application built on Amazon DynamoDB needs to query attributes that 
 A global secondary index (GSI) lets you query a table using an alternate partition key (and optional sort key) that differs from the base table's keys, which is exactly what's needed to query non-key attributes efficiently on an existing table. DynamoDB cannot efficiently query arbitrary attributes without an index (A is false). A local secondary index (B) must share the same partition key as the base table and can only be created at table creation time, so it can't be added to an existing table. Creating a new table and copying data (D) is far more operational effort than adding a GSI.
 </details>
 
-### Q132: Static public IP that persists across stop and start
+### Q129: Static public IP that persists across stop and start
 
 You are deploying an application into an AWS virtual private cloud (VPC). Internet hosts must connect to a static public IP address that is persistent across stop and start. Which of the following options should be used?
 
@@ -2731,7 +2744,7 @@ You are deploying an application into an AWS virtual private cloud (VPC). Intern
 An Elastic IP address is a static public IPv4 address that you allocate to your account and associate with an instance; it remains the same across stops and starts, satisfying the persistent-address requirement. A default public IP address (B) is released and reassigned when an instance is stopped and started, so it is not persistent. A private IP address (C) is not reachable from internet hosts. A NAT gateway (D) enables outbound internet access for private instances; it is not a static inbound address for the application.
 </details>
 
-### Q133: What a connection to a transit gateway is called
+### Q130: What a connection to a transit gateway is called
 
 What is a connection to a transit gateway called?
 
@@ -2748,25 +2761,7 @@ What is a connection to a transit gateway called?
 In AWS Transit Gateway terminology, each connection from a VPC, VPN, Direct Connect gateway, or peered transit gateway is called an *attachment*. A VPN (A) is one type of resource you attach, not the generic term for the connection. A route (C) is an entry in a route table that directs traffic, not the connection itself. A VPC (D) is a resource that you attach to the transit gateway via an attachment.
 </details>
 
-### Q134: Components of an AWS Site-to-Site VPN connection (Select TWO)
-
-What are the components of an AWS Site-to-Site VPN connection? (Select TWO.)
-
-- A. Customer gateway device
-- B. Interface endpoint
-- C. Virtual private gateway
-- D. Virtual Private Cloud (VPC) peering connection
-- E. Gateway endpoint
-
-<details>
-<summary>Show answer</summary>
-
-**Answer: A, C**
-
-A Site-to-Site VPN connects your on-premises network to a VPC using a customer gateway device on the on-premises side (A) and a virtual private gateway (or transit gateway) on the AWS side (C) to terminate the encrypted tunnels. Interface endpoints (B) and gateway endpoints (E) are VPC endpoint types for privately reaching AWS services, unrelated to VPN. A VPC peering connection (D) links two VPCs and is not part of a Site-to-Site VPN.
-</details>
-
-### Q135: True statements about VPC peering connections (Select TWO)
+### Q131: True statements about VPC peering connections (Select TWO)
 
 What is TRUE about Virtual Private Cloud (VPC) peering connections? (Select TWO.)
 
@@ -2784,7 +2779,7 @@ What is TRUE about Virtual Private Cloud (VPC) peering connections? (Select TWO.
 A VPC peering connection is a one-to-one link between exactly two VPCs (B), and the two VPCs can belong to different AWS accounts — and even different Regions (D). Peering is not one-to-many (A); each pair needs its own connection. It does not require a transit gateway (C) — peering is a direct relationship. Peering is non-transitive (E), so traffic cannot flow through an intermediate VPC to reach a third one.
 </details>
 
-### Q136: SQS queue type that provides at-least-once delivery
+### Q132: SQS queue type that provides at-least-once delivery
 
 Which type of Amazon Simple Queue Service (Amazon SQS) queue provides at-least-once delivery?
 
@@ -2801,7 +2796,7 @@ Which type of Amazon Simple Queue Service (Amazon SQS) queue provides at-least-o
 Standard queues guarantee at-least-once delivery, which means a message may occasionally be delivered more than once, in exchange for nearly unlimited throughput and best-effort ordering. FIFO queues (A) provide exactly-once processing and strict ordering, not at-least-once. A dead-letter queue (C) is a destination for messages that can't be processed successfully, not a delivery model. Long polling (D) is a message-retrieval technique, not a queue type.
 </details>
 
-### Q137: Advantage of long polling over short polling in SQS
+### Q133: Advantage of long polling over short polling in SQS
 
 What is an advantage of long polling compared to short polling while using Amazon Simple Queue Service (Amazon SQS)?
 
@@ -2818,7 +2813,7 @@ What is an advantage of long polling compared to short polling while using Amazo
 Long polling waits until a message is available (or the timeout expires) before responding, which eliminates most empty responses and avoids false empty responses by querying all SQS servers. Fewer empty `ReceiveMessage` calls mean lower request costs. An immediate response (A) describes short polling, not long polling. Long polling is not about single-thread stability (B). Sampling only a subset of servers (D) describes short polling, which is what causes false empty responses.
 </details>
 
-### Q138: A feature of Amazon Simple Notification Service (Amazon SNS)
+### Q134: A feature of Amazon Simple Notification Service (Amazon SNS)
 
 What is a feature of Amazon Simple Notification Service (Amazon SNS)?
 
@@ -2835,7 +2830,7 @@ What is a feature of Amazon Simple Notification Service (Amazon SNS)?
 Amazon SNS is a publish/subscribe (pub/sub) service that pushes messages to multiple subscribers (such as SQS queues, Lambda functions, HTTP endpoints, and email) at once. It uses a push model, not polling (A) — polling describes SQS. Decoupling components that don't need to be concurrently available (B) and keeping messages persistent in a queue (D) describe Amazon SQS, not SNS.
 </details>
 
-### Q139: Potential benefits of an Amazon CloudFront distribution (Select TWO)
+### Q135: Potential benefits of an Amazon CloudFront distribution (Select TWO)
 
 What are the potential benefits of implementing an Amazon CloudFront distribution? (Select TWO.)
 
@@ -2853,7 +2848,7 @@ What are the potential benefits of implementing an Amazon CloudFront distributio
 CloudFront caches content at edge locations close to users, reducing latency for accessing application content (D), and it increases application security by integrating with AWS WAF, AWS Shield, and HTTPS/TLS at the edge (A). Two global static IP addresses (B) is a feature of AWS Global Accelerator, not CloudFront. CloudFront caches content but does not provide automatic redundancy for *all* application content (C). It caches at AWS edge locations, not on-premises (E).
 </details>
 
-### Q140: Benefit of AWS Outposts servers versus an Outposts rack
+### Q136: Benefit of AWS Outposts servers versus an Outposts rack
 
 What is a benefit of choosing AWS Outposts servers when compared to an Outposts rack?
 
@@ -2870,7 +2865,7 @@ What is a benefit of choosing AWS Outposts servers when compared to an Outposts 
 Outposts servers are individual 1U or 2U devices that fit into your existing rack, making them ideal for smaller spaces such as retail stores or branch offices where a full Outposts rack won't fit (C). Outposts racks actually support more AWS services and larger capacity (A is a rack benefit). Only racks let you pool compute and storage across multiple units (B). Both form factors still require a suitable on-premises facility with power, cooling, and network (D is false).
 </details>
 
-### Q141: Preventing duplicate processing of records from a queue
+### Q137: Preventing duplicate processing of records from a queue
 
 An API receives a high volume of sensor data. The data is written to a queue before being processed to produce trend analysis and forecasting reports. With the current architecture, some data records are being received and processed more than once. How can a solutions architect modify the architecture to ensure that duplicate records are not processed?
 
@@ -2887,7 +2882,7 @@ An API receives a high volume of sensor data. The data is written to a queue bef
 An SQS FIFO queue provides exactly-once processing and deduplication (using a deduplication ID within a 5-minute interval), which guarantees that duplicate records are not processed. SQS standard queues, Kinesis Data Streams (A), and Kinesis Data Firehose (B) all provide at-least-once delivery, so consumers can see duplicates. SNS (C) is a pub/sub push service that also delivers at least once and does not deduplicate.
 </details>
 
-### Q142: DNS failover to a static website hosted on Amazon S3
+### Q138: DNS failover to a static website hosted on Amazon S3
 
 Which AWS service can you implement to create a DNS failover to a static website hosted on Amazon S3?
 
@@ -2899,7 +2894,7 @@ Which AWS service can you implement to create a DNS failover to a static website
 Route 53 failover routing uses health checks on the primary endpoint and automatically redirects DNS queries to a secondary resource — such as a static website hosted in an S3 bucket — when the primary becomes unhealthy. This provides DNS-level failover for high availability.
 </details>
 
-### Q143: S3 storage class for cold data
+### Q139: S3 storage class for cold data
 
 What Amazon S3 storage class would you choose to store cold data?
 
@@ -2911,7 +2906,7 @@ What Amazon S3 storage class would you choose to store cold data?
 S3 Glacier storage classes are purpose-built for cold (rarely accessed) archival data at the lowest cost. Depending on retrieval needs you choose Glacier Instant Retrieval, Glacier Flexible Retrieval, or Glacier Deep Archive — all far cheaper than S3 Standard for data that is seldom accessed.
 </details>
 
-### Q144: Parallel file system for frequently accessed data
+### Q140: Parallel file system for frequently accessed data
 
 What storage solution would you choose if you needed a parallel file system to store frequently accessed data?
 
@@ -2923,7 +2918,7 @@ What storage solution would you choose if you needed a parallel file system to s
 Amazon FSx for Lustre is a fully managed, high-performance parallel file system designed for compute-intensive workloads (HPC, machine learning, media processing) that need fast access to frequently used data with high throughput and low latency.
 </details>
 
-### Q145: Synchronous data replication across Availability Zones for Amazon RDS
+### Q141: Synchronous data replication across Availability Zones for Amazon RDS
 
 If you need to design and implement synchronous data replication across Availability Zones for your Amazon RDS instances, what is the best solution?
 
@@ -2935,7 +2930,7 @@ If you need to design and implement synchronous data replication across Availabi
 An RDS Multi-AZ deployment synchronously replicates data to a standby instance in a different Availability Zone and automatically fails over to it, providing high availability and durability within a Region.
 </details>
 
-### Q146: Asynchronous data replication to an Amazon RDS instance in another Region
+### Q142: Asynchronous data replication to an Amazon RDS instance in another Region
 
 If you need to design and implement asynchronous data replication to another Amazon RDS instance in another AWS Region, what is the best solution?
 
@@ -2945,18 +2940,6 @@ If you need to design and implement asynchronous data replication to another Ama
 **Answer: Add a read replica (cross-Region read replica)**
 
 RDS read replicas use asynchronous replication and can be created in another AWS Region. They offload read traffic and can be promoted to a standalone database, supporting cross-Region scaling and disaster recovery.
-</details>
-
-### Q147: Relational database for an RTO of 60 seconds and RPO of 1 second
-
-You need to create a disaster recovery plan for your relational database with an RTO of 60 seconds and an RPO of 1 second. What Amazon RDS database would be the best choice?
-
-<details>
-<summary>Show answer</summary>
-
-**Answer: Amazon Aurora Global Database**
-
-Amazon Aurora Global Database spans a single Aurora database across multiple AWS Regions using storage-based replication with typical latency of less than 1 second (meeting the 1-second RPO), and it can promote a secondary Region in well under a minute (meeting the 60-second RTO). This makes it ideal for low-RPO, low-RTO cross-Region disaster recovery of relational data.
 </details>
 
 ## References
