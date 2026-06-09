@@ -24,6 +24,7 @@ Notes for the AWS Solutions Architect Associate certification exam.
   - [AWS Organizations, OUs & Service Control Policies (SCPs)](#aws-organizations-ous--service-control-policies-scps)
   - [Internet Gateway vs. NAT Gateway](#internet-gateway-vs-nat-gateway)
   - [EC2 Instance Savings Plans vs. Compute Savings Plans](#ec2-instance-savings-plans-vs-compute-savings-plans)
+  - [Caching Strategies (Lazy Loading & Write-Through)](#caching-strategies-lazy-loading--write-through)
 - [Questions](#questions)
 - [References](#references)
 
@@ -304,6 +305,45 @@ Both connect a VPC to the internet, but they serve opposite directions of traffi
 - Compared with **Reserved Instances**, Savings Plans are simpler (commit to a dollar amount, not specific instance reservations).
 
 > Exam tip (Q118): a commitment (1 or 3 years) that stays **flexible across instance families** points to **Compute Savings Plans**. If it's locked to one family/Region for a bigger discount, that's an **EC2 Instance Savings Plan**.
+
+### Caching Strategies (Lazy Loading & Write-Through)
+
+A **cache** stores frequently accessed data in fast in-memory storage (typically **Amazon ElastiCache** — Redis or Memcached) to reduce latency and offload the backing database. The exam focuses on **how** the cache is kept in sync with the database, which comes down to two core strategies (often combined).
+
+**Lazy Loading (cache-aside):** data is loaded into the cache only when it is requested.
+
+1. Application requests data → checks the cache first.
+2. **Cache hit** → return the cached value (fast).
+3. **Cache miss** → read from the database, write it into the cache, then return it.
+
+- **Pros:** only requested data is cached (no wasted memory); resilient — a cache node failure just causes more misses, not data loss.
+- **Cons:** a cache miss costs **three trips** (cache → DB → cache), adding latency on the first read; data can become **stale**, since the cache isn't updated when the DB changes.
+
+**Write-Through:** the cache is updated **at the same time** the database is written.
+
+1. Application writes data → writes to the database **and** the cache together.
+2. Reads always hit a populated, up-to-date cache.
+
+- **Pros:** data in the cache is **never stale** and reads are always fast.
+- **Cons:** **write penalty** — every write touches two stores; **cache churn** — data is cached even if it's never read, wasting memory; on a new node, data is missing until it's written again.
+
+| | **Lazy Loading** | **Write-Through** |
+| --- | --- | --- |
+| **Cache populated on** | Read (cache miss) | Write |
+| **Data freshness** | Can be **stale** | **Always current** |
+| **Memory usage** | Only requested data | All written data (can be wasteful) |
+| **Penalty** | Slow first read (3 trips) | Slower writes |
+| **Best for** | Read-heavy workloads where some staleness is OK | Workloads that must never serve stale data |
+
+**Combining them + TTL:** real systems often use **both** — write-through to keep hot data fresh, lazy loading to backfill what's missing. Add a **TTL (Time to Live)** on cache entries to bound staleness: entries expire automatically, forcing a fresh DB read. TTL is the common fix for lazy loading's staleness problem.
+
+**Related caching services (exam context):**
+
+- **Amazon ElastiCache** — managed Redis/Memcached; you implement lazy loading or write-through in your app code. Use it to cache **relational database** (RDS/Aurora) query results and session data.
+- **Amazon DynamoDB Accelerator (DAX)** — a fully managed, write-through in-memory cache **specifically for DynamoDB**, delivering microsecond reads. Don't pick DAX for relational databases.
+- **Amazon CloudFront** — edge caching for **static/dynamic web content**, not database query results.
+
+> Exam tip (Q46): "cache must **never be stale**" on writes → **ElastiCache with write-through**. "Reduce DB load for a read-heavy app" → **lazy loading** (often + TTL). "Cache for **DynamoDB** with microsecond latency" → **DAX**.
 
 ## Questions
 
