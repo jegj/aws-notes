@@ -890,9 +890,13 @@ Which self-managed AWS service can the company use to meet these requirements wi
 <details>
 <summary>Show answer</summary>
 
-**Answer: A**
+**Answer: B**
 
-AWS Security Hub compliance standards provide automated, continuous security checks against industry frameworks (CIS, AWS Foundational Best Practices) across all member accounts in AWS Organizations with minimal setup. Security Hub integrates with AWS Organizations natively for centralized management. Config conformance packs (B) provide evaluations and remediation but require more operational effort to configure and deploy. CloudTrail (C) provides audit logging, not governance evaluations or remediation. Trusted Advisor (D) offers best-practice recommendations but does not provide standardized remediations.
+AWS Config conformance packs are collections of AWS Config rules and remediation actions that you can deploy as a single entity in an account and a Region, or across an entire organization in AWS Organizations. This delivers a standard set of governance evaluations and remediations with the least operational effort.
+
+- **A is wrong:** Security Hub gives a comprehensive view of your security state and checks against security standards, but the scenario requires general governance evaluations, not just security.
+- **C is wrong:** CloudTrail records API calls for governance, compliance, and auditing, but does not make recommendations or perform remediation.
+- **D is wrong:** Trusted Advisor provides real-time best-practice guidance, but does not provide standardized remediation.
 </details>
 
 ### Q30: Most secure way for EC2 in private subnet to access SNS with PII data
@@ -985,9 +989,13 @@ Which configuration should a solutions architect recommend?
 <details>
 <summary>Show answer</summary>
 
-**Answer: B**
+**Answer: C**
 
-Using two separate FIFO queues ensures ordered processing within each tier. Long polling on the paid queue means the application retrieves messages immediately when available, while short polling on the free queue introduces deliberate delays — effectively prioritizing paid users. SQS does not support native message priority (A is invalid). Two standard queues with application-level prioritization (C) could work but standard queues don't guarantee ordering, potentially processing free user photos out of order. Manipulating visibility timeout (D) does not create a reliable prioritization mechanism and adds unnecessary complexity.
+Two separate queues are necessary for free and paid requests, and the prioritization happens in the application running on the EC2 instances — it polls the paid queue ahead of the free queue. Standard queues are the right fit here since the requirement is prioritization, not strict ordering.
+
+- **A is wrong:** Two separate queues are needed to differentiate paid from free requests; prioritization must occur in the application, not in a single FIFO queue.
+- **B is wrong:** Although two queues are correct, polling type (short vs long polling) is not the mechanism for prioritization in this scenario.
+- **D is wrong:** Two separate queues are needed for free and paid requests; visibility timeout is unrelated to queue prioritization.
 </details>
 
 ### Q35: Document storage on EC2 across multi-AZ with immediate retrieval
@@ -1858,9 +1866,13 @@ Which solution solves the performance problem the company faces?
 <details>
 <summary>Show answer</summary>
 
-**Answer: D**
+**Answer: A**
 
-Placing an SQS queue in front of DynamoDB decouples the rate of incoming transactions from the database's write capacity. During a flash sale, transactions accumulate durably in the queue and are written to DynamoDB at a sustainable rate, so no transactions are lost. Switching to on-demand mode (A) can still throttle on sudden extreme spikes and is limited to one mode change per 24 hours, making it awkward to toggle for sales. DAX (B) is a read-through cache that doesn't help with write throughput. Kinesis (C) is designed for streaming analytics, adding unnecessary complexity for simple transaction buffering.
+Switching DynamoDB to on-demand mode gives the table the ability to scale to meet sudden increases in demand that occur during flash sales, solving the throttling/lost-transaction problem without managing capacity.
+
+- **B is wrong:** DAX improves read performance for repetitive queries; it does not help one-time queries or improve write performance.
+- **C is wrong:** Recording purchases as Kinesis messages and then processing them into DynamoDB means the writes could be out of sync with the reads — the company could sell inventory that is not available.
+- **D is wrong:** Same problem as C — queuing purchases through SQS and processing them asynchronously means writes could lag reads, leading to selling unavailable inventory.
 </details>
 
 ### Q80: Secure SSH access to private web servers via a bastion host (Select TWO)
@@ -2980,6 +2992,77 @@ If you need to design and implement asynchronous data replication to another Ama
 **Answer: Add a read replica (cross-Region read replica)**
 
 RDS read replicas use asynchronous replication and can be created in another AWS Region. They offload read traffic and can be promoted to a standalone database, supporting cross-Region scaling and disaster recovery.
+</details>
+
+### Q143: Encrypting an existing unencrypted Amazon RDS MySQL database
+
+A company's legacy application is currently relying on a single-instance Amazon RDS MySQL database without encryption. Due to new compliance requirements, all existing and new data in this database must be encrypted.
+
+How should this be accomplished?
+
+- **A.** Create an Amazon S3 bucket with server-side encryption turned on. Move all the data to Amazon S3. Delete the RDS instance.
+- **B.** Configure RDS Multi-AZ mode with encryption at rest turned on. Perform a failover to the standby instance to delete the original instance.
+- **C.** Take a snapshot of the RDS instance. Create an encrypted copy of the snapshot. Restore the RDS instance from the encrypted snapshot.
+- **D.** Create an RDS read replica with encryption at rest turned on. Promote the read replica to primary and switch the application over to the new primary. Delete the old RDS instance.
+
+<details>
+<summary>Show answer</summary>
+
+**Answer: C — Take a snapshot, create an encrypted copy, and restore from it**
+
+You can only enable encryption for an RDS DB instance at creation time. To encrypt an existing unencrypted database, take a snapshot, create an encrypted copy of that snapshot, and restore a new DB instance from the encrypted snapshot.
+
+- **A is wrong:** RDS MySQL already supports encryption, and Amazon S3 is not a viable replacement for a relational database.
+- **B is wrong:** You cannot create an encrypted standby DB instance from an unencrypted primary.
+- **D is wrong:** You cannot create an encrypted read replica of an unencrypted DB instance (nor an unencrypted replica of an encrypted one).
+</details>
+
+### Q144: Encrypting future Amazon RDS automated backups
+
+A company currently operates a web application backed by an Amazon RDS MySQL database. It has automated backups that run daily and are not encrypted. A security audit requires future backups to be encrypted and the unencrypted backups to be destroyed. The company will make at least one encrypted backup before destroying the old backups.
+
+What should be done to set up encryption for future backups?
+
+- **A.** Turn on default encryption for the Amazon S3 bucket where backups are stored.
+- **B.** Modify the backup section of the database configuration to toggle the Enable encryption check box.
+- **C.** Create a snapshot of the database. Copy it to an encrypted snapshot. Restore the database from the encrypted snapshot.
+- **D.** Configure an encrypted read replica on RDS for MySQL. Promote the encrypted read replica to primary. Remove the original database instance.
+
+<details>
+<summary>Show answer</summary>
+
+**Answer: C — Snapshot the database, copy it to an encrypted snapshot, and restore from it**
+
+You cannot encrypt an existing unencrypted DB instance directly. Take a snapshot, create an encrypted copy of that snapshot, and restore a new (encrypted) DB instance from it — its automated backups will then also be encrypted.
+
+- **A is wrong:** Users do not have access to the S3 bucket that stores RDS automated backups, so encryption cannot be turned on there.
+- **B is wrong:** There is no option to toggle encryption on an existing DB instance; encryption can only be configured when the instance is created.
+- **D is wrong:** You cannot create an encrypted read replica of an unencrypted DB instance.
+</details>
+
+### Q145: Immutable infrastructure with safe, testable deployments (Select TWO)
+
+A company wants to build an immutable infrastructure for its software application. The company wants to test the software applications before sending traffic to them. The company needs an efficient solution that limits the effects of application bugs.
+
+Which combination of steps should a solutions architect recommend? (Select TWO.)
+
+- **A.** Use AWS CloudFormation to update the production infrastructure and roll back the stack if the update fails.
+- **B.** Apply Amazon Route 53 weighted routing to test the staging environment and gradually increase the traffic as the tests pass.
+- **C.** Apply Amazon Route 53 failover routing to test the staging environment and fail over to the production environment if the tests pass.
+- **D.** Use AWS CloudFormation with a parameter set to the staging value in a separate environment other than the production environment.
+- **E.** Use AWS CloudFormation to deploy the staging environment with a snapshot deletion policy and reuse the resources in the production environment.
+
+<details>
+<summary>Show answer</summary>
+
+**Answer: B and D**
+
+- **B is correct:** Route 53 weighted routing sends a percentage of traffic to multiple resources, enabling a blue/green deployment strategy that deploys predictably and rolls back quickly if tests fail.
+- **D is correct:** Using a separate environment (driven by a CloudFormation parameter) lets the company test changes before deploying them to production.
+
+- **A is wrong:** Updating the production infrastructure directly would impact applications and users; a separate environment is needed to test before deploying updates.
+- **C is wrong:** Failover routing is for disaster recovery — routing to a healthy resource when one becomes unhealthy — not for testing deployments.
+- **E is wrong:** A snapshot deletion policy does not support all resource types and may not retain all required resources.
 </details>
 
 ## References
