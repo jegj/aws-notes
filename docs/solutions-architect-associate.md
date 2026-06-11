@@ -3000,10 +3000,10 @@ A company's legacy application is currently relying on a single-instance Amazon 
 
 How should this be accomplished?
 
-- **A.** Create an Amazon S3 bucket with server-side encryption turned on. Move all the data to Amazon S3. Delete the RDS instance.
-- **B.** Configure RDS Multi-AZ mode with encryption at rest turned on. Perform a failover to the standby instance to delete the original instance.
-- **C.** Take a snapshot of the RDS instance. Create an encrypted copy of the snapshot. Restore the RDS instance from the encrypted snapshot.
-- **D.** Create an RDS read replica with encryption at rest turned on. Promote the read replica to primary and switch the application over to the new primary. Delete the old RDS instance.
+- A. Create an Amazon S3 bucket with server-side encryption turned on. Move all the data to Amazon S3. Delete the RDS instance.
+- B. Configure RDS Multi-AZ mode with encryption at rest turned on. Perform a failover to the standby instance to delete the original instance.
+- C. Take a snapshot of the RDS instance. Create an encrypted copy of the snapshot. Restore the RDS instance from the encrypted snapshot.
+- D. Create an RDS read replica with encryption at rest turned on. Promote the read replica to primary and switch the application over to the new primary. Delete the old RDS instance.
 
 <details>
 <summary>Show answer</summary>
@@ -3023,10 +3023,10 @@ A company currently operates a web application backed by an Amazon RDS MySQL dat
 
 What should be done to set up encryption for future backups?
 
-- **A.** Turn on default encryption for the Amazon S3 bucket where backups are stored.
-- **B.** Modify the backup section of the database configuration to toggle the Enable encryption check box.
-- **C.** Create a snapshot of the database. Copy it to an encrypted snapshot. Restore the database from the encrypted snapshot.
-- **D.** Configure an encrypted read replica on RDS for MySQL. Promote the encrypted read replica to primary. Remove the original database instance.
+- A. Turn on default encryption for the Amazon S3 bucket where backups are stored.
+- B. Modify the backup section of the database configuration to toggle the Enable encryption check box.
+- C. Create a snapshot of the database. Copy it to an encrypted snapshot. Restore the database from the encrypted snapshot.
+- D. Configure an encrypted read replica on RDS for MySQL. Promote the encrypted read replica to primary. Remove the original database instance.
 
 <details>
 <summary>Show answer</summary>
@@ -3046,11 +3046,11 @@ A company wants to build an immutable infrastructure for its software applicatio
 
 Which combination of steps should a solutions architect recommend? (Select TWO.)
 
-- **A.** Use AWS CloudFormation to update the production infrastructure and roll back the stack if the update fails.
-- **B.** Apply Amazon Route 53 weighted routing to test the staging environment and gradually increase the traffic as the tests pass.
-- **C.** Apply Amazon Route 53 failover routing to test the staging environment and fail over to the production environment if the tests pass.
-- **D.** Use AWS CloudFormation with a parameter set to the staging value in a separate environment other than the production environment.
-- **E.** Use AWS CloudFormation to deploy the staging environment with a snapshot deletion policy and reuse the resources in the production environment.
+- A. Use AWS CloudFormation to update the production infrastructure and roll back the stack if the update fails.
+- B. Apply Amazon Route 53 weighted routing to test the staging environment and gradually increase the traffic as the tests pass.
+- C. Apply Amazon Route 53 failover routing to test the staging environment and fail over to the production environment if the tests pass.
+- D. Use AWS CloudFormation with a parameter set to the staging value in a separate environment other than the production environment.
+- E. Use AWS CloudFormation to deploy the staging environment with a snapshot deletion policy and reuse the resources in the production environment.
 
 <details>
 <summary>Show answer</summary>
@@ -3063,6 +3063,409 @@ Which combination of steps should a solutions architect recommend? (Select TWO.)
 - **A is wrong:** Updating the production infrastructure directly would impact applications and users; a separate environment is needed to test before deploying updates.
 - **C is wrong:** Failover routing is for disaster recovery — routing to a healthy resource when one becomes unhealthy — not for testing deployments.
 - **E is wrong:** A snapshot deletion policy does not support all resource types and may not retain all required resources.
+</details>
+
+### Q146: Boost performance and availability for a UDP streaming platform while keeping a custom DNS
+
+A media streaming service aims to boost the performance and availability of its global platform, which relies on UDP for data transmission. The company needs a solution that allows for swift regional failover in the event of a regional outage, while still using their proprietary DNS system.
+
+Which AWS service should they implement?
+
+- A. AWS Global Accelerator
+- B. AWS Elastic Load Balancing (ELB)
+- C. Amazon CloudFront
+
+<details>
+<summary>Show answer</summary>
+
+**Answer: A**
+
+AWS Global Accelerator is tailored to enhance the performance and availability of applications by leveraging the AWS global network. It is ideal for UDP-based applications, such as media streaming, as it offers rapid regional failover and improves performance by minimizing latency and jitter. It provides static anycast IP addresses, so the company can keep its own proprietary DNS system.
+
+- **B is wrong:** ELB distributes traffic within a single Region and does not provide cross-region failover or global network acceleration.
+- **C is wrong:** CloudFront is a CDN that does not support UDP traffic; it is designed for cacheable HTTP/HTTPS content.
+</details>
+
+### Q147: Most efficient method to transfer a 2 GB file daily to Amazon S3 from a remote location
+
+A company needs to transfer a 2 GB compressed data file daily to Amazon S3 from a remote location. What is the most efficient method to achieve this?
+
+- A. Perform a single upload operation
+- B. Utilize only multipart upload without acceleration
+- C. Use multipart upload with Amazon S3 Transfer Acceleration
+
+<details>
+<summary>Show answer</summary>
+
+**Answer: C**
+
+To efficiently upload large files to Amazon S3, the combination of multipart upload and Amazon S3 Transfer Acceleration is recommended. Transfer Acceleration leverages Amazon CloudFront's global edge network to optimize the transfer path, reducing latency and increasing speed. Multipart upload allows the file to be divided into smaller parts, which can be uploaded concurrently, enhancing the upload speed and reliability.
+
+- **A is wrong:** A single upload operation is slow for large files and must restart from scratch if it fails.
+- **B is wrong:** Multipart upload alone improves reliability and concurrency but, without Transfer Acceleration, it does not optimize the network path from a remote location.
+</details>
+
+### Q148: Secure archival for a financial institution with strict compliance using Amazon S3 Glacier
+
+You are tasked with designing a secure archival system for a financial institution that must adhere to strict compliance regulations. Which approach would you recommend using Amazon S3 Glacier to ensure that data access complies with these regulations?
+
+- A. Store data in Amazon S3 Glacier and apply an Amazon S3 Bucket Policy for compliance
+- B. Use Amazon S3 Glacier and manage access with IAM roles for compliance
+- C. Implement Amazon S3 Glacier Vault Lock to apply a vault lock policy for compliance on archived data
+
+<details>
+<summary>Show answer</summary>
+
+**Answer: C**
+
+Amazon S3 Glacier is suitable for secure and cost-effective data archiving. To meet compliance regulations, the Amazon S3 Glacier Vault Lock feature should be used. This feature allows you to apply a vault lock policy that enforces compliance requirements such as 'write once, read many' (WORM), ensuring the policy is immutable once locked, thus making it the appropriate choice for regulatory compliance.
+
+- **A is wrong:** A bucket policy controls access permissions but can be modified at any time, so it cannot enforce immutable, tamper-proof compliance controls.
+- **B is wrong:** IAM roles manage who can access the data but do not enforce a WORM model or prevent the policy from being changed later.
+</details>
+
+### Q149: Low-latency handling of a surge in real-time tracking data updates and retrievals
+
+A logistics company needs to optimize its application to handle a surge in real-time tracking data as its fleet size doubles. Which solution ensures high performance with low latency for frequent data updates and retrievals?
+
+- A. Configure Multi-AZ for the main RDS instance to improve write durability and distribute read operations during high demand periods
+- B. Transition the tracking data to Amazon OpenSearch Service, leveraging its geospatial capabilities for real-time data indexing and visualization
+- C. Deploy an Amazon ElastiCache for Redis cluster to cache tracking data, using a TTL-based eviction policy to manage data freshness and reduce database load
+
+<details>
+<summary>Show answer</summary>
+
+**Answer: C**
+
+Implementing Amazon ElastiCache for Redis offers a scalable and low-latency solution for managing frequent data updates and retrievals. Redis, being an in-memory data store, provides sub-millisecond response times, which is crucial for real-time tracking applications. By caching tracking data in Redis with a time-to-live (TTL) eviction policy, the system can offload the primary database, ensuring quick access to the most recent data.
+
+- **A is wrong:** RDS Multi-AZ improves availability and durability, but the standby is not used to serve reads, so it does not reduce read latency for a surge in traffic.
+- **B is wrong:** OpenSearch is built for search, analytics, and visualization, not for the sub-millisecond, high-frequency read/write caching that real-time tracking requires.
+</details>
+
+### Q150: Secure DNS resolution from AWS to on-premises services for an internal application
+
+A financial institution is hosting an internal application on AWS that requires secure DNS resolution for its on-premises services. What is the BEST method to achieve this?
+
+- A. Implement a Route 53 private hosted zone for the on-premises domain and link it to the VPC for DNS resolution
+- B. Set up a Route 53 Resolver inbound endpoint and enable recursive DNS resolution within the VPC for on-premises services
+- C. Establish a Route 53 Resolver outbound endpoint and configure forwarding rules to direct DNS queries for on-premises domains to the on-premises DNS server
+
+<details>
+<summary>Show answer</summary>
+
+**Answer: C**
+
+To securely resolve DNS queries from AWS to on-premises services, setting up a Route 53 Resolver outbound endpoint is recommended. This allows DNS queries from resources in the VPC to be forwarded to the on-premises DNS server over a site-to-site VPN. By configuring forwarding rules, specific domain names can be directed to the on-premises DNS server, ensuring secure and efficient DNS resolution. This method adheres to AWS best practices for hybrid DNS setups.
+
+- **A is wrong:** A private hosted zone resolves records hosted within Route 53 itself; it cannot forward queries to an external on-premises DNS server.
+- **B is wrong:** An inbound endpoint handles DNS queries coming *from* on-premises *into* the VPC — the opposite direction of what is needed here.
+</details>
+
+### Q151: Data transfer cost considerations when setting up Amazon RDS read replicas
+
+A company is planning to set up read replicas for their Amazon RDS database to improve read performance. What should they consider regarding data transfer costs?
+
+- A. Data transfer costs apply when replicating data to read replicas in different AWS Regions.
+- B. Data transfer costs apply when replicating data to read replicas within the same AWS Region.
+- C. Data transfer costs apply when replicating data to read replicas within the same Availability Zone.
+
+<details>
+<summary>Show answer</summary>
+
+**Answer: A**
+
+Data transfer between Amazon RDS instances within the same AWS Region does not incur charges. However, if read replicas are set up in different AWS Regions, data transfer costs will apply for the cross-Region replication traffic.
+
+- **B is wrong:** Replication to a read replica within the same Region (including across Availability Zones) is free of data transfer charges.
+- **C is wrong:** Replication within the same Availability Zone is also free; charges only start with cross-Region replication.
+</details>
+
+### Q152: Minimizing S3 data transfer costs for a video streaming traffic surge
+
+A media company is experiencing a surge in traffic to its video streaming service, leading to increased data transfer costs from their Amazon S3 storage. As a Solutions Architect, what strategy can you implement to minimize these costs while ensuring quick content delivery to users?
+
+- A. Migrate the data to Amazon EFS and serve it directly from there
+- B. Deploy Amazon CloudFront to cache and deliver content from Amazon S3 efficiently
+- C. Use Amazon S3 Transfer Acceleration to speed up data transfer to S3
+
+<details>
+<summary>Show answer</summary>
+
+**Answer: B**
+
+Implementing Amazon CloudFront as a content delivery network (CDN) in front of Amazon S3 can significantly reduce data transfer costs and improve delivery speed. CloudFront caches content at edge locations, which decreases the load on S3 and reduces latency for end-users. This approach is more cost-effective than directly serving content from S3, as it eliminates data transfer charges from S3 to CloudFront.
+
+- **A is wrong:** EFS is a file system for compute workloads, not a content delivery solution for streaming to internet users, and it would not reduce delivery costs or latency.
+- **C is wrong:** S3 Transfer Acceleration speeds up *uploads* into S3; it does not cache content or reduce the cost of delivering content out to viewers.
+</details>
+
+### Q153: Shared file system for both Windows and Linux servers with NTFS permissions and AD integration
+
+A company needs a shared file system that can be accessed by both Windows and Linux servers on AWS, while maintaining Windows-specific features like NTFS permissions and integration with Active Directory. Which AWS service should they use?
+
+- A. Use Amazon FSx for Windows File Server to provide a shared file system accessible via SMB from both Windows and Linux servers
+- B. Implement Amazon EFS and connect using NFS from both Windows and Linux servers
+- C. Set up Amazon FSx for Lustre and access it with POSIX-compliant clients from both systems
+
+<details>
+<summary>Show answer</summary>
+
+**Answer: A**
+
+Amazon FSx for Windows File Server is designed to provide a fully managed Windows file system that supports the SMB protocol, NTFS permissions, and Active Directory integration. This makes it suitable for environments where both Windows and Linux servers need to access a shared file system, as Linux can also connect using SMB clients.
+
+- **B is wrong:** EFS is an NFS file system aimed at Linux workloads and does not provide NTFS permissions or native Active Directory integration; Windows does not natively mount NFS.
+- **C is wrong:** FSx for Lustre is a high-performance file system for HPC/ML workloads and lacks NTFS permissions and Active Directory integration.
+</details>
+
+### Q154: Ordered processing of 1000 tracking notifications per second with Amazon SQS
+
+A logistics company needs to ensure that their package tracking notifications are processed in the exact order they are received, with a peak throughput of 1000 notifications per second. Which solution should they implement using Amazon SQS?
+
+- A. Deploy an Amazon SQS standard queue for processing notifications
+- B. Implement an Amazon SQS FIFO queue with batch processing of 4 messages per operation to handle the peak load
+- C. Use a single Amazon SQS FIFO queue without batch processing
+
+<details>
+<summary>Show answer</summary>
+
+**Answer: B**
+
+Amazon SQS FIFO queues guarantee that messages are processed in the order they are sent. By using FIFO queues in batch mode with 4 messages per operation, the system can handle up to 1200 messages per second, which satisfies the requirement of processing 1000 messages per second.
+
+- **A is wrong:** Standard queues offer best-effort ordering only, so they cannot guarantee the exact order required.
+- **C is wrong:** A FIFO queue without batching is limited to 300 messages per second, which falls short of the 1000-per-second requirement.
+</details>
+
+### Q155: Modernizing application infrastructure while keeping sensitive data on premises
+
+A financial institution wants to modernize its application infrastructure while ensuring that all sensitive customer data remains within its own data centers. Which AWS service should the institution implement to achieve this goal?
+
+- A. Implement an AWS Snowball Edge for on-site data processing and periodically transfer data to Amazon S3 for analysis
+- B. Deploy an AWS Outposts rack in the data center and use Amazon EKS Anywhere to manage Kubernetes clusters locally, integrating with AWS services
+- C. Set up Amazon ECS with Fargate in an AWS Local Zone and connect it to the data center via a secure VPN
+
+<details>
+<summary>Show answer</summary>
+
+**Answer: B**
+
+The best solution is to deploy an AWS Outposts rack within the financial institution's data center and utilize Amazon EKS Anywhere on Outposts. This setup allows the institution to run Kubernetes clusters on-premises, leveraging AWS APIs and services while ensuring that all data stays within the local data center, thus meeting data residency and compliance requirements.
+
+- **A is wrong:** Snowball Edge is for offline data transfer and edge processing; periodically moving data to Amazon S3 would take sensitive data out of the data center, violating the residency requirement.
+- **C is wrong:** A Local Zone is AWS-owned infrastructure outside the institution's data center, so data would not remain within their own facilities.
+</details>
+
+### Q156: Resources created when copying an AMI from one Region to another
+
+A company has duplicated an Amazon Machine Image (AMI) from Region A to Region B. What resources are now present in Region B?
+
+- A. One AMI and one snapshot are present in Region B
+- B. One EC2 instance and one AMI are present in Region B
+- C. One EC2 instance, one AMI, and one snapshot are present in Region B
+
+<details>
+<summary>Show answer</summary>
+
+**Answer: A**
+
+Copying an AMI to another Region creates a new AMI and an associated snapshot in the target Region. It does not create an EC2 instance automatically. The copied AMI can be used to launch new instances in Region B as needed.
+
+- **B is wrong:** Copying an AMI does not launch an EC2 instance, and it produces a snapshot (not just an AMI).
+- **C is wrong:** No EC2 instance is created by the copy operation; only the AMI and its backing snapshot are present.
+</details>
+
+### Q157: Centralized multi-account governance with shared networking and low operational complexity
+
+A tech startup aims to separate its development, staging, and production environments by utilizing distinct AWS accounts. They seek a solution that allows for centralized management of network resources and automatic application of security policies when new accounts are established. Which approach best fulfills these requirements while keeping operational complexity low?
+
+- A. Leverage AWS Organizations to create accounts and a shared networking account with a central VPC. Share VPC subnets using AWS RAM and manually enforce policies with service control policies (SCPs)
+- B. Utilize AWS Service Catalog to establish approved VPC templates. Deploy a separate VPC for each account from the catalog and apply networking policies using AWS Config conformance packs
+- C. Implement AWS Control Tower to manage account creation and governance. Set up a centralized VPC in a shared networking account and distribute its subnets to other accounts using AWS Resource Access Manager (AWS RAM)
+
+<details>
+<summary>Show answer</summary>
+
+**Answer: C**
+
+AWS Control Tower is tailored for managing multi-account AWS setups, offering automated account creation with integrated security and compliance features like Service Control Policies (SCPs) and AWS Config rules. By setting up a centralized VPC in a shared networking account, you can efficiently manage and distribute network resources across accounts using AWS Resource Access Manager (AWS RAM). This strategy reduces redundancy, cuts costs, and ensures uniform security practices with minimal operational burden.
+
+- **A is wrong:** Using AWS Organizations alone with *manual* SCP enforcement adds operational overhead and lacks the automated guardrails and account provisioning that Control Tower provides.
+- **B is wrong:** Deploying a separate VPC per account via Service Catalog increases redundancy and management effort, the opposite of the centralized, low-complexity goal.
+</details>
+
+### Q158: Retaining EC2 application logs for analysis after Auto Scaling instance termination
+
+A company is experiencing issues with accessing application logs after their EC2 instances, managed by an Auto Scaling Group, are terminated. What is the best approach to ensure log availability for analysis even after instance termination?
+
+- A. Schedule a script to transfer logs to Amazon S3 using AWS Lambda before instance termination
+- B. Deploy the Amazon CloudWatch Logs agent on EC2 instances to stream logs to Amazon CloudWatch Logs
+- C. Create an AMI of the EC2 instance to preserve logs before termination
+
+<details>
+<summary>Show answer</summary>
+
+**Answer: B**
+
+To maintain access to logs after an EC2 instance is terminated, deploying the Amazon CloudWatch Logs agent on each instance is recommended. This agent streams logs to Amazon CloudWatch Logs, ensuring they are available for review and analysis regardless of the instance's lifecycle. This method is both efficient and cost-effective.
+
+- **A is wrong:** Relying on a script triggered before termination is fragile — abrupt or failed terminations can skip the transfer, causing log loss.
+- **C is wrong:** Creating an AMI captures a point-in-time image and is not a practical way to continuously collect and analyze logs; it adds storage cost and operational overhead.
+</details>
+
+### Q159: Cutting costs and improving performance for a read-intensive Lambda + API Gateway + Aurora app
+
+A company runs a read-intensive application using AWS Lambda, Amazon API Gateway, and Amazon Aurora. They want to cut costs and enhance performance with minimal adjustments. What is the most effective strategy?
+
+- A. Implement caching in Amazon API Gateway
+- B. Deploy additional Amazon Aurora Read Replicas
+- C. Use in-memory caching with AWS Lambda
+
+<details>
+<summary>Show answer</summary>
+
+**Answer: A**
+
+Utilizing caching in Amazon API Gateway can greatly decrease the number of requests that reach your backend services by storing responses temporarily. This is advantageous for read-heavy applications where data can be slightly outdated, as it lessens the load on the database and boosts response times, leading to cost and performance optimization.
+
+- **B is wrong:** Adding Aurora Read Replicas increases cost and is a larger architectural change; it does not reduce the number of backend calls the way response caching does.
+- **C is wrong:** Lambda is stateless and short-lived, so in-memory caching is not reliably shared across invocations and would not consistently serve cached responses.
+</details>
+
+### Q160: Cost-effective NFS-compatible storage that auto-tiers infrequently accessed data
+
+A company needs a cost-effective cloud storage solution that supports NFS compatibility and automatically moves less frequently accessed data to cheaper storage. Which option should they choose?
+
+- A. Implement AWS Storage Gateway File Gateway to provide an NFS-compatible file share. Store data in Amazon S3 and utilize S3 Lifecycle policies to automatically transition less frequently accessed data to lower-cost storage classes.
+- B. Set up Amazon Elastic File System (Amazon EFS) with the One Zone-IA storage class. Use AWS DataSync for NFS data migration and enable lifecycle management for automatic tiering of infrequently accessed files.
+- C. Use AWS Storage Gateway Volume Gateway in cached mode, attaching it as a block device to an on-premises server with NFS. Store snapshots in Amazon S3 Glacier Deep Archive and manage tiering with AWS Backup.
+
+<details>
+<summary>Show answer</summary>
+
+**Answer: A**
+
+AWS Storage Gateway File Gateway offers an NFS-compatible interface, allowing seamless integration with existing applications. It stores data in Amazon S3, which is both scalable and cost-effective. By using S3 Lifecycle policies, data can be automatically transitioned to more economical storage classes as it becomes less frequently accessed, optimizing costs while maintaining NFS compatibility.
+
+- **B is wrong:** EFS is more expensive than S3 for this use case, and Volume/DataSync-based migration adds complexity; EFS lifecycle management tiers within EFS rather than to the cheapest S3 classes.
+- **C is wrong:** Volume Gateway presents block (iSCSI) storage, not an NFS file share, and using Glacier Deep Archive snapshots does not provide on-demand access to less frequently used files.
+</details>
+
+### Q161: Efficiently synchronizing media files from local storage to Amazon EFS during migration
+
+A company needs to efficiently synchronize newly generated media files from their local storage to an Amazon EFS file system as part of their cloud migration strategy. What is the MOST effective method to achieve this?
+
+- A. Deploy an AWS DataSync agent on the local server to access the storage system. Use AWS Direct Connect with a PrivateLink interface VPC endpoint to transfer data directly to Amazon EFS. Schedule DataSync tasks to update the EFS file system daily.
+- B. Set up an AWS DataSync agent on the local server to access the storage system. Transfer data to an Amazon S3 bucket using a public VIF over AWS Direct Connect. Use AWS Lambda to move files from S3 to Amazon EFS.
+- C. Install an AWS DataSync agent on the local server to access the storage system. Transfer data to an Amazon S3 bucket using AWS Direct Connect and a VPC gateway endpoint. Use AWS Lambda to move files from S3 to Amazon EFS.
+
+<details>
+<summary>Show answer</summary>
+
+**Answer: A**
+
+To efficiently synchronize media files from on-premises storage to Amazon EFS, deploying AWS DataSync is optimal. By installing a DataSync agent on the local server, data can be securely transferred to Amazon EFS using AWS Direct Connect with a PrivateLink interface VPC endpoint. This setup ensures a streamlined and secure data transfer process, and scheduling DataSync tasks allows for regular updates to the EFS file system.
+
+- **B is wrong:** Routing through an S3 bucket and then using Lambda to move files into EFS adds unnecessary hops and complexity; a public VIF also does not provide the private connectivity of a PrivateLink endpoint.
+- **C is wrong:** It also detours through S3 with Lambda, and a VPC gateway endpoint only supports S3 and DynamoDB — not a direct, private path to EFS.
+</details>
+
+### Q162: Securely giving private subnet instances outbound internet access
+
+How can instances located in private subnets be configured to access the internet securely?
+
+- A. Private subnet instances should not have internet access
+- B. Use a single NAT gateway in any public subnet for all subnets
+- C. Deploy a NAT gateway in each public subnet, aligned with the Availability Zone of the private subnet
+- D. Deploy a NAT gateway in each private subnet
+
+<details>
+<summary>Show answer</summary>
+
+**Answer: C**
+
+To enable instances in private subnets to connect to the internet, a NAT gateway should be deployed in a public subnet within the same Availability Zone as the private subnet. This configuration allows outbound internet traffic from the private subnet while preventing unsolicited inbound traffic, ensuring security and availability.
+
+- **A is wrong:** Private instances often need outbound internet access (e.g., for updates); a NAT gateway provides this securely without exposing them to inbound traffic.
+- **B is wrong:** A single NAT gateway is a single point of failure and routes cross-AZ traffic (incurring data transfer charges and reducing fault tolerance).
+- **D is wrong:** A NAT gateway must live in a *public* subnet so its own traffic can reach the internet via the internet gateway; placing it in a private subnet would not work.
+</details>
+
+### Q163: Handling unpredictable flash-sale order spikes by scaling on SQS queue depth
+
+A retail company experiences unpredictable spikes in online orders during flash sales. Which strategy will enhance the application's ability to handle these surges effectively?
+
+- A. Set up scheduled Auto Scaling for the processing tier based on historical peak traffic times, using average CPU utilization as a scaling metric.
+- B. Implement an EC2 Auto Scaling group with a target tracking policy that monitors the ApproximateNumberOfMessages in the SQS queue to dynamically adjust the processing tier.
+- C. Integrate Amazon Kinesis Data Streams to buffer incoming orders and configure the processing tier to use enhanced fan-out for high throughput.
+
+<details>
+<summary>Show answer</summary>
+
+**Answer: B**
+
+Implementing an EC2 Auto Scaling group with a target tracking policy that observes the ApproximateNumberOfMessages in the SQS queue is the optimal solution. This allows the system to automatically adjust the number of EC2 instances in response to the queue's depth, ensuring that the application can efficiently manage increased demand during peak times. This approach is particularly beneficial for applications with variable traffic patterns, as it dynamically scales resources to maintain optimal performance.
+
+- **A is wrong:** Scheduled scaling relies on known, historical peak times, so it cannot react to truly unpredictable spikes, and CPU utilization may not reflect the backlog of pending orders.
+- **C is wrong:** Kinesis Data Streams with enhanced fan-out adds complexity for streaming/real-time analytics; it does not, by itself, scale the processing tier to clear an order backlog the way queue-depth-based Auto Scaling does.
+</details>
+
+### Q164: Scalable customer feedback collection and sentiment analysis with one-year data retention
+
+A company needs to implement a system for collecting customer feedback and performing sentiment analysis, ensuring the data is retained for one year. What is the most efficient and scalable solution?
+
+- A. Implement a RESTful API with Amazon API Gateway to send feedback data to an Amazon SQS queue. Use an AWS Lambda function to process the queue messages, perform sentiment analysis with Amazon Comprehend, and store the results in a DynamoDB table with a 365-day TTL on each item.
+- B. Utilize Amazon Kinesis Data Streams to handle feedback submissions. Deploy an AWS Lambda consumer to process records in batches, apply Amazon Translate for language detection and translation, and store the output in an Amazon OpenSearch Service index. Set OpenSearch Index State Management (ISM) policies to delete documents after one year.
+- C. Leverage Amazon EventBridge to capture feedback events and route them to an AWS Step Functions workflow. The workflow triggers Lambda functions for data validation, uses Amazon Transcribe to convert text to audio for archival, and saves the results in an Amazon RDS database. Apply a lifecycle policy to delete records after one year.
+
+<details>
+<summary>Show answer</summary>
+
+**Answer: A**
+
+The optimal solution involves using Amazon API Gateway to create a RESTful API that directs feedback data to an Amazon SQS queue. This architecture supports scalable and decoupled data ingestion. An AWS Lambda function processes the messages from the queue, utilizing Amazon Comprehend for sentiment analysis, and stores the results in a DynamoDB table with a Time to Live (TTL) of 365 days. This serverless setup automatically scales with demand and efficiently manages data retention for a year.
+
+- **B is wrong:** Amazon Translate handles language translation, not sentiment analysis, so it does not meet the core requirement; the OpenSearch pipeline also adds unnecessary cost and management.
+- **C is wrong:** Amazon Transcribe converts speech to text (not text to audio), so it is misapplied here, and the Step Functions + RDS design adds complexity without performing sentiment analysis.
+</details>
+
+### Q165: Quickly reverting a DynamoDB table to a previous state after erroneous transactions
+
+A financial services firm operates a transaction processing system using an Amazon DynamoDB table. The operations team has noticed that sometimes, erroneous transactions are recorded. When such errors are identified, the team needs to quickly revert the table to its previous state. What solution should be implemented?
+
+- A. Set up the Amazon DynamoDB table as a global table and switch the application to use a replica in another AWS region without errors
+- B. Utilize Amazon DynamoDB point-in-time recovery to revert the table to its state before the erroneous transactions occurred
+- C. Employ Amazon DynamoDB on-demand backup to restore the table to its state before the erroneous transactions occurred
+
+<details>
+<summary>Show answer</summary>
+
+**Answer: B**
+
+Amazon DynamoDB's point-in-time recovery (PITR) feature enables you to restore your table to any second within the last 35 days. This capability is particularly useful for recovering from accidental data corruption or deletion, as it provides a continuous backup mechanism. In this case, PITR is the most effective solution to revert the table to its state before the erroneous transactions were recorded.
+
+- **A is wrong:** A global table replicates data (including the erroneous transactions) to other Regions; it provides availability, not the ability to roll back to a prior point in time.
+- **C is wrong:** On-demand backups are point-in-time snapshots taken manually, so they may not capture the exact moment just before the errors; PITR offers continuous, second-level granularity.
+</details>
+
+### Q166: Fully serverless processing of fluctuating IoT data for a real-time analytics platform
+
+A tech startup is developing a real-time analytics platform for IoT devices that requires a fully serverless architecture to handle fluctuating data loads. Which combination of AWS services should they use to efficiently process incoming data?
+
+- A. Use Amazon Simple Queue Service (Amazon SQS) to queue incoming data, which is processed by AWS Lambda functions and stored in an Amazon DynamoDB table for further analysis
+- B. Deploy an Amazon EC2 instance to process data from Amazon Simple Queue Service (Amazon SQS) and store it in an Amazon DynamoDB table
+- C. Utilize Amazon Kinesis Data Streams to ingest data, which is processed by AWS Lambda and stored in an Amazon RDS database
+
+<details>
+<summary>Show answer</summary>
+
+**Answer: A**
+
+The optimal solution involves using Amazon SQS with AWS Lambda. AWS Lambda executes code in a serverless environment, automatically scaling with the data load, while Amazon SQS provides a fully managed message queuing service that decouples and scales applications. This combination ensures that the architecture remains serverless and can handle varying data volumes without manual intervention.
+
+- **B is wrong:** An Amazon EC2 instance is not serverless — it requires provisioning, patching, and manual scaling, which conflicts with the fully serverless requirement.
+- **C is wrong:** Amazon RDS is a managed but server-based relational database (not serverless in this design), so the architecture would no longer be fully serverless.
 </details>
 
 ## References
