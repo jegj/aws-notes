@@ -3468,6 +3468,510 @@ The optimal solution involves using Amazon SQS with AWS Lambda. AWS Lambda execu
 - **C is wrong:** Amazon RDS is a managed but server-based relational database (not serverless in this design), so the architecture would no longer be fully serverless.
 </details>
 
+### Q167: Smooth blue-green traffic transition for a mobile app where devices cache DNS
+
+A company is planning a blue-green deployment strategy for their mobile application, which is used by a large number of customers. Given that mobile devices often cache DNS entries, what solution would you suggest to ensure a smooth transition of traffic between the old and new environments within a 48-hour window?
+
+- A. Configure Amazon Route 53 with weighted routing to balance traffic
+- B. Utilize Elastic Load Balancing (ELB) to direct traffic between environments
+- C. Implement AWS Global Accelerator to manage traffic flow between environments
+
+<details>
+<summary>Show answer</summary>
+
+**Answer: C**
+
+AWS Global Accelerator is the best choice for managing traffic in a blue-green deployment scenario where DNS caching is a concern. It allows you to control traffic flow using endpoint weights and traffic dials, ensuring that changes are applied quickly and reliably, unaffected by DNS caching issues.
+
+- **A is wrong:** Route 53 weighted routing depends on DNS, so cached DNS entries on mobile devices would delay the traffic shift and prevent a smooth transition within the window.
+- **B is wrong:** ELB distributes traffic to targets within a single environment/Region; it is not designed to shift traffic between separate blue and green environments.
+</details>
+
+### Q168: Securely connecting a Lambda function to RDS PostgreSQL without static credentials
+
+What is a secure way to allow an AWS Lambda function to connect to an Amazon RDS PostgreSQL instance without embedding static credentials?
+
+- A. Implement IAM database authentication for the Lambda function
+- B. Store the database username and password in AWS Secrets Manager
+- C. Include the database credentials directly in the Lambda function code
+
+<details>
+<summary>Show answer</summary>
+
+**Answer: A**
+
+Utilizing IAM database authentication enhances security by eliminating the need for static credentials. By assigning an IAM role to the Lambda function, it can generate temporary authentication tokens to access the RDS PostgreSQL database, ensuring credentials are not hardcoded or stored in the environment.
+
+- **B is wrong:** Secrets Manager securely stores credentials and is a valid pattern, but the username/password are still static, long-lived credentials — IAM database authentication uses short-lived tokens and best fits "without static credentials."
+- **C is wrong:** Hardcoding credentials in the function code is the least secure option, exposing them to anyone who can read the code.
+</details>
+
+### Q169: Secure private access from a VPC to a third-party vendor's RDS without internet, Direct Connect, or VPN
+
+A financial services firm needs to establish a secure connection from its private VPC to a third-party vendor's Amazon RDS for PostgreSQL instance located in the vendor's AWS account. The firm's VPC does not have internet access, Direct Connect, or VPN connections. Which solution ensures secure and private access to the RDS database while keeping the setup straightforward and adhering to security protocols?
+
+- A. Establish VPC peering between the firm's VPC and the vendor's VPC. Utilize AWS Transit Gateway in the vendor's account to direct traffic from the firm's VPC to the database. Update the RDS subnet route tables to permit access from the firm's CIDR block
+- B. Request the vendor to enable public access on the Amazon RDS instance and configure a security group rule to permit inbound access from the firm's IP range. The firm accesses the database over the public internet using a NAT Gateway set up in a private subnet
+- C. Ask the vendor to deploy a Network Load Balancer (NLB) in front of the Amazon RDS for PostgreSQL instance and use AWS PrivateLink to expose the NLB as an interface VPC endpoint in the firm's VPC
+
+<details>
+<summary>Show answer</summary>
+
+**Answer: C**
+
+The most effective solution is for the vendor to set up a Network Load Balancer (NLB) in front of the Amazon RDS for PostgreSQL instance and use AWS PrivateLink to present the NLB as an interface VPC endpoint in the firm's VPC. This method provides secure and private connectivity without needing internet access, VPN, or Direct Connect, and it maintains data traffic within the AWS infrastructure, aligning with security standards.
+
+- **A is wrong:** VPC peering and Transit Gateway expose the entire networks to each other and require careful CIDR/route management; this is more complex and less isolated than exposing only the database via PrivateLink.
+- **B is wrong:** Enabling public access on RDS and traversing the public internet violates the secure, private-access requirement and increases the attack surface.
+</details>
+
+### Q170: Cost-effectively relieving repeated-query read pressure on Amazon Aurora
+
+A company is experiencing high read traffic on its Amazon Aurora database due to repeated queries. What is the most cost-effective strategy to alleviate this pressure?
+
+- A. Switch to Aurora Serverless v2 to automatically adjust capacity based on demand, directing all traffic through the main endpoint
+- B. Deploy an additional Aurora read replica to handle increased read traffic and balance the load
+- C. Implement Amazon ElastiCache for Redis to cache frequently accessed data, reducing the number of repeated reads to the Aurora database
+
+<details>
+<summary>Show answer</summary>
+
+**Answer: C**
+
+Using Amazon ElastiCache for Redis as a caching layer between the application and the Aurora database is the most cost-effective solution. By storing frequently accessed data in Redis, the application can reduce the number of repeated read requests to the Aurora database. This reduces the load on the database, enhances performance, and scales efficiently without the need for additional read replicas.
+
+- **A is wrong:** Aurora Serverless v2 scales compute capacity (and cost) with demand but still executes every repeated query against the database; it does not eliminate the redundant reads.
+- **B is wrong:** Adding a read replica increases ongoing cost and still serves each repeated query from the database, rather than caching results to avoid the reads entirely.
+</details>
+
+### Q171: Minimizing AWS KMS encryption costs for frequently accessed S3 video files
+
+A media company needs to securely store frequently accessed video files in Amazon S3. They want to minimize encryption costs while using AWS KMS for server-side encryption. What strategy should they implement?
+
+- A. Opt for server-side encryption with Amazon S3 managed keys (SSE-S3) to avoid AWS KMS charges, while keeping the same encryption standards
+- B. Activate S3 Bucket Keys for server-side encryption with AWS KMS (SSE-KMS) to use a bucket-level key, reducing the need for individual KMS key requests for each object
+- C. Implement client-side encryption by creating a local symmetric key and attaching it to each object's metadata for decryption in Amazon S3
+
+<details>
+<summary>Show answer</summary>
+
+**Answer: B**
+
+By enabling S3 Bucket Keys with SSE-KMS, Amazon S3 can generate data keys locally using a bucket-level key, reducing the number of AWS KMS requests. This maintains the security benefits of AWS KMS while lowering the cost of frequent KMS API calls, which is ideal for high-access scenarios.
+
+- **A is wrong:** SSE-S3 avoids KMS charges entirely but the requirement is to keep using AWS KMS; it does not meet the "using AWS KMS" condition and gives up KMS key control/auditing.
+- **C is wrong:** Client-side encryption with a self-managed local key adds significant operational complexity and key-management risk, and storing keys in object metadata is insecure.
+</details>
+
+### Q172: IAM policy type that defines which entities can assume a role
+
+In AWS Identity and Access Management (IAM), which type of policy is specifically used to define which entities can assume a role?
+
+- A. Trust policy
+- B. Permissions boundary
+- C. Service control policy
+- D. Access control list (ACL)
+
+<details>
+<summary>Show answer</summary>
+
+**Answer: A**
+
+In AWS IAM, trust policies are used to specify which entities (users, services, or accounts) are allowed to assume a particular role. These are the only resource-based policies supported by IAM.
+
+- **B is wrong:** A permissions boundary sets the maximum permissions an identity can have; it does not define who can assume a role.
+- **C is wrong:** A service control policy (SCP) sets permission guardrails across accounts in AWS Organizations; it does not control role assumption.
+- **D is wrong:** An ACL is a legacy access-control mechanism (e.g., for S3 objects/buckets) and is not used to define who can assume an IAM role.
+</details>
+
+### Q173: Securely linking a corporate network to AWS with encryption and detailed access control
+
+What is the most effective method to securely link a company's internal network to its AWS infrastructure, ensuring encryption at both the transport and application layers, while also allowing detailed security management?
+
+- A. Implement AWS Client VPN for individual user connections from the corporate network to the VPC, controlling access with security groups and IAM policies
+- B. Establish a bastion host within a public subnet of the VPC to facilitate SSH access from the corporate network, using security groups for access management
+- C. Deploy an AWS Site-to-Site VPN to connect the corporate network with the AWS VPC, utilizing security groups and network ACLs for precise access control
+
+<details>
+<summary>Show answer</summary>
+
+**Answer: C**
+
+Implementing an AWS Site-to-Site VPN is the optimal solution as it provides transport layer encryption through IPsec tunnels, securing data exchange between the corporate network and AWS. This setup allows for detailed security management using security groups and network ACLs. Additionally, application layer encryption can be applied to meet comprehensive encryption needs, making it a secure and cost-efficient choice for hybrid connectivity.
+
+- **A is wrong:** AWS Client VPN is designed for individual remote user connections, not for linking an entire internal corporate network to AWS.
+- **B is wrong:** A bastion host only provides SSH access to instances and exposes a public entry point; it does not establish an encrypted network-to-network link.
+</details>
+
+### Q174: High availability with content-based routing for an EC2-based media streaming app
+
+A media streaming service is planning to transition its main application to a set of Amazon EC2 instances. The company requires a solution that supports high availability and can perform content-based routing. As a Solutions Architect, what would you recommend?
+
+- A. Utilize an Auto Scaling group to distribute traffic to Amazon EC2 instances across multiple Availability Zones and configure a Static IP for instance failure management.
+- B. Implement an Application Load Balancer to route traffic to Amazon EC2 instances across multiple Availability Zones and use an Auto Scaling group to handle instance failures.
+- C. Deploy a Network Load Balancer to route traffic to Amazon EC2 instances across multiple Availability Zones and use Elastic IPs to manage instance failures.
+
+<details>
+<summary>Show answer</summary>
+
+**Answer: B**
+
+The Application Load Balancer (ALB) is designed for handling HTTP and HTTPS traffic and provides advanced request routing based on the content of the request, which is essential for content-based routing. It functions at Layer 7 and can direct traffic to targets within an Amazon VPC, making it the appropriate choice for this scenario. To ensure high availability, deploying instances across multiple Availability Zones and using an Auto Scaling group to manage instance failures is recommended.
+
+- **A is wrong:** An Auto Scaling group distributes and replaces instances but does not perform load balancing or content-based routing; a Static IP does not provide HA traffic management.
+- **C is wrong:** A Network Load Balancer operates at Layer 4 and cannot perform content-based (Layer 7) routing; Elastic IPs are not the right mechanism for managing instance failures behind a load balancer.
+</details>
+
+### Q175: Tracking resource configuration changes for compliance and change history
+
+A company wants to ensure that their AWS infrastructure remains compliant with internal security policies and needs to keep a record of all configuration changes. As a solutions architect, which service would you suggest to achieve this?
+
+- A. Implement AWS Config to monitor and record resource configurations for compliance and change history
+- B. Utilize Amazon CloudWatch to monitor and record resource configurations for compliance and change history
+- C. Deploy AWS Systems Manager to monitor and record resource configurations for compliance and change history
+
+<details>
+<summary>Show answer</summary>
+
+**Answer: A**
+
+AWS Config is specifically designed to help you track and evaluate the configurations of your AWS resources. It provides a comprehensive history of configuration changes and assists in compliance auditing, making it the best choice for maintaining compliance and a record of changes.
+
+- **B is wrong:** Amazon CloudWatch monitors metrics, logs, and operational performance; it does not track resource configuration state or provide configuration change history.
+- **C is wrong:** AWS Systems Manager handles operational management tasks (patching, automation, parameter storage), not continuous recording and evaluation of resource configuration changes for compliance.
+</details>
+
+### Q176: Restricting CloudFront content to specific authorized users
+
+How can you ensure that only specific users can access content served by Amazon CloudFront?
+
+- A. Use VPC Security Groups
+- B. Implement signed URLs with CloudFront
+- C. Activate AWS WAF for CloudFront
+
+<details>
+<summary>Show answer</summary>
+
+**Answer: B**
+
+To control access to content delivered through Amazon CloudFront, you can implement signed URLs or signed cookies. Signed URLs are useful for granting access to individual files, while signed cookies are ideal for granting access to multiple files without altering URLs. Both methods effectively limit access to authorized users only.
+
+- **A is wrong:** VPC security groups control network traffic to resources inside a VPC; CloudFront is a global edge service, so security groups cannot restrict who accesses its content.
+- **C is wrong:** AWS WAF filters requests based on rules (IP, patterns, rate limits) but does not authenticate or restrict access to specific individual users.
+</details>
+
+### Q177: Service for a custom application to handle and analyze real-time data streams
+
+A company needs to develop a custom application that can handle and analyze real-time data streams for its specialized operations. Which AWS service should be recommended to ensure efficient processing and scalability?
+
+- A. Implement Amazon Kinesis Data Streams to efficiently handle and analyze the real-time data streams while ensuring scalability.
+- B. Implement Amazon Simple Notification Service (Amazon SNS) to efficiently handle and analyze the real-time data streams while ensuring scalability.
+- C. Implement Amazon Kinesis Data Firehose to efficiently handle and analyze the real-time data streams while ensuring scalability.
+
+<details>
+<summary>Show answer</summary>
+
+**Answer: A**
+
+Amazon Kinesis Data Streams is specifically designed for real-time data streaming and processing. It allows applications to capture, process, and store data streams from multiple sources, facilitating real-time analytics. This service supports the decoupling of data producers and consumers, which is crucial for building scalable and resilient systems.
+
+- **B is wrong:** Amazon SNS is a pub/sub notification service for delivering messages; it does not provide stream storage, replay, or custom real-time stream processing.
+- **C is wrong:** Kinesis Data Firehose is for loading/delivering streaming data into destinations (S3, Redshift, etc.); it does not allow custom, low-latency processing of records the way Data Streams does.
+</details>
+
+### Q178: Placement strategy for high-speed communication between compute nodes
+
+You are tasked with designing a solution for a financial analytics firm that requires rapid data processing and high-speed communication between compute nodes on AWS. Which deployment strategy should you choose to achieve optimal network performance?
+
+- A. Deploy instances in a Cluster placement group
+- B. Deploy instances in a Spread placement group
+- C. Utilize Amazon EC2 Auto Scaling for dynamic resource allocation
+
+<details>
+<summary>Show answer</summary>
+
+**Answer: A**
+
+Choosing a Cluster placement group is the best option for applications needing high-speed communication between instances. This configuration ensures that instances are placed close together within a single Availability Zone, minimizing network latency and maximizing throughput, which is crucial for high-performance computing tasks.
+
+- **B is wrong:** A Spread placement group deliberately places instances on distinct hardware across AZs to reduce correlated failures; this increases isolation but does not provide the low-latency, high-throughput networking needed here.
+- **C is wrong:** EC2 Auto Scaling adjusts the number of instances based on demand; it does not control physical placement and therefore does not optimize inter-node network performance.
+</details>
+
+### Q179: High-performance storage with cost-effective tiering for semiconductor EDA workflows
+
+A tech company is developing a new semiconductor and needs a solution to enhance the performance of their electronic design automation (EDA) workflows. Which AWS service should they use to efficiently manage high-speed data processing and storage for frequently accessed data, while also providing economical storage for less frequently accessed data?
+
+- A. Amazon FSx for Lustre
+- B. Amazon Redshift
+- C. Amazon FSx for Windows File Server
+
+<details>
+<summary>Show answer</summary>
+
+**Answer: A**
+
+Amazon FSx for Lustre is specifically designed for high-performance computing applications that demand fast data processing and storage. It can be integrated with Amazon S3, which allows for seamless management of frequently accessed 'hot data' and cost-effective storage for 'cold data' with quick retrieval times. This makes it the most suitable option for the company's EDA requirements.
+
+- **B is wrong:** Amazon Redshift is a data warehouse for analytical SQL queries, not a high-performance file system for EDA compute workloads.
+- **C is wrong:** FSx for Windows File Server provides SMB/NTFS file shares for Windows workloads; it is not optimized for the high-throughput, low-latency HPC processing that EDA requires, nor for S3 hot/cold tiering.
+</details>
+
+### Q180: Cost-effective POSIX-compliant storage for rarely accessed archival data
+
+An educational institution plans to migrate its archival data from local servers to a cloud-based POSIX-compliant file storage solution on AWS. The data will be retrieved only once annually for a week-long review. As an AWS Solutions Architect, which AWS service would you recommend to minimize costs?
+
+- A. Amazon S3 Glacier
+- B. Amazon S3 Standard
+- C. Amazon EFS Standard
+- D. Amazon EFS Infrequent Access (EFS IA)
+
+<details>
+<summary>Show answer</summary>
+
+**Answer: D**
+
+Amazon EFS Infrequent Access (EFS IA) is designed for files that are rarely accessed, offering a cost-effective solution compared to Amazon EFS Standard. It maintains POSIX compliance, which is necessary for this scenario, and is ideal for data that is accessed infrequently, such as once a year.
+
+- **A is wrong:** S3 Glacier is object storage, not a POSIX-compliant file system, and retrieval can take time depending on the tier.
+- **B is wrong:** S3 Standard is also object storage (not POSIX-compliant) and is more expensive for rarely accessed data.
+- **C is wrong:** EFS Standard is POSIX-compliant but costs significantly more than EFS IA for data accessed only once a year.
+</details>
+
+### Q181: Why an Auto Scaling group is not terminating instances marked as unhealthy
+
+A company is using an Auto Scaling group to manage its fleet of EC2 instances. Despite some instances being marked as unhealthy, they are not being terminated. What could be a reason for this behavior?
+
+- A. The Auto Scaling group is using an outdated launch template
+- B. The health check grace period is still active
+- C. The instances are failing EC2 health checks
+
+<details>
+<summary>Show answer</summary>
+
+**Answer: B**
+
+Auto Scaling groups have a health check grace period during which instances are not terminated even if they are marked unhealthy. This allows instances time to fully initialize and pass health checks. If the grace period has not expired, the Auto Scaling group will not terminate the instance.
+
+- **A is wrong:** An outdated launch template affects how new instances are launched, not whether unhealthy instances are terminated.
+- **C is wrong:** Failing EC2 health checks would normally trigger replacement; it is not a reason an unhealthy instance would be left running (and during the grace period failures are ignored).
+</details>
+
+### Q182: Ensuring high availability for a secure access point (bastion) to a private network
+
+You are tasked with designing a robust architecture for a secure access point to your private network on AWS. Which solution would you implement to ensure high availability for this access point?
+
+- A. Implement an Application Load Balancer (ALB)
+- B. Store access logs in an Amazon S3 bucket
+- C. Deploy a Network Load Balancer (NLB)
+- D. Use Amazon CloudFront for caching
+
+<details>
+<summary>Show answer</summary>
+
+**Answer: C**
+
+To achieve high availability for a secure access point like a bastion host, deploying a Network Load Balancer (NLB) is optimal. NLBs are designed to handle large volumes of connections and operate at the transport layer (Layer 4), making them ideal for managing TCP traffic such as SSH. This setup ensures that incoming connections are efficiently distributed across multiple EC2 instances, enhancing both availability and performance.
+
+- **A is wrong:** An ALB operates at Layer 7 (HTTP/HTTPS) and is not designed to load balance TCP-based protocols like SSH used to reach a bastion host.
+- **B is wrong:** Storing access logs in S3 supports auditing/visibility but does nothing to provide high availability for the access point.
+- **D is wrong:** CloudFront is a content delivery/caching service for web content, not a solution for highly available SSH/TCP access to a private network.
+</details>
+
+### Q183: Efficiently identifying S3 buckets without versioning with minimal administrative effort
+
+A company wants to ensure all its Amazon S3 buckets have versioning enabled to protect against accidental data loss. What is the most efficient method to identify buckets without versioning, while keeping administrative tasks to a minimum?
+
+- A. Review each bucket's settings manually in the AWS Management Console.
+- B. Enable advanced metrics in Amazon S3 Storage Lens to track versioning.
+- C. Deploy AWS Config rules to evaluate each bucket's versioning setting.
+- D. Create a script using AWS CLI to check versioning for each bucket.
+
+<details>
+<summary>Show answer</summary>
+
+**Answer: B**
+
+Amazon S3 Storage Lens offers a detailed analysis of storage usage and activity, including versioning status. By enabling advanced metrics, you can easily filter and identify buckets without versioning across multiple accounts and regions. This approach is efficient and reduces operational overhead by providing a centralized dashboard for monitoring and compliance.
+
+- **A is wrong:** Manually reviewing each bucket does not scale and is the most labor-intensive option.
+- **C is wrong:** AWS Config rules can evaluate compliance but require setting up and managing rules per account/Region, adding more administrative overhead than Storage Lens's built-in metrics.
+- **D is wrong:** A custom AWS CLI script must be written, maintained, and run, adding operational burden rather than minimizing it.
+</details>
+
+### Q184: Handling a sudden traffic surge on an e-commerce platform during a promotional event
+
+You are tasked with preparing an e-commerce platform for a major promotional event that is expected to cause a surge in user activity. Which strategy would you implement to ensure the platform can handle a sudden increase in traffic?
+
+- A. Deploy an Amazon CloudFront distribution to cache content
+- B. Implement an Auto Scaling Group to manage EC2 instances
+- C. Configure Amazon Route 53 with latency-based routing
+
+<details>
+<summary>Show answer</summary>
+
+**Answer: B**
+
+Implementing an Auto Scaling Group is the most effective approach for managing a sudden increase in web traffic. It dynamically adjusts the number of Amazon EC2 instances based on the current demand, ensuring that the infrastructure can scale up to accommodate the increased load and scale down when the demand subsides, optimizing both performance and cost.
+
+- **A is wrong:** CloudFront caches and accelerates static/cacheable content but does not scale the compute tier handling dynamic e-commerce transactions.
+- **C is wrong:** Route 53 latency-based routing directs users to the lowest-latency endpoint; it does not add capacity to handle a traffic surge.
+</details>
+
+### Q185: Integrating directory-dependent applications with an existing on-premises Microsoft AD
+
+An organization is migrating its directory-dependent applications to AWS and requires a solution that can integrate with their existing on-premises Microsoft Active Directory. Which AWS service should they use to establish this integration?
+
+- A. AWS Managed Microsoft AD
+- B. Simple AD
+- C. AWS Transit Gateway
+
+<details>
+<summary>Show answer</summary>
+
+**Answer: A**
+
+AWS Managed Microsoft AD is the appropriate service for integrating AWS-hosted applications with on-premises Microsoft Active Directory. It allows for the creation of trust relationships, enabling seamless integration and authentication across environments. This service provides a fully managed Active Directory environment in AWS, supporting applications that need comprehensive AD features.
+
+- **B is wrong:** Simple AD is a lightweight, standalone directory that does not support trust relationships with an on-premises Microsoft Active Directory.
+- **C is wrong:** AWS Transit Gateway is a network hub for connecting VPCs and on-premises networks; it provides connectivity, not directory/Active Directory integration.
+</details>
+
+### Q186: Why an Auto Scaling group does not replace an instance the Load Balancer marks unhealthy
+
+In a cloud environment, a web application is experiencing downtime because its Auto Scaling group is not replacing an instance marked as unhealthy by the Load Balancer. What could be the reason for this issue?
+
+- A. The Auto Scaling group and Load Balancer both use the same health check mechanism
+- B. The Auto Scaling group is configured with EC2 instance status checks, while the Load Balancer uses its own health checks
+- C. The Load Balancer is configured with EC2 instance status checks, while the Auto Scaling group uses its own health checks
+
+<details>
+<summary>Show answer</summary>
+
+**Answer: B**
+
+The problem occurs when the Auto Scaling group relies on EC2 instance status checks, while the Load Balancer uses its own health check criteria. If the Load Balancer identifies an instance as unhealthy and the Auto Scaling group does not, due to differing health check mechanisms, the Auto Scaling group will not automatically replace the instance. The fix is to configure the Auto Scaling group to use ELB (Load Balancer) health checks.
+
+- **A is wrong:** If both used the same health check mechanism, the Auto Scaling group would detect the same unhealthy state and replace the instance — so this would not cause the issue.
+- **C is wrong:** Load Balancers do not perform EC2 instance status checks; this configuration is not how the services work, so it does not describe the actual cause.
+</details>
+
+### Q187: Efficiently enhancing availability for a web application accessed by US users
+
+A company operates a web application primarily accessed by users in the United States. What is the MOST efficient approach to enhance the application's availability?
+
+- A. Deploy web-tier Amazon EC2 instances in two different regions with an Elastic Load Balancer and use Amazon RDS MySQL with read replicas.
+- B. Deploy web-tier Amazon EC2 instances in two Availability Zones (AZs) with an Elastic Load Balancer and use Amazon RDS MySQL in Multi-AZ configuration.
+- C. Deploy web-tier Amazon EC2 instances in two Availability Zones (AZs) with an Elastic Load Balancer and use Amazon RDS MySQL with read replicas.
+
+<details>
+<summary>Show answer</summary>
+
+**Answer: B**
+
+To boost application availability efficiently, deploying web-tier Amazon EC2 instances across two Availability Zones (AZs) with an Elastic Load Balancer is the optimal solution. This setup balances incoming traffic and provides redundancy. Additionally, using Amazon RDS MySQL in a Multi-AZ configuration ensures high availability by automatically maintaining a standby instance in a separate AZ, ready to take over in case of failure.
+
+- **A is wrong:** Deploying across two Regions is more complex and costly than necessary for a US-only user base, and read replicas provide read scaling, not automatic failover for availability.
+- **C is wrong:** Read replicas improve read performance but do not provide automatic database failover; only a Multi-AZ configuration delivers the high availability required.
+</details>
+
+### Q188: Interpreting an IAM policy that restricts EC2 actions by Region and source IP
+
+A company has an IAM policy that restricts all EC2 operations unless they occur in the 'us-east-1' region. However, it permits the termination of EC2 instances if the request originates from an IP address within the '192.168.1.0/24' range. Which statement accurately describes the permissions granted by this policy?
+
+- A. Users can terminate an EC2 instance in any region except us-east-1 if their source IP is '192.168.1.50'.
+- B. Users can terminate an EC2 instance in the 'us-east-1' region if their source IP is '192.168.1.50'.
+- C. Users can terminate an EC2 instance in the 'us-east-1' region if the instance's IP address is '192.168.1.50'.
+
+<details>
+<summary>Show answer</summary>
+
+**Answer: B**
+
+The IAM policy is designed to deny all EC2 actions unless they are performed in the 'us-east-1' region. However, it makes an exception for terminating instances if the request comes from an IP within the '192.168.1.0/24' range. Therefore, a user with the IP '192.168.1.50' can terminate instances in the 'us-east-1' region.
+
+- **A is wrong:** The policy restricts operations to us-east-1, so actions in other regions are denied — not allowed.
+- **C is wrong:** The `aws:SourceIp` condition evaluates the requester's source IP, not the instance's IP address.
+</details>
+
+### Q189: DDoS protection with compliance-grade logging and minimal changes for a financial web app
+
+A financial services company needs to protect its customer-facing web application from DDoS attacks while ensuring detailed logging for compliance audits. The solution should require minimal changes to the current AWS setup. What is the most suitable approach?
+
+- A. Set up an Amazon CloudFront distribution with AWS WAF to block malicious traffic and analyze CloudFront logs for suspicious activity.
+- B. Implement AWS Shield Advanced for enhanced DDoS protection and leverage the AWS DDoS Response Team for expert guidance. Use the service's logging features for audit compliance.
+- C. Utilize Amazon GuardDuty to monitor for threats and manually adjust security group rules on EC2 instances based on findings.
+
+<details>
+<summary>Show answer</summary>
+
+**Answer: B**
+
+AWS Shield Advanced offers robust DDoS protection for AWS resources, including Application Load Balancers (ALBs). It provides real-time threat detection, automated mitigation, and access to the AWS DDoS Response Team (DRT) for expert support. Additionally, it includes detailed logging and reporting capabilities, which are essential for compliance audits, all while requiring minimal architectural changes.
+
+- **A is wrong:** CloudFront with AWS WAF mitigates web exploits and some volumetric traffic but is not a dedicated DDoS protection service, and it would require adding a CloudFront/WAF layer rather than minimal changes.
+- **C is wrong:** GuardDuty is a threat-detection service, not a DDoS mitigation service, and manually adjusting security groups is reactive and operationally heavy.
+</details>
+
+### Q190: Sharing an EFS document with teams in different AWS regions while keeping management low
+
+You are tasked with ensuring that a shared document on Amazon EFS is accessible to teams located in different AWS regions, while keeping management efforts low. What is the best approach to achieve this?
+
+- A. Deploy a distinct EFS file system in each region
+- B. Replicate the EFS data to each region separately
+- C. Set up an inter-region VPC peering connection to allow access from other regions
+- D. Transfer the data to Amazon S3 for global access
+
+<details>
+<summary>Show answer</summary>
+
+**Answer: D**
+
+Amazon EFS is a regional service and cannot be directly accessed across regions, even with inter-region VPC peering. To share data with users in multiple regions while keeping management simple, it is best to use Amazon S3, which provides global accessibility and built-in cross-region replication if required.
+
+- **A is wrong:** Deploying a separate EFS file system per region creates isolated copies that must be kept in sync manually, increasing management effort.
+- **B is wrong:** Manually replicating EFS data to each region adds operational overhead and risk of inconsistency.
+- **C is wrong:** Inter-region VPC peering provides network connectivity but does not make a regional EFS file system directly mountable from another region.
+</details>
+
+### Q191: Determining EC2 instance tenancy from configuration template and VPC settings
+
+A company is deploying two sets of EC2 instances using Configuration Template A and Configuration Template B. What is true about the tenancy of these instances?
+
+- A. Instances launched using Configuration Template A will have dedicated tenancy, while those using Configuration Template B will have default tenancy.
+- B. Instances launched using Configuration Template A and Configuration Template B will have default tenancy.
+- C. Instances launched using Configuration Template A and Configuration Template B will have dedicated tenancy.
+
+<details>
+<summary>Show answer</summary>
+
+**Answer: C**
+
+The tenancy of EC2 instances can be determined by the settings in the configuration template or the VPC. If either specifies dedicated tenancy, the instances will be launched with dedicated tenancy. In this case, both Configuration Template A and Configuration Template B result in instances with dedicated tenancy due to either the template or the VPC settings.
+
+- **A is wrong:** Both sets end up with dedicated tenancy; the tenancy is not split between the two templates because the VPC (or template) setting forces dedicated.
+- **B is wrong:** Because dedicated tenancy is specified by the template or the VPC, the instances cannot fall back to default tenancy.
+</details>
+
+### Q192: Scaling for predictable month-end traffic surges on an e-commerce platform
+
+A company experiences predictable traffic surges on their e-commerce platform at the end of each month. As a solutions architect, what strategy would you recommend to ensure their Amazon EC2 instances scale appropriately during these peak periods?
+
+- A. Create a scheduled action in your Auto Scaling group to set both the minimum and maximum instance counts to 10 at the specified time, ensuring readiness for peak demand.
+- B. Implement a target tracking scaling policy to automatically adjust the instance count to 10 at the specified time, ensuring readiness for peak demand.
+- C. Set up a scheduled action in your Auto Scaling group to adjust the desired capacity to 10 instances at the specified time on the last day of the month, ensuring readiness for peak demand.
+
+<details>
+<summary>Show answer</summary>
+
+**Answer: C**
+
+For predictable traffic increases, such as those occurring at a specific time each month, implementing scheduled scaling actions in an Auto Scaling group is effective. By configuring a scheduled action to set the desired capacity to a specific number of instances at the required time, you ensure that the system is prepared for the increased demand. This method is more precise than setting minimum and maximum instance counts, which define a range rather than a specific target.
+
+- **A is wrong:** Setting only the minimum and maximum counts defines a range, not a guaranteed number of running instances; adjusting the desired capacity is the precise way to launch exactly 10 instances.
+- **B is wrong:** Target tracking reacts to a real-time metric (e.g., CPU); it is suited to unpredictable load, not to proactively provisioning capacity ahead of a known scheduled surge.
+</details>
+
 ## References
 
 - [AWS Solutions Architect Associate - Official Exam Guide](https://aws.amazon.com/certification/certified-solutions-architect-associate/)
