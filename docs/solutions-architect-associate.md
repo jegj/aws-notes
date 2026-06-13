@@ -3972,6 +3972,93 @@ For predictable traffic increases, such as those occurring at a specific time ea
 - **B is wrong:** Target tracking reacts to a real-time metric (e.g., CPU); it is suited to unpredictable load, not to proactively provisioning capacity ahead of a known scheduled surge.
 </details>
 
+### Q193: Automating SFTP/NFS data migration from on-premises to Amazon EFS (Choose Two)
+
+A media company stores all the media files in an on-premises data center in North America. The organization wants to migrate its on-premises data center to AWS. The data center hosts an SFTP server with 500 GB of data stored on an NFS-based file system. The requirement is to migrate this data to an Amazon EC2 instance leveraging an Amazon Elastic File System (Amazon EFS) file system. What combination of actions should a solutions architect implement to automate this data transfer? (Choose Two.)
+
+- A. Launch the EC2 instance into the same Availability Zone as the EFS file system.
+- B. Install an AWS DataSync agent in the on-premises data center.
+- C. Create a secondary Amazon Elastic Block Store (Amazon EBS) volume on the EC2 instance for the data.
+- D. Manually use an operating system copy command to push the data to the EC2 instance.
+- E. Use AWS DataSync to create a location configuration for the on-premises SFTP server.
+
+<details>
+<summary>Show answer</summary>
+
+**Answer: B and E**
+
+To automate the transfer of NFS data from an on-premises SFTP server to Amazon EFS, install an AWS DataSync agent in the on-premises data center to read data from the local storage system and securely transfer it to AWS, then use AWS DataSync to create a location configuration for the on-premises SFTP source. DataSync supports SFTP as a source location and enables automated, scheduled, and managed transfers directly into Amazon EFS.
+
+- **A is wrong:** EFS is a regional service with mount targets in multiple AZs; DataSync transfers directly to EFS, so co-locating the EC2 instance in a single AZ is unnecessary.
+- **C is wrong:** The requirement is to migrate data to Amazon EFS, not EBS.
+- **D is wrong:** A manual OS copy command is not an automated solution and does not meet the requirement for an automated transfer.
+</details>
+
+### Q194: Cost-effective private access to S3 from a gaming platform without traversing the internet
+
+An online gaming company hosts their gaming platform within a private subnet of an AWS VPC. The VPC has a NAT gateway and an Internet Gateway (IGW). The application needs to store objects from the application to an Amazon S3 bucket located inside the same PROD account. The organization's security policy strictly prohibits application traffic from traversing the public internet. What is the MOST cost-effective solution to meet these requirements?
+
+- A. Configure an S3 interface endpoint. Create a security group that allows outbound traffic to Amazon S3.
+- B. Configure an S3 gateway endpoint. Update the VPC route table to use the endpoint.
+- C. Configure an S3 bucket policy to allow traffic from the Elastic IP address that is assigned to the NAT gateway.
+- D. Create a second NAT gateway in the same subnet where the legacy application is deployed. Update the VPC route table to use the second NAT gateway.
+
+<details>
+<summary>Show answer</summary>
+
+**Answer: B**
+
+An Amazon S3 gateway VPC endpoint keeps traffic between the private subnet and Amazon S3 entirely on the AWS network, satisfying the policy against traversing the public internet. Gateway endpoints incur no additional charge, making this the most cost-effective option.
+
+- **A is wrong:** Interface endpoints are more expensive than gateway endpoints (ENI hourly cost plus data processing charges), while a gateway endpoint is free.
+- **C is wrong:** Routing through the NAT gateway's Elastic IP sends traffic from the private subnet to S3 over the public internet, violating the security policy.
+- **D is wrong:** NAT gateways are for internet-bound traffic and add cost; a second NAT gateway does not keep traffic on the AWS network.
+</details>
+
+### Q195: Efficient lift-and-shift migration of on-premises VMs to AWS (Choose Three)
+
+A video game company is undergoing rapid expansion and needs to migrate its on-premises workloads to AWS due to scalability limitations of its current data center. The migration is time-sensitive, and the company aims to use a lift-and-shift strategy for its non-critical workloads. Which combination of actions will efficiently meet these requirements? (Choose THREE.)
+
+- A. Use the AWS Schema Conversion Tool (AWS SCT) to collect data about the VMs.
+- B. Use AWS Application Migration Service. Install the AWS Replication Agent on the VMs.
+- C. Complete the initial replication of the VMs. Launch test instances to perform acceptance tests on the VMs.
+- D. Stop all operations on the VMs. Launch a cutover instance.
+- E. Use AWS App2Container (A2C) to collect data about the VMs.
+- F. Use AWS Database Migration Service (AWS DMS) to migrate the VMs.
+
+<details>
+<summary>Show answer</summary>
+
+**Answer: B, C, and D**
+
+For a lift-and-shift migration of VMs, AWS Application Migration Service (MGN) is the right tool: install the AWS Replication Agent on the VMs, complete the initial replication and launch test instances for non-disruptive acceptance testing, then stop operations and launch a cutover instance for the final sync. Stopping workloads before cutover ensures data consistency.
+
+- **A is wrong:** AWS SCT is used for heterogeneous database migration, not VM migration.
+- **E is wrong:** App2Container is for modernizing applications into containers, not for lift-and-shift migration.
+- **F is wrong:** AWS DMS migrates databases, not entire VM workloads or server images.
+</details>
+
+### Q196: Aggregating global site data into a single S3 bucket with minimal operational complexity
+
+A weather forecasting company collects data for temperature, humidity, and atmospheric pressure in cities across multiple continents. The average volume of data that the organization collects from each source is 500 GB per day. Files uploaded once per day. Each site has a high-speed Internet connection. The company wants to aggregate the data from all these global sites as quickly as possible in a single Amazon S3 bucket that the organization owns. The solution must minimize operational complexity. Which solution meets these requirements?
+
+- A. Upload the data from each site to an S3 bucket in the closest AWS Region. Use S3 Cross-Region Replication to copy objects to the destination S3 bucket. Then remove the data from the origin S3 bucket.
+- B. Schedule AWS Snowball Edge Storage Optimized device jobs daily to transfer data from each site to the closest AWS Region. Use S3 Cross-Region Replication to copy objects to the destination S3 bucket.
+- C. Upload the data from each site to an EC2 instance in the closest AWS Region. Store the data in an Amazon Elastic Block Store (Amazon EBS) volume. At regular intervals, take an EBS snapshot and copy it to the AWS Region that contains the destination S3 bucket. Restore the EBS volume in that AWS Region.
+- D. Turn on S3 Transfer Acceleration on the destination S3 bucket. Use multipart uploads to directly upload site data to the destination S3 bucket.
+
+<details>
+<summary>Show answer</summary>
+
+**Answer: D**
+
+S3 Transfer Acceleration uses Amazon CloudFront's globally distributed edge locations to provide fast uploads from distant sites directly into the destination S3 bucket, with minimal operational overhead. Combined with multipart uploads, it delivers fast global uploads without extra infrastructure.
+
+- **A is wrong:** Uploading to a regional bucket and then using Cross-Region Replication adds unnecessary operational complexity and increases latency.
+- **B is wrong:** Snowball Edge is intended for offline or limited bandwidth scenarios; these sites have high-speed internet connections.
+- **C is wrong:** The EC2/EBS snapshot-and-restore approach is operationally complex, slow, and indirect.
+</details>
+
 ## References
 
 - [AWS Solutions Architect Associate - Official Exam Guide](https://aws.amazon.com/certification/certified-solutions-architect-associate/)
