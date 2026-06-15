@@ -4059,6 +4059,239 @@ S3 Transfer Acceleration uses Amazon CloudFront's globally distributed edge loca
 - **C is wrong:** The EC2/EBS snapshot-and-restore approach is operationally complex, slow, and indirect.
 </details>
 
+### Q197: Rotating RDS credentials across multiple Regions with the least operational overhead
+
+An online gaming company maintained its gaming platform infrastructure across multiple AWS regions. The company performs monthly maintenance on its AWS infrastructure. Based on the regulatory compliance, the company must rotate the Amazon RDS for MySQL database credentials across multiple AWS regions. Which solution will meet these requirements with the LEAST operational overhead?
+
+- A. Store the credentials as secrets in AWS Secrets Manager. Use multi-Region secret replication for the required regions. Configure Secrets Manager to rotate the secrets on a schedule.
+- B. Store the credentials as secrets in AWS Systems Manager by creating a secure string parameter. Use multi-Region secret replication for the required regions. Configure Secrets Manager to rotate the secrets on a schedule.
+- C. Store the credentials in an Amazon S3 bucket that has server-side encryption (SSE) enabled. Use Amazon EventBridge (Amazon CloudWatch Events) to invoke an AWS Lambda function to rotate the credentials.
+- D. Encrypt the credentials as secrets by using AWS Key Management Service (AWS KMS) multi-Region customer managed keys. Store the secrets in an Amazon DynamoDB global table. Use an AWS Lambda function to retrieve the secrets from DynamoDB. Use the RDS API to rotate the secrets.
+
+<details>
+<summary>Show answer</summary>
+
+**Answer: A**
+
+AWS Secrets Manager natively supports multi-Region secret replication and built-in scheduled rotation for Amazon RDS credentials, minimizing custom code and operational effort.
+
+- **B is wrong:** "Multi-Region secret replication" is a Secrets Manager feature, not a Systems Manager Parameter Store feature; secure string parameters do not provide it.
+- **C is wrong:** This requires custom rotation logic and Lambda code, and you must handle consistency and permissions across regions.
+- **D is wrong:** Building KMS multi-Region keys, a DynamoDB global table, and Lambda rotation is operationally heavier than the managed Secrets Manager + RDS rotation integration.
+</details>
+
+### Q198: Durable, stateless image-compression processing with SQS and Lambda (Choose Two)
+
+A media company wants to convert large images to a smaller and compressed format. The application development team is designing a microservice to perform the image compression activity. When a user uploads an image through the web interface, the microservice should store the image in an Amazon S3 bucket, process and compress the image with an AWS Lambda function and store the image in its compressed form in a different S3 bucket. A solutions architect needs to design a solution that uses durable, stateless components to process the images automatically. Which combination of actions will meet these requirements? (Choose two.)
+
+- A. Create an Amazon Simple Queue Service (Amazon SQS) queue. Configure the S3 bucket to send a notification to the SQS queue when an image is uploaded to the S3 bucket.
+- B. Configure the Lambda function to use the Amazon Simple Queue Service (Amazon SQS) queue as the invocation source. When the SQS message is successfully processed, delete the message in the queue.
+- C. Configure the Lambda function to monitor the S3 bucket for new uploads. When an uploaded image is detected, write the file name to a text file in memory and use the text file to keep track of the images that were processed.
+- D. Launch an Amazon EC2 instance to monitor an Amazon Simple Queue Service (Amazon SQS) queue. When items are added to the queue, log the file name in a text file on the EC2 instance and invoke the Lambda function.
+- E. Configure an Amazon EventBridge (Amazon CloudWatch Events) event to monitor the S3 bucket. When an image is uploaded, send an alert to an Amazon Simple Notification Service (Amazon SNS) topic with the application owner's email address for further processing.
+
+<details>
+<summary>Show answer</summary>
+
+**Answer: A and B**
+
+Configuring the S3 bucket to send a notification to an SQS queue when an image is uploaded creates a durable, decoupled trigger. Using that SQS queue as the Lambda invocation source (event source mapping) provides automatic, scalable, stateless processing, with messages deleted from the queue after successful processing.
+
+- **C is wrong:** Lambda execution environments are ephemeral, so an in-memory text file is not durable or stateless and cannot reliably track processed images.
+- **D is wrong:** Adding an Amazon EC2 instance to monitor the queue violates the goal of using stateless, serverless components.
+- **E is wrong:** Sending an SNS email alert notifies a person; it does not automatically process and compress the images.
+</details>
+
+### Q199: Secure integration between a Cognito-authenticated app in a private subnet and S3 (Select Two)
+
+A research institute hosts an application in a private subnet. The company has integrated the application with Amazon Cognito using a user pool for authentication. The company now requires the application to securely store user documents in an Amazon S3 bucket. Which combination of steps will achieve secure integration between the application and Amazon S3? (Select TWO.)
+
+- A. Create an Amazon Cognito identity pool to generate secure Amazon S3 access tokens for users upon successful login.
+- B. Use the existing Amazon Cognito user pool to generate Amazon S3 access tokens for users upon successful login.
+- C. Create an Amazon S3 VPC endpoint in the same VPC where the company hosts the application.
+- D. Create a NAT gateway in the VPC where the company hosts the application. Assign a policy to the S3 bucket to deny any request that is not initiated from Amazon Cognito.
+- E. Attach a policy to the S3 bucket that allows access only from the users' IP addresses.
+
+<details>
+<summary>Show answer</summary>
+
+**Answer: A and C**
+
+An Amazon Cognito identity pool (federated identities) exchanges a successful login for temporary AWS credentials that grant scoped access to Amazon S3. An Amazon S3 VPC (gateway) endpoint lets the private-subnet application reach S3 over the AWS network without traversing the public internet.
+
+- **B is wrong:** Cognito user pools issue JWTs for authentication, not AWS credentials; an identity pool is required to obtain S3 access.
+- **D is wrong:** A NAT gateway would send the S3 traffic over public routes, which is undesirable for a private-subnet use case.
+- **E is wrong:** Restricting the bucket policy to users' IP addresses is unreliable because client/user IPs are often dynamic.
+</details>
+
+### Q200: Granting pod-level access to DynamoDB and S3 from an EKS cluster
+
+An online retail company has an application running on an Amazon EKS cluster on Amazon EC2 instances. The application's UI uses Amazon DynamoDB, and its data services utilize Amazon S3 as part of the deployment. The company requires that EKS Pods for the UI can access only Amazon DynamoDB, and EKS Pods for data services can access only Amazon S3. The company uses AWS Identity and Access Management (IAM). Which solution meets these requirements?
+
+- A. Create separate IAM policies for Amazon S3 and DynamoDB access with the required permissions. Attach both IAM policies to the EC2 instance profile. Use role-based access control (RBAC) to control access to Amazon S3 or DynamoDB for the respective EKS Pods.
+- B. Create separate IAM policies for Amazon S3 and DynamoDB access with the required permissions. Attach the Amazon S3 IAM policy directly to the EKS Pods for the data services and the DynamoDB policy to the EKS Pods for the UI.
+- C. Create separate Kubernetes service accounts for the UI and data services to assume an IAM role. Attach the AmazonS3FullAccess policy to the data services account and the AmazonDynamoDBFullAccess policy to the UI service account.
+- D. Create separate Kubernetes service accounts for the UI and data services to assume an IAM role. Use IAM Role for Service Accounts (IRSA) to provide access to the EKS Pods for the UI to Amazon S3 and the EKS Pods for the data services to DynamoDB.
+
+<details>
+<summary>Show answer</summary>
+
+**Answer: C**
+
+Creating separate Kubernetes service accounts that assume IAM roles (IAM Roles for Service Accounts) provides pod-level IAM permissions. Attaching the S3 policy to the data services account and the DynamoDB policy to the UI account scopes each set of pods to exactly the service it needs.
+
+- **A is wrong:** Putting both permissions on the node (EC2) instance profile lets any pod on that node potentially use them, breaking least privilege.
+- **B is wrong:** IAM policies cannot be applied directly to EKS pods; access must be granted via a service account/IAM role.
+- **D is wrong:** It reverses the access — the UI should access DynamoDB only and the data services should access S3 only.
+</details>
+
+### Q201: Encrypting security certificates and storing them in highly available storage with least overhead
+
+A company's containerized application runs on an Amazon EC2 instance. The application needs to download security certificates before it can communicate with other business applications. The company wants a highly secure solution to encrypt and decrypt the certificates in near real time. The solution also needs to store data in highly available storage after the data is encrypted. Which solution will meet these requirements with the LEAST operational overhead?
+
+- A. Create AWS Secrets Manager secrets for encrypted certificates. Manually update the certificates as needed. Control access to the data by using fine-grained IAM access.
+- B. Create an AWS Lambda function that uses the Python cryptography library to receive and perform encryption operations. Store the function in an Amazon S3 bucket.
+- C. Create an AWS Key Management Service (AWS KMS) customer managed key. Allow the EC2 role to use the KMS key for encryption operations. Store the encrypted data on Amazon S3.
+- D. Create an AWS Key Management Service (AWS KMS) customer managed key. Allow the EC2 role to use the KMS key for encryption operations. Store the encrypted data on Amazon Elastic Block Store (Amazon EBS) volumes.
+
+<details>
+<summary>Show answer</summary>
+
+**Answer: C**
+
+An AWS KMS customer managed key provides secure, near-real-time encryption and decryption, and granting the EC2 role permission to use the key keeps operational overhead low. Storing the encrypted certificates in Amazon S3 provides highly available, durable storage.
+
+- **A is wrong:** Manually updating certificates in Secrets Manager increases operational effort.
+- **B is wrong:** Writing custom Lambda crypto code introduces unnecessary custom code and operational burden.
+- **D is wrong:** Amazon EBS is not "highly available" storage (it is tied to a single Availability Zone), unlike Amazon S3.
+</details>
+
+### Q202: Resilient, continuously available, cost-effective DynamoDB architecture for a growing gaming platform
+
+An online gaming company is migrating its user data storage to Amazon DynamoDB to accommodate its growing user base. The company's DynamoDB tables store user profiles, achievements, and in-game transactions. The company requires a resilient and continuously available DynamoDB architecture to ensure a seamless gaming experience while remaining cost-effective. Which solution BEST fulfills these requirements?
+
+- A. Create DynamoDB tables in a single AWS Region. Use on-demand capacity mode. Use global tables to replicate data across multiple Regions.
+- B. Use DynamoDB Accelerator (DAX) to cache frequently accessed data. Deploy tables in a single AWS Region and enable auto scaling. Configure Cross-Region Replication manually to additional Regions.
+- C. Create DynamoDB tables in multiple AWS Regions. Use on-demand capacity mode. Use DynamoDB Streams for Cross-Region Replication between Regions.
+- D. Use DynamoDB global tables for automatic multi-Region replication. Deploy tables in multiple AWS Regions. Use provisioned capacity mode. Enable auto scaling.
+
+<details>
+<summary>Show answer</summary>
+
+**Answer: D**
+
+DynamoDB global tables provide active-active, multi-Region replication for high resilience and continuous availability. Pairing them with provisioned capacity mode and auto scaling keeps costs predictable and efficient while still handling a growing user base.
+
+- **A is wrong:** You don't use DynamoDB global tables while keeping tables only in a single Region — replication requires tables in multiple Regions.
+- **B is wrong:** DAX improves read latency but does not provide multi-Region continuous availability, and manual Cross-Region Replication adds overhead.
+- **C is wrong:** On-demand can be more expensive than provisioned, and using DynamoDB Streams for replication is custom and operationally heavy compared to native global tables.
+</details>
+
+### Q203: Centralized identity for multiple AWS accounts using on-premises Active Directory with least overhead
+
+A manufacturing company with a globally distributed development team needs to grant secure access to the company's AWS resources while adhering to security policies. The company utilizes an on-premises Active Directory for internal authentication and AWS Organizations to manage multiple AWS accounts across different projects. The desired solution should integrate with the existing infrastructure to provide centralized identity management and access control with the LEAST operational overhead. Which solution best meets these requirements?
+
+- A. Set up AWS Directory Service to create an AWS-managed Microsoft Active Directory on AWS. Establish a trust relationship with the on-premises Active Directory. Use IAM roles that are assigned to Active Directory groups to access AWS resources within the company's AWS accounts.
+- B. Create an IAM user for each developer. Manually manage permissions for each IAM user based on each user's involvement with each project. Enforce multi-factor authentication (MFA) as an additional layer of security.
+- C. Use AD Connector in AWS Directory Service to connect to the on-premises Active Directory. Integrate AD Connector with AWS IAM Identity Center. Configure permission sets to give each AD group access to specific AWS accounts and resources.
+- D. Use Amazon Cognito to deploy an identity federation solution. Integrate the identity federation solution with the on-premises Active Directory. Use Amazon Cognito to provide access tokens for developers to access AWS accounts and resources.
+
+<details>
+<summary>Show answer</summary>
+
+**Answer: C**
+
+AD Connector lets AWS authenticate users directly against the existing on-premises Active Directory without duplicating directories. Integrating it with AWS IAM Identity Center and using permission sets gives each AD group scoped access across the AWS Organizations accounts — centralized identity management with the least operational overhead.
+
+- **A is wrong:** Deploying an AWS Managed Microsoft AD plus a trust relationship adds directory infrastructure and increases operational overhead.
+- **B is wrong:** Manually managing an IAM user per developer does not scale well.
+- **D is wrong:** Amazon Cognito is intended for application end-user authentication, not centralized workforce access to AWS accounts.
+</details>
+
+### Q204: Fully managed shared storage that supports Lustre clients
+
+An online gaming company is implementing a shared storage solution for their most popular gaming platform that is hosted on an on-premises data center. The company needs the ability to use Lustre clients to access data. The solution must be fully managed. Which solution meets these requirements?
+
+- A. Create an AWS Storage Gateway file gateway. Create a file share that uses the required client protocol. Connect the application server to the file share.
+- B. Create an Amazon EC2 Windows instance. Install and configure a Windows file share role on the instance. Connect the application server to the file share.
+- C. Create an Amazon Elastic File System (Amazon EFS) file system and configure it to support Lustre. Attach the file system to the origin server. Connect the application server to the file system.
+- D. Create an Amazon FSx for Lustre file system. Attach the file system to the origin server. Connect the application server to the file system.
+
+<details>
+<summary>Show answer</summary>
+
+**Answer: D**
+
+Amazon FSx for Lustre is a fully managed, high-performance file system that natively supports the Lustre protocol and Lustre clients.
+
+- **A is wrong:** AWS Storage Gateway file gateway supports NFS and SMB protocols, not Lustre.
+- **B is wrong:** A Windows file share instance is not fully managed and only supports SMB-based file sharing.
+- **C is wrong:** Amazon EFS supports NFS only and cannot be configured to support Lustre.
+</details>
+
+### Q205: Scaling a monolithic image-processing workload with the least operational overhead
+
+A digital image processing company hosts its image processing application in an on-premises data center. The application is a monolithic application. As part of the data center evacuation exercise, the organization wants to migrate the application to the AWS Cloud. The application processes thousands of images and generates large files as part of the image processing workflow. The organization is looking for a solution that can manage the growing number of image processing jobs. The solution must also reduce the manual tasks in the image processing workflow. The company does not want to manage the underlying infrastructure of the solution. Which solution should a Solution Architect propose that will meet these requirements with the LEAST operational overhead?
+
+- A. Use Amazon Elastic Container Service (Amazon ECS) with Amazon EC2 Spot Instances to process the images. Configure Amazon Simple Queue Service (Amazon SQS) to orchestrate the workflow. Store the processed files in Amazon Elastic File System (Amazon EFS).
+- B. Use AWS Batch jobs to process the images. Use AWS Step Functions to orchestrate the workflow. Store the processed files in an Amazon S3 bucket.
+- C. Use AWS Lambda functions and Amazon EC2 Spot Instances to process the images. Store the processed files in Amazon FSx.
+- D. Deploy a group of Amazon EC2 instances to process the images. Use AWS Step Functions to orchestrate the workflow. Store the processed files in an Amazon Elastic Block Store (Amazon EBS) volume.
+
+<details>
+<summary>Show answer</summary>
+
+**Answer: B**
+
+AWS Batch is a fully managed job scheduler that can scale to thousands of batch jobs without managing the underlying infrastructure, and AWS Step Functions orchestrates the workflow to reduce manual tasks. Storing the processed files in Amazon S3 provides durable, scalable storage.
+
+- **A is wrong:** ECS with EC2 Spot Instances still requires managing the underlying compute infrastructure.
+- **C is wrong:** Mixing Lambda and EC2 Spot Instances still implies managing compute capacity.
+- **D is wrong:** Running and managing a fleet of EC2 instances is the option with the highest operational burden.
+</details>
+
+### Q206: Transforming clinical trial data with customer-specific encryption and least operational effort
+
+A medical company wants to perform transformations on a large amount of clinical trial data that comes from several customers. The company must extract the data from a relational database that contains the customer data. Then the company will transform the data by using a series of complex rules. The company will load the data to Amazon S3 when the transformations are complete. All data must be encrypted where it is processed before the company stores the data in Amazon S3. All data must be encrypted by using customer-specific keys. Which solution will meet these requirements with the LEAST amount of operational effort?
+
+- A. Create one AWS Glue job for each customer. Attach a security configuration to each job that uses server-side encryption with Amazon S3 managed keys (SSE-S3) to encrypt the data.
+- B. Create one Amazon EMR cluster for each customer. Attach a security configuration to each cluster that uses client-side encryption with a custom client-side root key (CSE-Custom) to encrypt the data.
+- C. Create one AWS Glue job for each customer. Attach a security configuration to each job that uses client-side encryption with AWS KMS managed keys (CSE-KMS) to encrypt the data.
+- D. Create one Amazon EMR cluster for each customer. Attach a security configuration to each cluster that uses server-side encryption with AWS KMS managed keys (SSE-KMS) to encrypt the data.
+
+<details>
+<summary>Show answer</summary>
+
+**Answer: C**
+
+AWS Glue is serverless, and CSE-KMS ensures each customer's data is encrypted before it is written to S3 using a customer-specific KMS key — meeting both the "encrypted where it is processed" and "customer-specific keys" requirements with the least operational effort.
+
+- **A is wrong:** SSE-S3 uses S3-managed keys, not customer-specific keys.
+- **B is wrong:** Running one Amazon EMR cluster per customer adds significant operational overhead.
+- **D is wrong:** It also uses Amazon EMR clusters, which add significant operational overhead compared to serverless Glue.
+</details>
+
+### Q207: Low-latency on-premises access to data moved to S3 in the most cost-effective way
+
+A media company runs its media rendering application on premises. The company wants to reduce storage costs and has moved all data to Amazon S3. The on-premises rendering application needs low-latency access to storage to maintain performance. Which storage solution will meet these requirements in the MOST cost-effective way?
+
+- A. Use Mountpoint for Amazon S3 to access the data in Amazon S3 for the on-premises application.
+- B. Configure an Amazon S3 File Gateway to provide storage for the on-premises application.
+- C. Copy the data from Amazon S3 to Amazon FSx for Windows File Server. Configure an Amazon FSx File Gateway to provide storage for the on-premises application.
+- D. Configure an on-premises file server. Use the Amazon S3 API to connect to S3 storage. Configure the application to access the storage from the on-premises file server.
+
+<details>
+<summary>Show answer</summary>
+
+**Answer: B**
+
+Amazon S3 File Gateway is a cost-effective, common pattern for on-premises applications that need fast (low-latency) access to S3-backed storage. It caches frequently accessed data locally while durably storing all data as objects in S3.
+
+- **A is wrong:** Mountpoint for Amazon S3 is not designed for managed on-premises integration and does not provide the on-premises caching gateway pattern.
+- **C is wrong:** Copying data to FSx for Windows File Server adds an extra managed file system layer with higher cost and complexity.
+- **D is wrong:** A self-managed on-premises file server using the S3 API has higher operational overhead and is less reliable than Storage Gateway.
+</details>
+
 ## References
 
 - [AWS Solutions Architect Associate - Official Exam Guide](https://aws.amazon.com/certification/certified-solutions-architect-associate/)
