@@ -4292,6 +4292,239 @@ Amazon S3 File Gateway is a cost-effective, common pattern for on-premises appli
 - **D is wrong:** A self-managed on-premises file server using the S3 API has higher operational overhead and is less reliable than Storage Gateway.
 </details>
 
+### Q208: Tiered access control for a CloudFront streaming platform (Select TWO)
+
+A streaming platform uses Amazon CloudFront to deliver content from S3. The platform offers two tiers — free users can watch three specific preview clips, while premium subscribers have access to the full library of 800 videos. The solutions architect must implement access control that restricts content appropriately for each tier. Which combination of features should be used? (Select TWO.)
+
+- A. CloudFront Signed URLs for free users to access the three preview clips
+- B. CloudFront Geo-Restriction with an allowlist for premium subscriber countries
+- C. CloudFront Signed Cookies for premium subscribers to access the full video library
+- D. AWS WAF rate-based rules to limit free user requests to three per session
+- E. Lambda@Edge at the Origin Response trigger to filter content based on user tier
+
+<details>
+<summary>Show answer</summary>
+
+**Answer: A, C**
+
+Signed URLs grant time-limited access to individual files, which fits free users needing exactly three preview clips — one URL per clip that expires after a set time (A). Signed Cookies grant access to multiple files with a single cookie, ideal for premium subscribers who need access to the entire 800-video library without generating a URL per file (C).
+
+- **B is wrong:** Geo-Restriction controls access by country — it has no concept of user subscription tier.
+- **D is wrong:** WAF rate-based rules throttle request frequency, not which content a user is entitled to.
+- **E is wrong:** Lambda@Edge at Origin Response runs *after* the origin has already processed the request, so it cannot enforce tier-based access control upfront.
+</details>
+
+### Q209: Region for an ACM certificate used by a CloudFront distribution
+
+A solutions architect is configuring HTTPS for a new Amazon CloudFront distribution. The company uses a custom domain cloudexperts.solutions.com and needs a free SSL/TLS certificate. The company's infrastructure is deployed in ap-southeast-2 (Sydney). Where must the AWS Certificate Manager (ACM) certificate be provisioned?
+
+- A. ap-southeast-2 (Sydney) — the same region as the company's infrastructure
+- B. us-west-2 (Oregon) — the closest US region to Sydney
+- C. us-east-1 (N. Virginia) — regardless of where the infrastructure or users are located
+- D. Any region — CloudFront automatically replicates ACM certificates globally
+
+<details>
+<summary>Show answer</summary>
+
+**Answer: C**
+
+A certificate used with CloudFront MUST be created in us-east-1 (N. Virginia) regardless of where the infrastructure, origin, or users are located.
+
+- **A is wrong:** ACM certificates in ap-southeast-2 work for ALBs and other regional services in Sydney — but not for CloudFront.
+- **B is wrong:** There is no rule linking CloudFront to the "nearest US region."
+- **D is wrong:** CloudFront does not auto-discover or replicate ACM certificates globally.
+</details>
+
+### Q210: Improving global image/video load performance with the least architectural change
+
+A global retail company serves product images and videos to customers worldwide through their e-commerce website. The images are stored in Amazon S3 in us-east-1. Users in Asia and Australia are complaining about slow page load times. A solutions architect needs to improve performance for global users with the least amount of architectural change. Which solution best addresses this requirement?
+
+- A. Migrate the S3 bucket to ap-southeast-1 to be closer to Asian users
+- B. Enable S3 Transfer Acceleration on the bucket to speed up content delivery
+- C. Create an Amazon CloudFront distribution with the S3 bucket as the origin
+- D. Deploy EC2 instances in multiple regions and replicate the images across all of them
+
+<details>
+<summary>Show answer</summary>
+
+**Answer: C**
+
+CloudFront is specifically designed to solve this exact problem, caching content at 400+ edge locations worldwide so users in Asia and Australia are served from a nearby location.
+
+- **A is wrong:** Migrating the S3 bucket to ap-southeast-1 helps Asian users but hurts US and European users.
+- **B is wrong:** S3 Transfer Acceleration speeds up uploads. It doesn't cache content or improve download performance for website visitors.
+- **D is wrong:** Deploying EC2 instances across multiple regions to replicate images is massively over-engineered for static content delivery.
+</details>
+
+### Q211: Resilient CloudFront architecture with automatic S3 origin failover
+
+A media company hosts a static website using Amazon S3 and delivers it through Amazon CloudFront. The website serves users globally and must remain available even if the primary S3 bucket in us-east-1 becomes unavailable. The solutions architect must design a resilient architecture with automatic recovery and no manual intervention. Which solution meets these requirements?
+
+- A. Enable S3 Cross-Region Replication to us-west-2 and configure Route 53 failover routing between the two S3 buckets
+- B. Create a CloudFront Origin Group with the us-east-1 S3 bucket as the primary origin and a replicated us-west-2 S3 bucket as the secondary — CloudFront will automatically failover on 5xx errors
+- C. Deploy an Application Load Balancer across two regions and configure CloudFront to use the ALB as the origin with health checks
+- D. Configure AWS Lambda to monitor the primary S3 bucket and automatically update the CloudFront distribution's origin if the bucket becomes unavailable
+
+<details>
+<summary>Show answer</summary>
+
+**Answer: B**
+
+A CloudFront Origin Group designates a primary and a secondary origin and automatically retries with the secondary — transparently, within the same user request — when the primary returns a 5xx error. This gives automatic recovery with no manual intervention.
+
+- **A is wrong:** Route 53 failover routing involves manual configuration, DNS delays, and a potential downtime window.
+- **C is wrong:** An ALB cannot span two AWS regions.
+- **D is wrong:** A Lambda function monitoring S3 and updating the CloudFront origin configuration introduces significant latency in the failover process.
+</details>
+
+### Q212: Improving CloudFront cache hit ratio for varying query string order
+
+A developer notices that their CloudFront distribution's cache hit ratio is only 35% — far below the expected 85%. Investigation reveals that the application sends requests with query strings in varying parameter orders. For example, `/products?color=red&size=M` and `/products?size=M&color=red` return identical content but are being treated as different cache entries by CloudFront. What is the MOST effective solution to improve the cache hit ratio?
+
+- A. Increase the CloudFront Maximum TTL from 86,400 seconds to 604,800 seconds
+- B. Configure the CloudFront cache policy to normalize query string parameter order so that equivalent query strings share the same cache key
+- C. Submit a CloudFront invalidation for `/*` every hour to clear fragmented cache entries
+- D. Create separate CloudFront distributions for each unique query string combination
+
+<details>
+<summary>Show answer</summary>
+
+**Answer: B**
+
+Normalizing query string parameter order in the cache policy means the same content is cached under a single cache key, even when query parameters arrive in different orders — directly fixing the root cause of the low hit ratio.
+
+- **A is wrong:** Increasing the Maximum TTL helps content stay cached longer, but it doesn't fix the root cause of duplicate cache keys.
+- **C is wrong:** Submitting hourly invalidations actively makes the problem worse by clearing the cache repeatedly.
+- **D is wrong:** Creating separate distributions per query string is architecturally absurd and operationally unmanageable.
+</details>
+
+### Q213: Static IPs for firewall whitelisting plus regulatory country blocking (Select TWO)
+
+A financial services company uses Amazon CloudFront to deliver a trading application to enterprise clients worldwide. Corporate clients require that the application's IP addresses remain static so they can be whitelisted in enterprise firewalls. The company also needs to serve users in 45 countries but must block access from users in three specific countries due to regulatory requirements. Which combination of services and features should the solutions architect recommend? (Select TWO.)
+
+- A. Amazon CloudFront with Geo-Restriction blocklist for the three restricted countries
+- B. AWS Global Accelerator to provide two static Anycast IP addresses for firewall whitelisting
+- C. Amazon Route 53 with geolocation routing to redirect users from restricted countries
+- D. AWS WAF with geo-match conditions to block traffic from the three restricted countries
+- E. Amazon CloudFront with AWS Shield Advanced to provide static IP addresses
+
+<details>
+<summary>Show answer</summary>
+
+**Answer: A, B**
+
+CloudFront Geo-Restriction with a blocklist satisfies the regulatory requirement to block the three restricted countries (A). AWS Global Accelerator provides two static Anycast IP addresses that never change, satisfying the firewall whitelisting requirement (B).
+
+- **C is wrong:** Route 53 geolocation relies on DNS and TTL propagation, doesn't enforce hard blocks, and doesn't provide static IPs.
+- **D is wrong:** WAF doesn't solve the static IP requirement.
+- **E is wrong:** Shield Advanced provides DDoS protection — it does not provide static IP addresses.
+</details>
+
+### Q214: Immediately serving updated content after an S3 origin update
+
+A company has a CloudFront distribution with an S3 origin. The development team deploys a new version of the website and updates the S3 content. However, users continue seeing the old version of the website for up to 24 hours because of the cached content at CloudFront edge locations. The team needs to immediately serve the updated content to all users worldwide. What is the MOST operationally efficient solution?
+
+- A. Delete and recreate the CloudFront distribution to clear all cached content
+- B. Change the CloudFront Minimum TTL to 0 seconds on all cache behaviors
+- C. Submit a CloudFront cache invalidation request for `/*` to remove all cached objects from edge locations immediately
+- D. Contact AWS Support to manually purge the CloudFront edge caches
+
+<details>
+<summary>Show answer</summary>
+
+**Answer: C**
+
+A CloudFront cache invalidation with path `/*` immediately removes all cached objects from every edge location worldwide, so users are served the updated content right away.
+
+- **A is wrong:** Deleting and recreating the distribution is an extreme measure that changes your distribution domain name, breaks existing URLs, requires reconfiguring SSL certificates and behaviors, and causes significant downtime.
+- **B is wrong:** Changing Minimum TTL to 0 affects future cache behavior — it doesn't retroactively clear objects that are currently cached at edge locations.
+- **D is wrong:** AWS Support does not manually purge edge caches on request — it's operationally burdensome and completely unnecessary.
+</details>
+
+### Q215: Applying different caching rules per URL path in one CloudFront distribution
+
+A company runs a web application that serves both static HTML/CSS/JavaScript files and dynamic API responses. Static files rarely change and should be cached aggressively. API responses are unique per user and must not be cached. Both types of content are served from the same CloudFront distribution using different URL paths. Which CloudFront feature allows the solutions architect to apply different caching rules to different URL paths within a single distribution?
+
+- A. CloudFront Origin Groups with separate TTL configurations per group
+- B. CloudFront Cache Behaviors with different path patterns and cache policies for each content type
+- C. CloudFront Lambda@Edge functions at the Origin Response trigger to set TTL per content type
+- D. Multiple CloudFront distributions — one for static content and one for API responses
+
+<details>
+<summary>Show answer</summary>
+
+**Answer: B**
+
+Cache Behaviors are CloudFront's mechanism for applying different rules to different URL paths within a single distribution. Each behavior matches a path pattern and applies its own cache policy.
+
+- **A is wrong:** Origin Groups don't have TTL configurations and don't route based on URL path patterns.
+- **C is wrong:** Lambda@Edge at the origin is an overly complex approach to what Cache Behaviors solve natively and cleanly.
+- **D is wrong:** Two separate distributions would work technically but is operationally unnecessary and more complex to manage.
+</details>
+
+### Q216: Verifying JWT tokens via an external API as close to the user as possible
+
+A company wants to implement authentication for their CloudFront-delivered application. When users make a request, the system must verify a JWT token by calling an external authentication API. Only requests with valid tokens should be forwarded to the origin. The verification must happen as close to the user as possible to minimize latency. Which solution meets these requirements?
+
+- A. Create a CloudFront Function at the Viewer Request trigger to call the authentication API and verify the JWT token
+- B. Create a Lambda@Edge function at the Viewer Request trigger that calls the external authentication API and returns a 403 response for invalid tokens
+- C. Create a Lambda@Edge function at the Origin Request trigger to verify JWT tokens before the request reaches the origin
+- D. Configure an Application Load Balancer with an authentication rule to verify JWT tokens before CloudFront forwards requests
+
+<details>
+<summary>Show answer</summary>
+
+**Answer: B**
+
+Lambda@Edge at the Viewer Request trigger perfectly satisfies both requirements — it runs at the edge (closest to the user) and can make network calls to the external authentication API, returning a 403 for invalid tokens before forwarding valid requests to the origin.
+
+- **A is wrong:** CloudFront Functions cannot make network calls, so they can't call an external authentication API.
+- **C is wrong:** The Origin Request trigger runs only on cache misses and only after CloudFront has decided to contact the origin — not as close to the user as possible.
+- **D is wrong:** An ALB authentication rule contradicts the requirement that verification happens "as close to the user as possible."
+</details>
+
+### Q217: Reducing CloudFront costs when users are concentrated in a few regions
+
+A startup has deployed a SaaS application using Amazon CloudFront. After three months of operation, the team analyzes their AWS bill and finds CloudFront costs are 40% higher than projected. Traffic analytics show that 96% of users are in the United States and Canada, with only 4% from other continents. The team wants to significantly reduce CloudFront costs while maintaining excellent performance for the vast majority of users. What is the MOST cost-effective solution?
+
+- A. Enable CloudFront Origin Shield in us-east-1 to reduce origin requests and lower overall costs
+- B. Switch the CloudFront distribution Price Class from All to Price Class 100 to serve content only from North America and Europe edge locations
+- C. Migrate the application origin from S3 to an EC2 instance to reduce data transfer costs
+- D. Reduce all CloudFront cache TTL values to 60 seconds to minimize the volume of cached data stored at edge locations
+
+<details>
+<summary>Show answer</summary>
+
+**Answer: B**
+
+96% of users are in the US and Canada — which are covered by Price Class 100 (North America and Europe). Restricting the distribution to the cheaper edge locations significantly lowers CloudFront costs while keeping excellent performance for the vast majority of users.
+
+- **A is wrong:** Origin Shield helps reduce origin infrastructure costs, not CloudFront service costs.
+- **C is wrong:** The origin type (S3 vs EC2) has no bearing on CloudFront pricing.
+- **D is wrong:** Reducing TTL to 60 seconds causes more cache misses, which will increase costs.
+</details>
+
+### Q218: Adding a static security header at the edge with minimum latency and cost
+
+A solutions architect needs to add a Content-Security-Policy (CSP) security header to all CloudFront responses for compliance requirements. The header value is static and does not change based on the request. The solution must add the header with the absolute minimum latency overhead and at the lowest possible cost. Which solution should the architect choose?
+
+- A. Create a Lambda@Edge function at the Viewer Response trigger to add the Content-Security-Policy header to every response
+- B. Configure the origin application to include the Content-Security-Policy header in all responses before they reach CloudFront
+- C. Create a CloudFront Function at the Viewer Response trigger to add the Content-Security-Policy header to every response
+- D. Attach an AWS WAF Web ACL to the CloudFront distribution and create a custom rule to inject the Content-Security-Policy header
+
+<details>
+<summary>Show answer</summary>
+
+**Answer: C**
+
+Adding a static header to every response is a simple, deterministic operation — no network calls, no external dependencies, pure string manipulation. CloudFront Functions run at the edge with the lowest latency and cost, making them ideal for this case.
+
+- **A is wrong:** Lambda@Edge at Viewer Response would work technically, but it's significantly more expensive and slower than CloudFront Functions for this simple operation.
+- **B is wrong:** Configuring the origin to add the header works but adds complexity — every origin server or service must be individually configured.
+- **D is wrong:** AWS WAF is not designed to inject custom headers into responses.
+</details>
+
 ## References
 
 - [AWS Solutions Architect Associate - Official Exam Guide](https://aws.amazon.com/certification/certified-solutions-architect-associate/)
