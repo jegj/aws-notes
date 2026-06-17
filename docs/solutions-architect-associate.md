@@ -25,6 +25,7 @@ Notes for the AWS Solutions Architect Associate certification exam.
   - [Internet Gateway vs. NAT Gateway](#internet-gateway-vs-nat-gateway)
   - [EC2 Instance Savings Plans vs. Compute Savings Plans](#ec2-instance-savings-plans-vs-compute-savings-plans)
   - [Caching Strategies (Lazy Loading & Write-Through)](#caching-strategies-lazy-loading--write-through)
+  - [CloudFront Price Classes](#cloudfront-price-classes)
 - [Questions](#questions)
 - [References](#references)
 
@@ -344,6 +345,24 @@ A **cache** stores frequently accessed data in fast in-memory storage (typically
 - **Amazon CloudFront** — edge caching for **static/dynamic web content**, not database query results.
 
 > Exam tip (Q46): "cache must **never be stale**" on writes → **ElastiCache with write-through**. "Reduce DB load for a read-heavy app" → **lazy loading** (often + TTL). "Cache for **DynamoDB** with microsecond latency" → **DAX**.
+
+### CloudFront Price Classes
+
+A **price class** controls **which edge locations** CloudFront uses to serve your content, trading off global performance for lower cost. Edge locations are grouped by region, and some regions (e.g. South America, Australia, India) cost more — picking a smaller price class excludes the pricier ones.
+
+| Price Class | Edge locations used | Cost |
+| --- | --- | --- |
+| **Price Class 100** | North America + Europe | Cheapest |
+| **Price Class 200** | NA + Europe + Asia, Middle East, Africa | Medium |
+| **Price Class All** | All locations worldwide (incl. South America, Australia) | Most expensive (best global performance) |
+
+**Key behavior:**
+
+- Users **outside** the selected regions are **still served** — CloudFront routes them to the **nearest included** edge location, so they get higher latency, not an error.
+- You keep all CloudFront features (caching, HTTPS, etc.) — only the **geographic footprint** changes.
+- **When to use Price Class 100:** most users are in North America / Europe and you want to **cut costs**, accepting slightly higher latency for the small percentage of users elsewhere.
+
+> Don't confuse with **Geo-Restriction**: a price class is a **cost/performance** control and never blocks anyone; Geo-Restriction is an **access control** that actually blocks users by country.
 
 ## Questions
 
@@ -4523,6 +4542,155 @@ Adding a static header to every response is a simple, deterministic operation �
 - **A is wrong:** Lambda@Edge at Viewer Response would work technically, but it's significantly more expensive and slower than CloudFront Functions for this simple operation.
 - **B is wrong:** Configuring the origin to add the header works but adds complexity — every origin server or service must be individually configured.
 - **D is wrong:** AWS WAF is not designed to inject custom headers into responses.
+</details>
+
+### Q219: Reducing origin load during traffic spikes through cache optimization
+
+A company serves a global e-commerce website through Amazon CloudFront. The origin is an Application Load Balancer in us-east-1 backed by an Auto Scaling group. During a major product launch, traffic spikes 500% — causing the origin to become overwhelmed. A solutions architect needs to design a solution that reduces the load on the origin during traffic spikes while maintaining fast response times for users. Which strategy MOST effectively reduces origin load during traffic spikes?
+
+- A. Increase the EC2 instance sizes in the Auto Scaling group to handle higher traffic volumes
+- B. Optimize CloudFront cache behaviors — increase TTL for static assets, use versioned filenames for deployables, and ensure cache-control headers are set correctly on the origin to maximize the cache hit ratio
+- C. Deploy the application in multiple AWS regions and use Route 53 latency-based routing to distribute traffic
+- D. Enable CloudFront Real-Time Logs to monitor traffic patterns and manually adjust cache settings during the spike
+
+<details>
+<summary>Show answer</summary>
+
+**Answer: B**
+
+Increasing TTL for static assets, using versioned filenames for deployables (eliminating constant invalidations), and ensuring proper Cache-Control headers on the origin maximizes the cache hit ratio — so CloudFront serves most requests from the edge and the origin load drops during spikes.
+
+- **A is wrong:** Scaling up EC2 instance sizes increases capacity to handle origin load — but it doesn't reduce that load.
+- **C is wrong:** This is horizontal scaling of the origin, not load reduction through caching.
+- **D is wrong:** Real-Time Logs provide observability — they don't reduce origin load.
+</details>
+
+### Q220: Restricting content to specific countries with a custom error page for blocked users
+
+A media company distributes licensed sports broadcast content through Amazon CloudFront. Due to broadcasting rights agreements, the content must be accessible only in the United Kingdom, Ireland, and Australia. Users in all other countries must be blocked. Blocked users should see a custom error page explaining regional restrictions rather than a generic error. Which combination of CloudFront features implements this requirement?
+
+- A. AWS WAF with geo-match rules for UK, Ireland, and Australia — with a custom WAF block response page
+- B. CloudFront Geo-Restriction with an allowlist containing UK, Ireland, and Australia — combined with a CloudFront custom error page configuration returning a user-friendly 403 response
+- C. Lambda@Edge at the Viewer Request trigger to check the CloudFront-Viewer-Country header and return a custom error response for blocked countries
+- D. CloudFront Signed URLs distributed only to users who have verified their location in UK, Ireland, or Australia through the application
+
+<details>
+<summary>Show answer</summary>
+
+**Answer: B**
+
+CloudFront Geo-Restriction with an allowlist of UK, Ireland, and Australia ensures ONLY users in those countries can access the distribution, and a CloudFront custom error page configuration returns a user-friendly 403 explaining the regional restriction.
+
+- **A is wrong:** WAF geo-match rules are costlier and more complex to configure than CloudFront's native Geo-Restriction feature.
+- **C is wrong:** It's an over-engineered solution for a requirement that CloudFront's Geo-Restriction can handle natively.
+- **D is wrong:** Signed URLs control which users can access content based on a signed token — they don't block based on geography.
+</details>
+
+### Q221: Rewriting URLs at the edge with minimal latency and cost
+
+A company uses Amazon CloudFront to deliver a web application. The application currently uses the URL path `/category/Electronics/Laptops`. The marketing team wants to change the URL structure to `/shop/laptops` for SEO purposes. The origin application cannot be modified immediately. The solution must redirect users and search engines from the old URL structure to the new one at the edge, with minimal latency and cost. Which solution best meets these requirements?
+
+- A. Create a Lambda@Edge function at the Origin Request trigger to rewrite the URL before forwarding to the origin
+- B. Create a CloudFront Function at the Viewer Request trigger to rewrite the URL path from the old structure to the new structure
+- C. Configure an Application Load Balancer listener rule to redirect the old URL to the new URL before CloudFront processes the request
+- D. Update the S3 origin to include redirect rules that map old URL paths to new paths using S3 website redirect configuration
+
+<details>
+<summary>Show answer</summary>
+
+**Answer: B**
+
+URL rewriting is a simple string transformation — no external calls, no complex logic, pure text manipulation. A CloudFront Function at the Viewer Request trigger runs at the edge with the lowest latency and cost, perfect for this case.
+
+- **A is wrong:** For a simple URL rewrite with no external dependencies, Lambda@Edge is overkill.
+- **C is wrong:** An ALB listener rule runs in the origin region — not at the edge close to the user. It doesn't meet the "edge" requirement.
+- **D is wrong:** S3 redirects are origin-level, not edge-level.
+</details>
+
+### Q222: Why API responses are never cached despite a 24-hour Default TTL
+
+A company's web application is delivered through Amazon CloudFront. The origin server returns a Cache-Control: no-store header on all API responses. However, the CloudFront distribution's Default TTL is configured to 86,400 seconds. The development team reports that all API responses are never being cached by CloudFront, even though the Default TTL is set to 24 hours. The solutions architect is asked to explain this behavior. What is the correct explanation?
+
+- A. Cache-Control: no-store from the origin instructs CloudFront never to cache the response — the Default TTL only applies when the origin sends NO cache headers, so the origin header takes precedence
+- B. The Default TTL of 86,400 seconds overrides the Cache-Control: no-store header — this behavior indicates a CloudFront configuration error
+- C. The Minimum TTL must be set to 0 for Cache-Control: no-store to take effect — the Default TTL is preventing the header from working
+- D. CloudFront ignores Cache-Control: no-store — a custom Cache Policy must be explicitly configured to honor this header
+
+<details>
+<summary>Show answer</summary>
+
+**Answer: A**
+
+When the origin explicitly sends Cache-Control: no-store, CloudFront honors that instruction and does not cache the response. The Default TTL only applies when the origin sends no cache headers, so the origin's header takes precedence.
+
+- **B is wrong:** The Default TTL does not override Cache-Control: no-store.
+- **C is wrong:** Setting Minimum TTL to 0 is not required for Cache-Control: no-store to work.
+- **D is wrong:** CloudFront does not ignore Cache-Control: no-store.
+</details>
+
+### Q223: Combining CloudFront features to satisfy five access-control requirements (Select THREE)
+
+A company is designing a CloudFront-based content delivery architecture for a premium online education platform. The platform has these requirements:
+
+- Course videos in S3 must not be directly accessible — only through CloudFront
+- Enrolled students must access all course videos and PDFs seamlessly after login
+- Trial users can access two specific preview lessons — links expire after 48 hours
+- Users in sanctioned countries must be blocked
+- The platform must be protected from SQL injection attacks on the enrollment API
+
+Which combination of CloudFront features satisfies ALL five requirements? (Select THREE.)
+
+- A. OAC on the S3 origin + updated S3 bucket policy
+- B. CloudFront Signed Cookies for enrolled students + CloudFront Signed URLs for trial users
+- C. CloudFront Geo-Restriction blocklist + AWS WAF with SQL injection managed rule group
+- D. AWS Shield Advanced for SQL injection protection + CloudFront Signed URLs for all users
+- E. Lambda@Edge at Origin Request to authenticate students + CloudFront Functions for trial user access
+
+<details>
+<summary>Show answer</summary>
+
+**Answer: A, B, C**
+
+- **A** is the textbook solution for requirement 1 — OAC restricts S3 access to the specific CloudFront distribution only.
+- **B** satisfies requirements 2 and 3 by using the right tool for each access pattern: Signed Cookies for enrolled students (multiple files seamlessly) and Signed URLs for trial users (time-limited individual links).
+- **C** satisfies requirements 4 and 5: Geo-Restriction blocklist handles sanctioned-country blocking and AWS WAF handles SQL injection natively.
+
+- **D is wrong:** Shield Advanced has no SQL injection detection or filtering capability.
+- **E is wrong:** Lambda@Edge for trial access is architecturally over-engineered when native CloudFront features are available.
+</details>
+
+### Q224: Optimizing both performance and cost for a global news website (Select THREE)
+
+A solutions architect is designing a CloudFront architecture for a global news website. The website has the following characteristics:
+
+- Breaking news articles change every few minutes
+- Feature articles are updated once a week
+- Hero images and thumbnails never change once published
+- The website serves 85% of users in North America and Europe
+- A/B testing is needed for a new homepage layout — routing requires checking a feature flag stored in DynamoDB
+- URL normalization is needed to remove trailing slashes before cache lookup
+
+Which combination of features should the architect implement to optimize BOTH performance AND cost? (Select THREE.)
+
+- A. Set TTL to 300 seconds for breaking news, 604,800 seconds for feature articles, and 31,536,000 seconds for images — using separate cache behaviors per content type
+- B. Use Price Class 100 to serve content only from North America and Europe edge locations
+- C. Use Lambda@Edge at the Viewer Request trigger for A/B testing that reads from DynamoDB
+- D. Use CloudFront Functions at the Viewer Request trigger for both URL normalization AND DynamoDB-based A/B testing
+- E. Use Price Class All for all edge locations to ensure best performance for the 15% international users
+- F. Set a single TTL of 3,600 seconds for all content types to simplify configuration
+
+<details>
+<summary>Show answer</summary>
+
+**Answer: A, B, C**
+
+- **A** matches each content type's change frequency — a short 300s TTL for breaking news, ~1 week for feature articles, and ~1 year for images that never change. Separate cache behaviors apply the right rule per path, maximizing cache hits and minimizing origin load.
+- **B** Price Class 100 covers North America and Europe, where 85% of users are — serving from the cheaper edge locations lowers cost while keeping performance for the vast majority.
+- **C** A/B testing requires reading a feature flag from DynamoDB, which is a network call. Only Lambda@Edge can make network calls, so it's the correct tool for this routing logic.
+
+- **D is wrong:** CloudFront Functions cannot make network calls, so they cannot read DynamoDB for A/B testing. (URL normalization alone would suit a CloudFront Function, but bundling the DynamoDB lookup into it makes this option invalid.)
+- **E is wrong:** Price Class All serves every edge location, increasing cost just to benefit 15% of users — the opposite of cost optimization.
+- **F is wrong:** A single 3,600s TTL ignores the very different change frequencies — it's too long for breaking news and far too short for images that never change.
 </details>
 
 ## References
