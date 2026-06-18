@@ -4693,6 +4693,262 @@ Which combination of features should the architect implement to optimize BOTH pe
 - **F is wrong:** A single 3,600s TTL ignores the very different change frequencies — it's too long for breaking news and far too short for images that never change.
 </details>
 
+### Q225: Blocking a malicious IP and forcing traffic through the ALB (Select TWO)
+
+A company runs a web application on EC2 instances behind an Application Load Balancer. The security team discovers that a specific IP address 198.51.100.45 is sending thousands of malicious requests per minute directly to the EC2 instances, bypassing the ALB. The EC2 instances are in a public subnet with public IP addresses. The security team wants to immediately block this IP address from reaching the EC2 instances while also preventing direct internet access to EC2 instances in the future — all traffic should flow through the ALB only. Which combination of actions should the solutions architect take? (Select TWO.)
+
+- A. Add a deny rule to the EC2 instances' Security Group blocking inbound traffic from 198.51.100.45
+- B. Add a DENY rule to the Network ACL on the EC2 subnet blocking all inbound traffic from 198.51.100.45
+- C. Move the EC2 instances to a private subnet, remove their public IP addresses, and update the EC2 Security Group to allow inbound traffic only from the ALB Security Group
+- D. Enable AWS Shield Advanced on the EC2 instances to automatically block malicious IP addresses
+- E. Attach an AWS WAF Web ACL to the EC2 instances directly to filter malicious requests
+
+<details>
+<summary>Show answer</summary>
+
+**Answer: B, C**
+
+Network ACLs support explicit DENY rules at the subnet level, so adding a DENY for 198.51.100.45 immediately blocks that IP from reaching the instances (B). Moving the EC2 instances to a private subnet and removing their public IPs eliminates the ability for the internet to reach them directly — all traffic must now flow through the ALB (C).
+
+- **A is wrong:** Security Groups have no DENY rules — they only ALLOW.
+- **D is wrong:** Shield Advanced protects against DDoS volumetric attacks at layers 3 and 4 — it doesn't block specific malicious request IPs at the application level.
+- **E is wrong:** WAF cannot be attached directly to EC2 instances.
+</details>
+
+### Q226: Handling a known flash-sale spike while minimizing cost in normal traffic
+
+A company runs a web application on an Auto Scaling Group of EC2 instances behind an Application Load Balancer. The ASG is configured with a minimum of 2 and a maximum of 10 instances. During a flash sale event, traffic increases dramatically over 5 minutes — faster than the default Auto Scaling cooldown period allows new instances to become healthy and serve traffic. Several users experience timeouts and errors during the scaling event. Which solution BEST addresses the slow scaling response while minimizing cost during normal traffic periods?
+
+- A. Set the ASG minimum capacity to 10 instances permanently to ensure enough capacity is always available
+- B. Configure a scheduled scaling action to increase capacity 30 minutes before the flash sale, combined with a target tracking scaling policy based on ALB request count per target
+- C. Replace the Auto Scaling Group with a fixed fleet of 10 Reserved Instances to guarantee consistent capacity
+- D. Enable EC2 instance hibernation on the ASG instances so they can resume faster during traffic spikes
+
+<details>
+<summary>Show answer</summary>
+
+**Answer: B**
+
+Scheduled scaling pre-warms capacity before the known event, so instances are already healthy when the flash sale starts. Target tracking based on ALB request count per target then automatically scales during the event. This handles the spike while keeping costs low during normal traffic.
+
+- **A is wrong:** Setting minimum to 10 permanently solves the scaling problem but wastes significant compute capacity during normal traffic.
+- **C is wrong:** A fixed fleet of 10 Reserved Instances eliminates Auto Scaling entirely and always pays for peak capacity.
+- **D is wrong:** Hibernated instances in an ASG are terminated, not hibernated — hibernation is not a valid ASG scaling mechanism.
+</details>
+
+### Q227: Improving read performance for a read-heavy RDS MySQL e-commerce app
+
+A company runs a read-heavy e-commerce application with an Amazon RDS MySQL database in a single-AZ deployment. The database is experiencing high CPU utilization and slow query response times — approximately 80% of database queries are read operations. The development team cannot modify the application code significantly. The solutions architect needs to improve read performance with minimal application changes. Which solution MOST effectively addresses the read performance issue?
+
+- A. Upgrade the RDS instance to a larger instance type with more CPU and memory
+- B. Enable RDS Multi-AZ deployment to distribute read traffic across the primary and standby instances
+- C. Create one or more Amazon RDS Read Replicas and update the application's database connection string to point read operations to the Read Replica endpoint
+- D. Migrate the database from MySQL to Amazon DynamoDB to take advantage of its horizontal scaling capabilities
+
+<details>
+<summary>Show answer</summary>
+
+**Answer: C**
+
+RDS Read Replicas are purpose-built for read-heavy workloads. They offload read traffic from the primary using asynchronous replication, directly relieving the high CPU and slow query times, and require only a connection-string change for read operations — minimal application impact.
+
+- **A is wrong:** Scaling up the instance temporarily helps but doesn't architecturally solve the read-heavy problem.
+- **B is wrong:** RDS Multi-AZ standby instances do NOT serve read traffic — they exist solely for automatic failover.
+- **D is wrong:** Migrating from MySQL to DynamoDB is a major architectural change requiring a significant application rewrite.
+</details>
+
+### Q228: Securing premium video for paying subscribers only (Select TWO)
+
+A media company delivers premium video content through Amazon CloudFront from an S3 origin. The company wants to ensure that only paying subscribers can access the video files, that individual video links expire after 24 hours, and that the S3 bucket cannot be accessed directly — bypassing CloudFront. Which combination of CloudFront features implements ALL three requirements? (Select TWO.)
+
+- A. Configure CloudFront Signed URLs with a 24-hour expiry for each video file and distribute them only to authenticated subscribers
+- B. Configure CloudFront Geo-Restriction to limit access to countries where the company has paying subscribers
+- C. Create a CloudFront Origin Access Control (OAC) and update the S3 bucket policy to allow access only from the CloudFront distribution
+- D. Enable AWS WAF on the CloudFront distribution to block unauthenticated requests
+- E. Configure CloudFront to require HTTPS and use AWS Certificate Manager for SSL termination
+
+<details>
+<summary>Show answer</summary>
+
+**Answer: A, C**
+
+Signed URLs are exactly right for individual-file access with time-limited expiry — a 24-hour URL per video grants access only to authenticated subscribers (A). Origin Access Control locks the S3 bucket so ONLY the CloudFront distribution can access it, preventing direct-URL bypass (C).
+
+- **B is wrong:** Geo-Restriction controls access by country — not by subscription status.
+- **D is wrong:** WAF filters traffic based on request patterns, not to enforce subscription-based business logic.
+- **E is wrong:** HTTPS with ACM is a security best practice for encrypting data in transit — it doesn't restrict who can access the content.
+</details>
+
+### Q229: Meeting a 5-minute RPO and 1-minute RTO for RDS PostgreSQL
+
+A financial services company runs a mission-critical application on Amazon RDS for PostgreSQL. The RPO (Recovery Point Objective) is 5 minutes, and the RTO (Recovery Time Objective) is 1 minute. The database currently uses automated backups with a 7-day retention period. During a recent DR test, the team discovered that restoring from an automated backup took 45 minutes — far exceeding the 1-minute RTO. Which solution meets BOTH the RPO and RTO requirements?
+
+- A. Increase the automated backup retention period to 35 days to have more restore points available
+- B. Enable RDS Multi-AZ deployment — in the event of a primary failure, the standby automatically promotes within approximately 60 seconds
+- C. Create an RDS Read Replica in a second Availability Zone and manually promote it during a failure event
+- D. Take manual RDS snapshots every 5 minutes using a Lambda function and restore from the most recent snapshot during failures
+
+<details>
+<summary>Show answer</summary>
+
+**Answer: B**
+
+When the primary fails, RDS Multi-AZ automatically promotes the standby — typically within 60-120 seconds — meeting the 1-minute RTO, while synchronous replication to the standby keeps data loss near zero, satisfying the 5-minute RPO.
+
+- **A is wrong:** Longer backup retention gives more restore points — but restoring from any backup still takes 30-45+ minutes.
+- **C is wrong:** Promoting a Read Replica manually introduces human-intervention latency, failing the 1-minute RTO.
+- **D is wrong:** Manual snapshots every 5 minutes could meet the RPO — but snapshot restoration still takes 30-45+ minutes.
+</details>
+
+### Q230: Addressing Lambda throttling for bursty image processing with SQS
+
+A company processes image uploads from users. When an image is uploaded to S3, a Lambda function is triggered to resize the image and generate thumbnails. During peak hours, thousands of images are uploaded simultaneously. The Lambda function is timing out and the SQS queue depth is growing. The team discovers that Lambda is hitting its concurrency limit and throttling requests. Which solution MOST effectively addresses the Lambda throttling issue while maintaining the event-driven architecture?
+
+- A. Replace Lambda with EC2 instances in an Auto Scaling Group to handle the image processing workload
+- B. Request a Lambda concurrency limit increase through AWS Service Quotas and configure a reserved concurrency limit for the image processing function
+- C. Configure S3 event notifications to write to an SQS queue, and set up Lambda with the SQS queue as an event source — Lambda will automatically scale concurrency to process the backlog, and the queue provides buffering during traffic spikes
+- D. Increase the Lambda function timeout from 3 seconds to 15 minutes to allow more processing time per invocation
+
+<details>
+<summary>Show answer</summary>
+
+**Answer: C**
+
+Using SQS as an event source for Lambda is the correct pattern for high-volume, bursty workloads. The queue buffers the spike of uploads while Lambda scales concurrency to drain the backlog, keeping the event-driven architecture intact.
+
+- **A is wrong:** Replacing Lambda with EC2 loses the serverless benefits.
+- **B is wrong:** A concurrency increase alone doesn't solve the bursty nature of the problem.
+- **D is wrong:** Increasing the timeout from 3 seconds to 15 minutes doesn't solve throttling.
+</details>
+
+### Q231: Choosing an S3 encryption option for company-controlled, auditable, revocable keys
+
+A company stores sensitive customer data in Amazon S3. The security team requires that all data must be encrypted at rest, encryption keys must be managed by the company (not AWS), and all key usage must be auditable. Additionally, if the company chooses to revoke a key, all data encrypted with that key must become immediately inaccessible. Which S3 encryption option meets ALL requirements?
+
+- A. SSE-S3 (Server-Side Encryption with S3-managed keys) — AWS manages encryption automatically
+- B. SSE-KMS (Server-Side Encryption with AWS KMS keys) — using an AWS managed key
+- C. SSE-KMS with a Customer Managed Key (CMK) — the company creates and controls the key in AWS KMS, audits key usage in CloudTrail, and can disable or delete the key to revoke access
+- D. SSE-C (Server-Side Encryption with Customer-Provided Keys) — the company provides the key with each API request
+
+<details>
+<summary>Show answer</summary>
+
+**Answer: C**
+
+SSE-KMS with a Customer Managed Key (CMK) satisfies all requirements. The company creates and fully controls the key in AWS KMS, all key usage is logged in CloudTrail for auditing, and disabling or deleting the key makes all data encrypted with it immediately inaccessible.
+
+- **A is wrong:** With SSE-S3 the company has no control over the keys, cannot audit individual usage, and cannot revoke access.
+- **B is wrong:** SSE-KMS with an AWS managed key provides KMS integration and CloudTrail logging — but the company doesn't fully control the key.
+- **D is wrong:** SSE-C requires the customer to provide the encryption key with EVERY API request.
+</details>
+
+### Q232: Reducing ASG recovery time during AZ failures
+
+A company runs a stateless web application on EC2 instances in an Auto Scaling Group across two Availability Zones. The ALB distributes traffic evenly. During an AZ failure simulation, the ASG successfully launches replacement instances in the surviving AZ — but the application experiences elevated error rates for approximately 8 minutes while new instances initialize and pass health checks. Which solution MOST effectively reduces the recovery time during AZ failures?
+
+- A. Enable EC2 instance termination protection on all ASG instances to prevent them from being terminated during AZ events
+- B. Configure the ASG with lifecycle hooks to delay health check registration until the application has fully initialized, combined with pre-warming by maintaining warm pool instances
+- C. Switch from an Application Load Balancer to a Network Load Balancer for faster health check detection
+- D. Enable RDS Multi-AZ to ensure database availability during EC2 recovery
+
+<details>
+<summary>Show answer</summary>
+
+**Answer: B**
+
+ASG Warm Pools maintain a pool of pre-initialized, stopped instances that can launch significantly faster than starting fresh instances, and lifecycle hooks ensure an instance only registers as healthy once the application has fully initialized — directly cutting the initialization-driven recovery delay.
+
+- **A is wrong:** Termination protection would actually prevent the ASG from managing instance lifecycle properly.
+- **C is wrong:** The bottleneck is application initialization time — not health check detection speed.
+- **D is wrong:** RDS Multi-AZ has no effect on how quickly EC2 application instances initialize and pass health checks.
+</details>
+
+### Q233: Reducing leaderboard latency for a read-heavy gaming app
+
+A gaming company's leaderboard application reads player rankings from an Amazon RDS MySQL database. As the game grows, the leaderboard page experiences response times exceeding 3 seconds because the ranking queries are computationally expensive and run against millions of rows. The rankings update every 60 seconds. The team needs to reduce leaderboard response time to under 100 milliseconds. Which solution MOST effectively meets the latency requirement?
+
+- A. Create an RDS Read Replica and direct all leaderboard queries to the replica
+- B. Implement Amazon ElastiCache for Redis — cache the computed leaderboard results with a 60-second TTL so the expensive ranking query runs once per minute and all subsequent requests are served from cache in microseconds
+- C. Upgrade the RDS instance to a memory-optimized instance type to improve query execution speed
+- D. Enable RDS Performance Insights to identify and optimize the slow ranking queries
+
+<details>
+<summary>Show answer</summary>
+
+**Answer: B**
+
+ElastiCache for Redis is purpose-built for this exact use case. With the cache-aside pattern and a 60-second TTL, the expensive ranking query runs only once per minute and all other requests are served from cache in microseconds — easily meeting the sub-100 ms target for read-heavy, periodically updated data.
+
+- **A is wrong:** A Read Replica helps reduce load on the primary but still executes the expensive ranking query against millions of rows.
+- **C is wrong:** Upgrading to a memory-optimized instance improves query execution speed — but complex ranking queries on millions of rows will still take seconds on any single RDS instance size.
+- **D is wrong:** Performance Insights identifies slow queries and their causes — it's a diagnostic tool, not a performance solution.
+</details>
+
+### Q234: Exposing a single microservice to customer VPCs with overlapping CIDRs
+
+A company runs a SaaS platform and needs to expose a single microservice to multiple enterprise customers. Each customer has their own VPC in their own AWS account and their CIDR ranges overlap — some customers use 10.0.0.0/16, some use 172.16.0.0/16, and others use 192.168.0.0/16. The company needs to expose ONLY this specific microservice — not their entire VPC — to customers privately without traversing the internet. Which solution correctly handles overlapping CIDRs while exposing only the specific microservice?
+
+- A. Create VPC Peering connections between the SaaS provider VPC and each customer VPC
+- B. Deploy the microservice behind a Network Load Balancer and create an AWS PrivateLink Endpoint Service — customers create Interface VPC Endpoints in their own VPCs to connect to the service
+- C. Deploy AWS Transit Gateway and attach all customer VPCs — use route tables to expose only the microservice subnet
+- D. Assign a public IP address to the microservice and use HTTPS for secure communication between customers and the service
+
+<details>
+<summary>Show answer</summary>
+
+**Answer: B**
+
+AWS PrivateLink is the only option that handles overlapping CIDRs AND exposes only a specific service. The microservice sits behind a Network Load Balancer fronted by an Endpoint Service; each customer connects via an Interface VPC Endpoint, so no VPC routing (and therefore no CIDR coordination) is required, and only that one service is exposed — never the whole VPC.
+
+- **A is wrong:** Customers have overlapping ranges (10.0.0.0/16, etc.), so peering connections would be impossible.
+- **C is wrong:** Transit Gateway also requires non-overlapping CIDRs for routing to work correctly.
+- **D is wrong:** Assigning a public IP and using HTTPS means traffic traverses the public internet — violating the private connectivity requirement.
+</details>
+
+### Q235: Securing an RDS MySQL database tier — no internet, app-tier only, encrypted in transit (Select TWO)
+
+A solutions architect is designing the database tier for a multi-tier application in a VPC. The application uses Amazon RDS for MySQL. The security team requires that the database must not be accessible from the internet, must only accept connections from the application tier EC2 instances, and all connections to the database must be encrypted in transit. Which combination of configurations meets ALL three security requirements? (Select TWO.)
+
+- A. Place the RDS instance in a private subnet with no route to the Internet Gateway, and configure the RDS Security Group to allow inbound port 3306 only from the application-tier Security Group
+- B. Place the RDS instance in a public subnet and use a strong password policy to prevent unauthorized access
+- C. Enable RDS encryption at rest using AWS KMS to secure data stored in the database
+- D. Enable the require_secure_transport parameter in the RDS parameter group and configure the application to connect using SSL/TLS
+- E. Deploy the RDS instance in a Multi-AZ configuration to automatically encrypt replication traffic between primary and standby
+
+<details>
+<summary>Show answer</summary>
+
+**Answer: A, D**
+
+Placing RDS in a private subnet with no route to the Internet Gateway handles both network-layer and instance-layer controls in one answer — it blocks internet access and the Security Group rule restricts inbound 3306 to only the application-tier Security Group (A). Enabling the require_secure_transport parameter forces all database connections to use SSL/TLS, meeting the encryption-in-transit requirement (D).
+
+- **B is wrong:** Public subnet placement provides internet accessibility regardless of Security Group rules.
+- **C is wrong:** Encryption at rest (KMS) protects stored data on disk — it has no effect on encryption in transit.
+- **E is wrong:** Multi-AZ replication between primary and standby is encrypted by AWS internally — it doesn't address client connection encryption.
+</details>
+
+### Q236: Preventing future accidental deletions in S3 (Select TWO)
+
+A company stores critical business documents in Amazon S3. A developer accidentally deletes an important file, and the company needs to recover it. The S3 bucket does not have versioning enabled, and the file was deleted 3 days ago. The company wants to prevent this from happening again. The file cannot be recovered. Which combination of S3 features should be enabled to prevent future accidental deletions and enable recovery? (Select TWO.)
+
+- A. Enable S3 Versioning on the bucket — all future object versions are preserved and deleted objects can be recovered by removing the delete marker
+- B. Enable S3 Cross-Region Replication to automatically copy all objects to a bucket in another region
+- C. Enable MFA Delete on the bucket — requires multi-factor authentication to permanently delete object versions or disable versioning
+- D. Enable S3 Intelligent-Tiering to automatically move objects to cheaper storage classes and protect against deletion
+- E. Configure an S3 Lifecycle policy to transition objects to Glacier after 30 days to prevent accidental deletion
+
+<details>
+<summary>Show answer</summary>
+
+**Answer: A, C**
+
+With S3 Versioning enabled, deleted objects only get a delete marker — the object isn't permanently gone and can be recovered by removing the marker (A). MFA Delete adds a second factor of authentication required to permanently delete object versions or suspend versioning, preventing accidental or malicious permanent deletion (C).
+
+- **B is wrong:** Cross-Region Replication copies objects to another region — providing geographic redundancy, not deletion protection.
+- **D is wrong:** Intelligent-Tiering automatically moves objects between storage tiers based on access patterns — it doesn't protect against deletion.
+- **E is wrong:** Lifecycle policies transition objects to Glacier for cost savings — they don't prevent deletion.
+</details>
+
 ## References
 
 - [AWS Solutions Architect Associate - Official Exam Guide](https://aws.amazon.com/certification/certified-solutions-architect-associate/)
