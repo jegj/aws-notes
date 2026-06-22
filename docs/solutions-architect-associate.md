@@ -5144,6 +5144,157 @@ An Egress-Only Internet Gateway is purpose-built for IPv6 — it is stateful and
 - **D is wrong:** RFC 4193 Unique Local Addresses are not internet-routable, so the instances could not reach the internet to download updates at all.
 </details>
 
+### Q246: Remediating a public S3 bucket and preventing future exposure (Select TWO)
+
+A company stores confidential documents in Amazon S3. An internal audit found that an S3 bucket containing financial reports is publicly accessible. The security team needs to immediately remediate the exposure AND implement a permanent control preventing any future S3 bucket from becoming public. Existing authorized application access must not be disrupted. Which combination of actions meets these requirements? (Select TWO.)
+
+- A. Enable S3 Block Public Access at the account level to block all public access for every bucket in the account
+- B. Delete and recreate each S3 bucket with public access disabled in each bucket's settings
+- C. Add a bucket policy on the exposed bucket that explicitly denies s3:GetObject where aws:PrincipalArn is null
+- D. Enable S3 Block Public Access at the individual bucket level for only the financial reports bucket
+- E. Use AWS Trusted Advisor to identify publicly accessible buckets and generate a weekly report
+
+<details>
+<summary>Show answer</summary>
+
+**Answer: A, C**
+
+- **A:** Account-level Block Public Access overrides all bucket ACLs and policies that grant public access — it covers all existing and future buckets automatically, providing the permanent control against any future bucket becoming public.
+- **C:** An explicit DENY policy on the exposed bucket provides immediate protection at the resource layer while the account-level Block Public Access takes effect. Denying `s3:GetObject` where `aws:PrincipalArn` is null blocks anonymous/public requests without disrupting authorized application principals.
+
+- **B is wrong:** Deleting buckets causes data loss and downtime. Modifying access controls on existing buckets achieves the same result without disruption.
+- **D is wrong:** Applying Block Public Access to only one bucket fails the requirement of preventing ANY future bucket from becoming public.
+- **E is wrong:** Trusted Advisor is a monitoring tool — it identifies issues but doesn't remediate or prevent them. This is reactive, not preventive.
+</details>
+
+### Q247: Preventing member accounts from disabling CloudTrail across an Organization
+
+A company has multiple AWS accounts managed through AWS Organizations. The security team wants to prevent all member accounts from disabling AWS CloudTrail, regardless of what permissions individual account administrators have. The solution must apply across all existing and future member accounts with the least operational overhead. Which solution meets these requirements?
+
+- A. Create an IAM policy in each member account that denies cloudtrail:StopLogging and attach it to all IAM users and roles
+- B. Create a Service Control Policy (SCP) that denies cloudtrail:StopLogging and cloudtrail:DeleteTrail and attach it to the root of the AWS Organization
+- C. Enable AWS Config in each member account with a rule that detects when CloudTrail is disabled and triggers automatic remediation via Lambda
+- D. Create a permission boundary in each member account that denies CloudTrail modification actions and apply it to all IAM roles
+
+<details>
+<summary>Show answer</summary>
+
+**Answer: B**
+
+An SCP that denies `cloudtrail:StopLogging` and `cloudtrail:DeleteTrail` attached to the Organization root applies organization-wide — including future accounts — and overrides even account administrator permissions (SCPs cap the maximum permissions of an account). A single one-time setup gives the least operational overhead.
+
+- **A is wrong:** IAM policies must be maintained in each account individually, and account administrators can modify or delete them — significant ongoing operational effort, and not enforceable against admins.
+- **C is wrong:** AWS Config is a detective control — it detects violations after they occur. CloudTrail could be disabled for minutes before remediation runs; prevention is required, not detection.
+- **D is wrong:** Permission boundaries only restrict IAM principals, not the root user, and administrators can create new roles without the boundary, bypassing the control.
+</details>
+
+### Q248: Securing a three-tier app with security group chaining and blocking a malicious IP range (Select TWO)
+
+A company deploys a three-tier web application in a VPC. The architecture consists of an Application Load Balancer in public subnets, EC2 application servers in private subnets, and an Amazon RDS MySQL database in isolated private subnets. The security team requires that the database must only accept connections from the application servers, and the application servers must only accept connections from the ALB. A specific malicious IP range 192.0.2.0/24 must be blocked from accessing the ALB entirely. Which combination of configurations meets all three requirements? (Select TWO.)
+
+- A. Configure Security Groups using reference chaining: ALB-SG allows 443 from internet; App-SG allows 8080 from ALB-SG only; RDS-SG allows 3306 from App-SG only
+- B. Configure a Network ACL on the public subnet with a DENY rule for 192.0.2.0/24 at a rule number lower than any ALLOW rules
+- C. Configure a Security Group DENY rule on the ALB Security Group to block 192.0.2.0/24
+- D. Configure Security Groups with CIDR-based rules using subnet CIDRs as sources
+- E. Create a WAF Web ACL with an IP match rule to block 192.0.2.0/24 and attach it to the ALB
+
+<details>
+<summary>Show answer</summary>
+
+**Answer: A, B**
+
+- **A:** Security Group reference chaining controls each tier precisely — each tier trusts the upstream tier only, regardless of IP address. This is the AWS-recommended multi-tier security pattern (ALB-SG → App-SG → RDS-SG).
+- **B:** Security Groups cannot DENY — only NACLs support explicit DENY rules. A NACL DENY at a lower rule number ensures the malicious IP is blocked before any ALLOW rule is evaluated.
+
+- **C is wrong:** Security Groups support ALLOW rules only — DENY does not exist in Security Groups. To block specific IPs you must use NACLs.
+- **D is wrong:** Subnet CIDR rules allow any resource in that subnet to connect — not just the specific tier. Security Group referencing is more precise and secure.
+- **E is wrong:** WAF can block IPs but doesn't address the Security Group chaining requirement. The question asks for the combination meeting all three requirements.
+</details>
+
+### Q249: Storing rotating RDS credentials for an ECS app with minimal code changes
+
+A company runs a containerized application on Amazon ECS that needs to connect to an Amazon RDS PostgreSQL database. Currently, database credentials are stored in environment variables in the ECS task definition. A security audit flags this as a critical vulnerability. The company needs a solution that stores credentials securely, supports automatic credential rotation every 30 days, audits every credential retrieval, and requires the least amount of application code changes. Which solution meets ALL requirements?
+
+- A. Store the database password in AWS Systems Manager Parameter Store as a SecureString and reference it in the ECS task definition
+- B. Store credentials in AWS Secrets Manager with automatic rotation enabled — reference the secret ARN in the ECS task definition — attach an IAM task role with retrieval permission
+- C. Store credentials in an encrypted S3 object — configure the application to download the credentials file at startup
+- D. Store credentials in AWS KMS as encrypted key material and call the KMS Decrypt API at runtime
+
+<details>
+<summary>Show answer</summary>
+
+**Answer: B**
+
+Secrets Manager provides native RDS rotation, CloudTrail audits every retrieval, and ECS injects secrets as environment variables directly from a referenced secret ARN — meeting all requirements with zero application code changes.
+
+- **A is wrong:** Parameter Store SecureString does NOT natively support automatic credential rotation for RDS. Rotation requires custom Lambda functions — more operational overhead.
+- **C is wrong:** Downloading from S3 at startup requires application code changes, and S3 has no native secret rotation. This violates the "least code changes" requirement.
+- **D is wrong:** KMS stores encryption KEYS, not secrets like database passwords. This describes an incorrect use of the KMS service entirely.
+</details>
+
+### Q250: Redshift encryption when key material must never reside on AWS hardware
+
+A company migrates its data warehouse to Amazon Redshift. Compliance requirements state that all data must be encrypted at rest using encryption keys that the company controls. The company must be able to immediately revoke access to all Redshift data by revoking the encryption key. The company's security policy also requires that the key material must never exist on AWS hardware — it must be generated and stored in the company's own Hardware Security Module (HSM). Which solution meets ALL compliance requirements?
+
+- A. Enable Redshift encryption using an AWS managed key (aws/redshift)
+- B. Enable Redshift encryption using a Customer Managed Key (CMK) in AWS KMS with automatic rotation
+- C. Enable Redshift encryption using AWS CloudHSM — configure Redshift to use the CloudHSM cluster for key management
+- D. Configure Redshift with AWS KMS and import the company's own key material from their on-premises HSM
+
+<details>
+<summary>Show answer</summary>
+
+**Answer: C**
+
+CloudHSM provides dedicated, customer-controlled HSM hardware. The key material never leaves the HSM and is inaccessible to AWS — and wiping the cluster immediately makes the Redshift data inaccessible, satisfying the immediate-revocation and "never on AWS hardware" requirements.
+
+- **A is wrong:** AWS managed keys are controlled by AWS, not the company — the company cannot directly disable or revoke an AWS managed key immediately.
+- **B is wrong:** CMKs in AWS KMS are stored on AWS-managed HSM hardware. The requirement states key material must NEVER exist on AWS hardware — so KMS CMKs fail this.
+- **D is wrong:** Imported key material into KMS ultimately resides in KMS's HSM fleet for use. Once imported, it lives on AWS hardware — violating the requirement.
+</details>
+
+### Q251: Cross-account S3 writes from EC2 without long-term credentials
+
+A company has two AWS accounts — Account A (Production) and Account B (Security). The security team runs a centralized logging system. EC2 instances in Account A need to write application logs to an S3 bucket in Account B. The solution must follow the principle of least privilege and must not require storing long-term credentials on the EC2 instances. Which solution meets these requirements?
+
+- A. Create an IAM user in Account B with S3 write permissions — store its access key and secret key on the EC2 instances in Account A
+- B. Create an IAM role in Account A with S3 write permissions to the Account B bucket — attach it as an instance profile — add a bucket policy in Account B allowing the Account A role
+- C. Create a VPC peering connection between Account A and Account B so EC2 instances can access the S3 bucket
+- D. Create an S3 Gateway Endpoint in Account A's VPC with a policy granting write access to the Account B bucket
+
+<details>
+<summary>Show answer</summary>
+
+**Answer: B**
+
+EC2 instance profiles use automatically rotated temporary credentials — no long-term secrets on the instances. Cross-account access requires BOTH the IAM role in Account A (granting the permission) and the bucket policy in Account B (allowing that role), so both sides must explicitly permit the access.
+
+- **A is wrong:** Storing IAM access keys on EC2 instances IS long-term credential storage — exactly what the question prohibits. Compromised instances expose credentials permanently.
+- **C is wrong:** VPC peering enables network connectivity — it grants zero S3 permissions. IAM roles and bucket policies are still required regardless of network setup.
+- **D is wrong:** S3 Gateway Endpoints provide private routing — they don't grant cross-account permissions. The Account B bucket policy must also explicitly allow Account A's role.
+</details>
+
+### Q252: Decoupling synchronous services so no orders are lost during spikes
+
+A company runs an order processing system where the Order Service directly calls the Payment Service synchronously via API. During flash sales, the Payment Service becomes overwhelmed and begins returning errors, causing the Order Service to fail and preventing customers from completing purchases. The solutions architect must redesign the architecture so that order placement remains available even when the Payment Service is temporarily unable to process payments, and no orders are lost. Which solution best meets these requirements?
+
+- A. Add Auto Scaling to the Payment Service with target tracking on CPU utilization
+- B. Deploy the Payment Service behind an ALB with multiple instances across two Availability Zones
+- C. Introduce an SQS Standard Queue between the Order Service and Payment Service — Order Service writes to queue and returns success — Payment Service consumes asynchronously
+- D. Increase the timeout on the Order Service's synchronous HTTP call from 5 seconds to 30 seconds
+
+<details>
+<summary>Show answer</summary>
+
+**Answer: C**
+
+An SQS Standard Queue decouples the services. The Order Service never waits for the Payment Service — it queues the order and returns success immediately, so order placement stays available even when payments are temporarily down. Messages persist up to 14 days, so no orders are lost.
+
+- **A is wrong:** Auto Scaling takes minutes to launch new instances. During that gap, the Payment Service is still overwhelmed and orders can still fail — the synchronous coupling remains.
+- **B is wrong:** Multi-AZ improves availability against failures, but during a flash sale ALL instances can be simultaneously overwhelmed. The synchronous coupling problem remains.
+- **D is wrong:** Longer timeouts make the problem worse — during a flash sale, thousands of connections hold open for 30 seconds each, exhausting connection pools and accelerating cascading failure.
+</details>
+
 ## References
 
 - [AWS Solutions Architect Associate - Official Exam Guide](https://aws.amazon.com/certification/certified-solutions-architect-associate/)
