@@ -4949,6 +4949,201 @@ With S3 Versioning enabled, deleted objects only get a delete marker — the obj
 - **E is wrong:** Lifecycle policies transition objects to Glacier for cost savings — they don't prevent deletion.
 </details>
 
+### Q237: Improving CloudFront cache hit ratio with tracking query strings
+
+A global e-commerce company uses Amazon CloudFront to deliver product images stored in S3. The engineering team notices that the CloudFront cache hit ratio is only 42%. Investigation reveals that the application generates product image URLs with different query string parameters for tracking purposes — for example, `/product.jpg?ref=homepage&session=abc123`. Each unique combination of parameters creates a separate cache entry even though all requests return the same image. Which CloudFront configuration change MOST effectively improves the cache hit ratio?
+
+- A. Increase the CloudFront Maximum TTL from 86,400 seconds to 604,800 seconds to keep images cached longer
+- B. Configure the CloudFront cache policy to not forward query strings to the origin and exclude query strings from the cache key — so all requests for the same image share one cache entry regardless of query string parameters
+- C. Create a Lambda@Edge function at the Origin Request trigger to strip query strings before the request reaches S3
+- D. Enable CloudFront compression to reduce the size of cached objects and improve cache efficiency
+
+<details>
+<summary>Show answer</summary>
+
+**Answer: B**
+
+Excluding query strings from the cache key means identical images are no longer stored as hundreds of separate objects — all tracking variations of the same image collapse into one cache entry, so the cache hit ratio jumps dramatically.
+
+- **A is wrong:** Increasing TTL helps content stay cached longer, but it doesn't fix the fragmentation problem — each unique query string still creates its own entry.
+- **C is wrong:** Lambda@Edge can strip query strings, but the native cache policy already handles this without the added cost and complexity of running a function on every request — always use the native CloudFront configuration first.
+- **D is wrong:** Compression reduces object size and improves transfer speed, but does nothing about the duplicate cache entries caused by query strings.
+</details>
+
+### Q238: Why Lambda is not the right choice for a long-running, high-memory batch workload
+
+A company has a data transformation workload that runs for exactly 8 minutes when triggered. The workload is triggered 500 times per month and requires 3 GB of memory. The team is evaluating whether to run this on AWS Lambda or EC2. What is the primary reason AWS Lambda is NOT the right compute choice for this workload?
+
+- A. Lambda does not support 3 GB of memory allocation
+- B. Lambda has a maximum execution timeout of 15 minutes — but 8-minute functions cost significantly more than EC2 for predictable, high-memory workloads running 500 times per month
+- C. Lambda functions cannot be triggered on a schedule — only event-driven triggers are supported
+- D. Lambda maximum execution timeout is 15 minutes which is sufficient, but Lambda does not support workloads that require more than 512 MB of memory
+
+<details>
+<summary>Show answer</summary>
+
+**Answer: B**
+
+8 minutes is within Lambda's 15-minute limit, so the workload *can* run — but that's not the point. Lambda charges by GB-seconds: 3 GB × 8 minutes (480 seconds) = 1,440 GB-seconds per invocation × 500 invocations/month = 720,000 GB-seconds. For a predictable, long-running, high-memory workload, that consistently costs significantly more than running the same job on EC2.
+
+- **A is wrong:** Lambda supports up to 10 GB of memory — 3 GB is well within limits.
+- **C is wrong:** Lambda absolutely supports scheduled triggers through Amazon EventBridge (CloudWatch Events).
+- **D is wrong:** Lambda supports up to 10 GB memory allocation — the 512 MB limit was the original Lambda limit, not the current one.
+</details>
+
+### Q239: Reducing RDS costs for a business-hours-only development environment
+
+A startup runs a development environment with an Amazon RDS MySQL database that is used only during business hours — Monday through Friday, 9 AM to 6 PM. The RDS instance runs continuously even when no developers are working, resulting in unnecessary costs during off-hours and weekends. Which solution MOST cost-effectively reduces RDS costs for this development environment?
+
+- A. Migrate from RDS to Amazon DynamoDB to take advantage of its pay-per-request pricing model
+- B. Use Amazon RDS Proxy to pool connections and reduce the RDS instance size needed
+- C. Use AWS Lambda to automatically stop the RDS instance outside business hours and start it before business hours using scheduled EventBridge rules
+- D. Enable RDS Auto Scaling to automatically scale down to zero instances when not in use
+
+<details>
+<summary>Show answer</summary>
+
+**Answer: C**
+
+Automating RDS start/stop with Lambda and EventBridge is the most cost-effective solution — the instance only runs during business hours and incurs no instance charges while stopped, directly eliminating the off-hours and weekend waste.
+
+- **A is wrong:** DynamoDB is a NoSQL database — migrating from RDS MySQL to DynamoDB requires significant application redesign.
+- **B is wrong:** RDS Proxy reduces connection overhead and can allow a smaller instance size, but the instance still runs 24/7.
+- **D is wrong:** RDS does not support "Auto Scaling to zero."
+</details>
+
+### Q240: Automatic cross-Region failover with Route 53 and a sub-5-minute RTO
+
+A company runs a critical application across two AWS regions — us-east-1 (primary) and eu-west-1 (disaster recovery). The application in eu-west-1 is kept warm with minimal capacity. The company requires that if the primary region becomes completely unavailable, traffic should automatically fail over to eu-west-1 with a Recovery Time Objective (RTO) of under 5 minutes. Which Route 53 routing policy and health check configuration enables this automatic failover?
+
+- A. Configure Route 53 weighted routing with 90% weight to us-east-1 and 10% to eu-west-1 — if us-east-1 fails, Route 53 redistributes the 90% traffic automatically
+- B. Configure Route 53 failover routing with us-east-1 as the PRIMARY record and eu-west-1 as the SECONDARY record — attach a health check to the primary that monitors the application endpoint — if the health check fails, Route 53 automatically routes all traffic to eu-west-1
+- C. Configure Route 53 latency-based routing — us-east-1 will always serve US users and eu-west-1 will always serve European users, providing natural regional isolation
+- D. Configure Route 53 geolocation routing to direct US users to us-east-1 and EU users to eu-west-1, with a default record pointing to us-east-1 as fallback
+
+<details>
+<summary>Show answer</summary>
+
+**Answer: B**
+
+Failover routing with health checks is exactly the right solution — designate us-east-1 as the PRIMARY record and eu-west-1 as the SECONDARY, attach a health check to the primary endpoint, and Route 53 automatically routes all traffic to the DR region the moment the health check fails (active-passive failover).
+
+- **A is wrong:** Weighted routing distributes traffic proportionally — it does not provide automatic failover.
+- **C is wrong:** Latency-based routing directs users to the region with lowest latency — not the same as failover.
+- **D is wrong:** Geolocation routing sends users based on geographic origin — it doesn't provide automatic failover based on health.
+</details>
+
+### Q241: Choosing a DynamoDB capacity mode for predictable daily peak traffic
+
+A mobile gaming application uses Amazon DynamoDB to store player session data. The application performs millions of reads per second during peak hours with predictable traffic patterns that spike from 6 PM to 10 PM daily. Outside of peak hours, traffic drops by 90%. The team wants to ensure high performance during peaks while minimizing costs during off-peak periods. Which DynamoDB capacity mode best meets these requirements?
+
+- A. Provisioned capacity mode with a fixed throughput set to handle peak traffic — ensures consistent performance at all times
+- B. On-Demand capacity mode — DynamoDB automatically scales to handle any request volume without capacity planning
+- C. Provisioned capacity mode with DynamoDB Auto Scaling — automatically adjusts throughput capacity up during peak hours and down during off-peak hours based on target utilization metrics
+- D. Provisioned capacity mode with DynamoDB global tables to distribute load across multiple regions during peak hours
+
+<details>
+<summary>Show answer</summary>
+
+**Answer: C**
+
+Provisioned capacity with DynamoDB Auto Scaling is the optimal choice — the traffic pattern is predictable, so Auto Scaling raises throughput during the 6–10 PM peak and lowers it the rest of the day based on target utilization, delivering high performance during peaks while minimizing off-peak cost.
+
+- **A is wrong:** Fixed provisioned capacity at peak levels means you pay for peak throughput 24 hours a day.
+- **B is wrong:** On-Demand mode handles any request volume automatically — but it costs more per request than Provisioned mode for this predictable, steady pattern.
+- **D is wrong:** Global tables significantly increase cost — they solve multi-Region replication, not cost-efficient scaling for a single-Region daily peak.
+</details>
+
+### Q242: Designing single-AZ fault tolerance across three Availability Zones (Select THREE)
+
+A company is designing a highly available VPC architecture across three Availability Zones for a production workload. The architecture includes an Application Load Balancer, EC2 instances in private subnets, and RDS databases. The solutions architect must ensure the architecture can survive the complete failure of any single Availability Zone with no manual intervention. Which combination of design decisions ensures single-AZ fault tolerance? (Select THREE.)
+
+- A. Deploy one NAT Gateway per Availability Zone in each AZ's public subnet, and configure each AZ's private subnet route table to use its local NAT Gateway
+- B. Deploy a single NAT Gateway in the most reliable AZ and configure all private subnets to use it for cost efficiency
+- C. Configure the Application Load Balancer with subnets in all three Availability Zones so it can route traffic to healthy instances in surviving AZs
+- D. Deploy the EC2 instances in an Auto Scaling Group configured to distribute instances across all three Availability Zones with a minimum of one instance per AZ
+- E. Enable RDS Multi-AZ deployment so the database automatically fails over to a standby replica in another AZ if the primary becomes unavailable
+
+<details>
+<summary>Show answer</summary>
+
+**Answer: A, C, E**
+
+- **A:** If AZ-a fails, AZ-b and AZ-c continue using their own NAT Gateways unaffected — one NAT Gateway per AZ removes the single point of failure for outbound traffic.
+- **C:** An ALB configured with subnets in all three AZs sends traffic only to healthy registered instances, so it keeps serving from surviving AZs.
+- **E:** RDS Multi-AZ provides automatic database failover when the primary AZ becomes unavailable.
+
+- **B is wrong:** A single NAT Gateway in "the most reliable AZ" is itself a single point of failure — if that AZ fails, every private subnet loses outbound access.
+- **D is wrong:** Distributing ASG instances across AZs is correct in principle, but specifying "minimum of one instance per AZ" only guarantees a total of 3 instances — it doesn't by itself ensure enough surviving capacity to absorb a full AZ's load, so it's not the intended fault-tolerance choice here.
+</details>
+
+### Q243: Choosing the right VPC endpoint type for S3, Systems Manager, and SQS (Select TWO)
+
+A company's EC2 instances in private subnets need to access multiple AWS services privately without routing traffic through the internet. The instances need to access Amazon S3 for data storage, AWS Systems Manager for patch management, and Amazon SQS for message queuing. The solution must minimize cost while maintaining private connectivity to all three. Which combination of VPC Endpoints should the solutions architect implement? (Select TWO.)
+
+- A. Create a Gateway VPC Endpoint for Amazon S3 — it is free and routes S3 traffic over the AWS private network via a route table entry
+- B. Create an Interface VPC Endpoint for Amazon S3 — it provides private IP access and supports on-premises connectivity through Direct Connect
+- C. Create Interface VPC Endpoints for AWS Systems Manager (SSM) and Amazon SQS — these services require Interface Endpoints using AWS PrivateLink
+- D. Create a Gateway VPC Endpoint for AWS Systems Manager — SSM supports Gateway Endpoints as a free alternative to Interface Endpoints
+- E. Create a Gateway VPC Endpoint for Amazon SQS — SQS supports the free Gateway Endpoint type for private access
+
+<details>
+<summary>Show answer</summary>
+
+**Answer: A, C**
+
+- **A:** A Gateway VPC Endpoint for S3 satisfies the requirement at zero additional cost — correct and optimal. Gateway endpoints route traffic over the AWS private network via a route table entry and are free.
+- **C:** SSM and SQS only support Interface Endpoints (AWS PrivateLink) — this is the only option for private connectivity to those two services.
+
+- **B is wrong:** While Interface Endpoints for S3 do work, they COST money — hourly fees plus data processing charges. The free Gateway Endpoint is the better fit.
+- **D is wrong:** AWS Systems Manager does NOT support Gateway Endpoints — only Interface Endpoints.
+- **E is wrong:** Amazon SQS does NOT support Gateway Endpoints — only Interface Endpoints. Gateway Endpoints exist only for S3 and DynamoDB.
+</details>
+
+### Q244: Reducing networking costs across NAT, endpoints, and cross-AZ transfer (Select THREE)
+
+A company wants to optimize the networking costs in their AWS environment. They have identified the following in their current architecture: EC2 instances in private subnets sending large volumes of data to Amazon S3 and DynamoDB through NAT Gateways, multiple AWS accounts each running separate NAT Gateways and VPC Endpoints, and EC2 instances in AZ-a communicating with RDS instances in AZ-b generating cross-AZ data transfer charges. Which combination of changes MOST effectively reduces networking costs? (Select THREE.)
+
+- A. Create Gateway VPC Endpoints for S3 and DynamoDB to eliminate NAT Gateway data processing charges for traffic to those services
+- B. Create Interface VPC Endpoints for S3 and DynamoDB to reduce NAT Gateway hourly costs
+- C. Use AWS RAM to implement a Shared VPC across multiple accounts, consolidating NAT Gateways and VPC Endpoints into a single shared infrastructure
+- D. Deploy EC2 instances and RDS instances in the same Availability Zone to eliminate cross-AZ data transfer charges where the application architecture allows
+- E. Enable VPC Flow Logs to identify and eliminate unnecessary traffic patterns that are contributing to data transfer costs
+
+<details>
+<summary>Show answer</summary>
+
+**Answer: A, C, D**
+
+- **A:** Gateway Endpoints for S3 and DynamoDB eliminate NAT Gateway data processing charges — traffic to those services routes over the AWS private network for free instead of through the NAT Gateway.
+- **C:** A Shared VPC via AWS RAM consolidates NAT Gateways and VPC Endpoints across multiple accounts, removing duplicated per-account infrastructure cost.
+- **D:** Cross-AZ data transfer is charged by AWS — placing EC2 and RDS in the same AZ eliminates those charges where the architecture allows.
+
+- **B is wrong:** Interface Endpoints for S3 and DynamoDB COST money — they add hourly and data processing fees. Gateway Endpoints are the free choice for these two services.
+- **E is wrong:** Flow Logs are a monitoring tool — they can help you identify WHERE costs are coming from, but they don't themselves reduce networking costs.
+</details>
+
+### Q245: Outbound-only internet access for IPv6-enabled instances
+
+A solutions architect is designing a VPC for a company that runs IPv6-enabled workloads. The company's EC2 instances use IPv6 addresses and need to access the internet to download software updates. However, the security team requires that these instances must NOT be reachable from the internet via their IPv6 addresses — only outbound-initiated connections should be permitted. Which solution correctly implements this requirement?
+
+- A. Attach a NAT Gateway to the VPC and add a route for ::/0 pointing to the NAT Gateway in the private subnet route table
+- B. Create an Egress-Only Internet Gateway and add a route for ::/0 pointing to it in the subnet route table
+- C. Configure a Network ACL to block all inbound IPv6 traffic while allowing outbound IPv6 traffic
+- D. Assign only private IPv6 addresses to the EC2 instances using RFC 4193 Unique Local Addresses to prevent internet reachability
+
+<details>
+<summary>Show answer</summary>
+
+**Answer: B**
+
+An Egress-Only Internet Gateway is purpose-built for IPv6 — it is stateful and allows instances to initiate outbound connections to the internet (e.g., to download updates) while blocking any internet host from initiating an inbound connection. Adding a `::/0` route to it in the subnet route table implements exactly the required behavior.
+
+- **A is wrong:** NAT Gateways only work with IPv4 — they do not support IPv6 traffic, so a `::/0` route to a NAT Gateway is invalid.
+- **C is wrong:** Network ACLs are stateless and managing inbound/outbound IPv6 rules by hand is error-prone; the instances would still need an internet-routable path (a regular internet gateway), leaving them publicly reachable. This is not the purpose-built solution.
+- **D is wrong:** RFC 4193 Unique Local Addresses are not internet-routable, so the instances could not reach the internet to download updates at all.
+</details>
+
 ## References
 
 - [AWS Solutions Architect Associate - Official Exam Guide](https://aws.amazon.com/certification/certified-solutions-architect-associate/)
