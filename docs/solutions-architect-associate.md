@@ -5295,6 +5295,808 @@ An SQS Standard Queue decouples the services. The Order Service never waits for 
 - **D is wrong:** Longer timeouts make the problem worse — during a flash sale, thousands of connections hold open for 30 seconds each, exhausting connection pools and accelerating cascading failure.
 </details>
 
+### Q253: Orchestrating a multi-step video transcoding workflow with parallel steps, dependencies, and retries
+
+A media company processes video files uploaded to Amazon S3. When a video is uploaded, a transcoding workflow must execute to generate three thumbnail images, create multiple video quality renditions (1080p, 720p, 480p), and update a DynamoDB table with processing metadata. Each step has dependencies — thumbnails and DynamoDB update can happen in parallel, but quality renditions must complete before the DynamoDB status is marked "complete." If any step fails, the company needs to retry up to 3 times with exponential backoff. Which solution best implements this workflow?
+
+- A. Create a Lambda function triggered by S3 that sequentially calls other Lambda functions for each processing step using nested synchronous invocations.
+- B. Create an SQS queue for each processing step and use Lambda to process messages from each queue sequentially.
+- C. Use AWS Step Functions Standard Workflow — Parallel state for thumbnails/renditions, DynamoDB update as subsequent step, Retry with MaxAttempts 3 and exponential backoff.
+- D. Use SNS to fan out the S3 event to three SQS queues — thumbnails, renditions, DynamoDB — each queue triggers a Lambda.
+
+<details>
+<summary>Show answer
+
+**Answer: C**
+
+Step Functions Standard Workflow natively models parallel execution (Parallel state), sequential dependencies, and built-in Retry with BackoffRate — exactly what this complex multi-step workflow with dependencies needs. The state machine enforces ordering (renditions complete before DynamoDB "complete") declaratively, no orchestration code.
+
+- **A is wrong:** Nested synchronous invocations hit the 15-minute Lambda timeout, and there's no built-in retry/backoff — it must all be coded manually.
+- **B is wrong:** Sequential SQS queues can't model the parallel execution requirement. Dependency management (DynamoDB only after renditions) requires custom orchestration logic.
+- **D is wrong:** SNS fan-out starts all three steps simultaneously — there's no way to enforce "DynamoDB update only after renditions complete." Workflow dependency management is not possible with this pattern.
+</details>
+
+### Q254: Lowest-cost DR strategy for a 1-hour RPO and 4-hour RTO
+
+A company hosts a customer-facing e-commerce application on AWS in us-east-1. The business requirements specify an RPO of 1 hour and an RTO of 4 hours. The application tier runs on EC2 instances with application code deployed via Auto Scaling launch templates. The data tier uses Amazon RDS for PostgreSQL with daily automated backups. A disaster recovery strategy must be implemented at the lowest possible cost that still meets the RPO and RTO requirements. Which DR strategy best meets these requirements?
+
+- A. Active-Active: Deploy identical infrastructure in us-west-2 with Route 53 weighted routing distributing traffic between both regions.
+- B. Warm Standby: Scaled-down but fully functional environment in us-west-2 with an RDS read replica — scale up during failover.
+- C. Backup and Restore: Copy RDS backups to us-west-2 cross-region, store AMIs and CloudFormation templates — restore from scratch during disaster.
+- D. Pilot Light: Run only RDS as a read replica in us-west-2 — keep EC2 as CloudFormation templates — promote replica and launch fleet during failover.
+
+<details>
+<summary>Show answer
+
+**Answer: C**
+
+With a 4-hour RTO, no pre-warmed infrastructure is needed. Cross-region RDS backup copy supports a 1-hour RPO, and CloudFormation restores the infrastructure within 4 hours. It is the lowest-cost option that still meets both targets.
+
+- **A is wrong:** Active-Active provides near-zero RPO/RTO — far exceeding requirements. It doubles infrastructure costs permanently — massive over-engineering for a 4-hour RTO.
+- **B is wrong:** Warm Standby achieves ~15–30 min RTO — far exceeds requirements. A permanently running standby environment costs more than backup-and-restore for a 4-hour RTO.
+- **D is wrong:** Pilot Light achieves ~1–2 hour RTO and meets requirements, but a running read replica costs more than cross-region backup copies. Backup-and-restore is cheaper for a 4-hour RTO.
+</details>
+
+### Q255: Diagnosing why AZ-b lost outbound internet when AZ-a failed (root cause + fix)
+
+A company's web application uses an Application Load Balancer, an Auto Scaling Group of EC2 instances across two Availability Zones (AZ-a and AZ-b), and a single NAT Gateway deployed in AZ-a's public subnet. During a simulated AZ failure test, the team discovers that EC2 instances launched in AZ-b cannot download software packages from the internet during initialization, even though AZ-a is unaffected by the test. What is the root cause and the correct fix?
+
+- A. Root cause: ASG health check type is EC2 not ELB. Fix: Change health check to ELB to properly detect and replace unhealthy instances.
+- B. Root cause: AZ-b's private subnet routes 0.0.0.0/0 to the NAT Gateway in AZ-a. When AZ-a fails, NAT becomes unreachable. Fix: Deploy a second NAT Gateway in AZ-b and update AZ-b's route table.
+- C. Root cause: The Internet Gateway is AZ-specific and becomes unavailable during AZ failures. Fix: Deploy an Internet Gateway in each Availability Zone.
+- D. Root cause: EC2 instances in AZ-b use the wrong AMI without package manager configuration. Fix: Update the launch template with the correct AMI.
+
+<details>
+<summary>Show answer
+
+**Answer: B**
+
+NAT Gateways are AZ-specific. A single NAT in AZ-a creates a cross-AZ dependency — when AZ-a fails, AZ-b's route table still points 0.0.0.0/0 at the dead NAT. Best practice: one NAT Gateway per AZ, each private subnet routing to its local NAT Gateway.
+
+- **A is wrong:** Health check type affects how the ASG replaces unhealthy instances — it has zero effect on whether instances can access the internet for package downloads.
+- **C is wrong:** Internet Gateways are VPC-level resources managed by AWS — they are highly available and NOT AZ-specific. You cannot and need not deploy multiple IGWs per VPC.
+- **D is wrong:** If AZ-a instances can download packages using the same launch template, the issue is clearly network routing (NAT Gateway), not the AMI or package manager configuration.
+</details>
+
+### Q256: Preventing cascading failures between synchronous microservices with a circuit breaker
+
+A company is modernizing a monolithic application into microservices. Service A needs to call Service B and Service C synchronously. The team wants to ensure that if Service B becomes slow or unavailable, it doesn't cause Service A to fail or consume all its threads waiting for responses. The solution should automatically stop sending requests to failing services and allow them to recover. Which design pattern and AWS service combination implements this requirement?
+
+- A. Use Amazon SQS queues between all services with long polling — if a service is down, messages queue until it recovers.
+- B. Implement a circuit breaker pattern using AWS App Mesh with Envoy proxy — configure outlier detection to automatically eject unhealthy service instances.
+- C. Deploy services behind an ALB with connection draining enabled — unhealthy targets are automatically removed from the target group.
+- D. Implement retry logic with exponential backoff in Service A's code for all downstream service calls.
+
+<details>
+<summary>Show answer
+
+**Answer: B**
+
+AWS App Mesh with Envoy implements circuit breaking at the service mesh layer with no application code changes. Outlier detection ejects slow/failing instances, so requests fail fast instead of timing out and exhausting Service A's threads — and the ejected instance is given time to recover.
+
+- **A is wrong:** SQS makes the interaction asynchronous — fundamentally changing the request-response model. Circuit breaking for synchronous calls is a different pattern than message queueing.
+- **C is wrong:** ALB health checks detect complete failures but not SLOW services. A service responding in 30 seconds instead of 100ms still passes health checks — thread exhaustion continues.
+- **D is wrong:** Retrying requests to an already-overloaded service adds MORE load and worsens the situation. Circuit breaking stops ALL requests during failure — the opposite of retrying.
+</details>
+
+### Q257: Protecting S3 data against accidental deletion and a malicious insider (Select TWO)
+
+A company stores critical business data in Amazon S3. A developer accidentally deleted important files by running a script with incorrect parameters. The files were permanently deleted because S3 Versioning was not enabled. The company wants to prevent this from happening again and ensure that any accidentally deleted files can be recovered. The solution must also protect against an insider threat scenario where a malicious administrator tries to permanently delete all object versions. Which combination of S3 features addresses both requirements? (Select TWO.)
+
+- A. Enable S3 Versioning — future deletions create a delete marker, preserving the original object for recovery.
+- B. Enable S3 Cross-Region Replication to automatically copy all objects to a bucket in another region.
+- C. Enable MFA Delete on the bucket — permanently deleting object versions or disabling versioning requires MFA authentication.
+- D. Configure an S3 Lifecycle policy to transition objects to S3 Glacier after 30 days.
+- E. Enable S3 Intelligent-Tiering to automatically protect objects from deletion based on access patterns.
+
+<details>
+<summary>Show answer
+
+**Answer: A, C**
+
+Versioning is the foundational protection — deletions create a delete marker and the original data is preserved under previous version IDs, so it can be fully recovered. MFA Delete requires MFA credentials to permanently delete versions or disable versioning, so even an administrator with full S3 permissions cannot permanently delete object versions without the MFA device.
+
+- **B is wrong:** CRR provides geographic redundancy, but delete markers can also be replicated. CRR doesn't prevent an administrator from deleting objects from both source and destination.
+- **D is wrong:** Lifecycle policies transition objects between storage classes or delete them — they are cost-optimization tools, not deletion-protection mechanisms.
+- **E is wrong:** S3 Intelligent-Tiering automatically moves objects between cost tiers based on access frequency. It provides zero protection against object deletion.
+</details>
+
+### Q258: Scaling a read-heavy leaderboard to sub-100ms response time (Select TWO)
+
+A gaming company's leaderboard application reads player rankings from Amazon RDS MySQL. The database experiences 95% read traffic and 5% write traffic. During peak hours, the database CPU reaches 90% utilization and query response times exceed 3 seconds, causing poor user experience. Queries are complex ranking queries that run against millions of rows. The team needs to reduce leaderboard query response time to under 100 milliseconds. Which combination of solutions achieves the performance target? (Select TWO.)
+
+- A. Create one or more RDS Read Replicas and redirect all read traffic to them — distribute complex queries across replicas.
+- B. Implement Amazon ElastiCache for Redis — cache the computed leaderboard with a 60-second TTL, subsequent requests served from cache in microseconds.
+- C. Enable RDS Performance Insights to identify and automatically optimize slow queries.
+- D. Upgrade the RDS instance to a memory-optimized instance type with significantly more RAM.
+- E. Create a DynamoDB table and migrate all player ranking data to it for faster reads.
+
+<details>
+<summary>Show answer
+
+**Answer: A, B**
+
+Read Replicas offload the 95% read traffic from the primary, dramatically reducing CPU, and multiple replicas can distribute the complex ranking queries independently. ElastiCache for Redis caches the computed leaderboard so subsequent requests are served in sub-millisecond latency — orders of magnitude faster than any database query, with a 60-second TTL balancing freshness against performance.
+
+- **C is wrong:** Performance Insights is a monitoring and diagnostics tool — it identifies problems but does NOT automatically optimize queries. Human action is required after reviewing insights.
+- **D is wrong:** Vertical scaling helps but complex ranking queries on millions of rows still run in seconds on even the largest instance. Caching is orders of magnitude more effective.
+- **E is wrong:** Migrating to DynamoDB requires complete schema redesign and application rewrite. DynamoDB is optimized for key-value access — not complex SQL ranking queries.
+</details>
+
+### Q259: Shared high-throughput storage for many EC2 instances rendering large video files
+
+A media company processes large video files (10GB–100GB each) that must be accessible with low latency by multiple EC2 instances simultaneously for rendering workloads. The files are read by many instances at the same time (shared read access) and must persist independently of any single EC2 instance lifecycle. The storage must support high throughput (multiple GB/s aggregate) and the company wants to minimize administrative overhead. Which storage solution best meets these requirements?
+
+- A. Amazon EBS gp3 volumes with provisioned IOPS — attach the same EBS volume to multiple EC2 instances using EBS Multi-Attach.
+- B. Amazon EFS with Throughput Mode set to Provisioned — mount the file system on all EC2 instances that need simultaneous access.
+- C. Amazon S3 with Transfer Acceleration — each EC2 instance reads files directly from S3.
+- D. Instance Store volumes on each EC2 instance with a synchronization script to keep files consistent.
+
+<details>
+<summary>Show answer
+
+**Answer: B**
+
+EFS provides a fully managed shared NFS file system mountable by many EC2 instances across multiple AZs simultaneously. Provisioned throughput delivers multiple GB/s, and AWS manages all the infrastructure.
+
+- **A is wrong:** EBS Multi-Attach only works for io1/io2 volumes, is limited to 16 instances in the SAME AZ, and requires cluster-aware file systems. Not suitable for general shared file access.
+- **C is wrong:** S3 is object storage — not a POSIX file system. Applications using file-system semantics (paths, locking, directories) cannot use S3 directly without application code changes.
+- **D is wrong:** Instance Store is ephemeral — data is lost when an instance stops or terminates. This directly violates the "must persist independently of any EC2 instance lifecycle" requirement.
+</details>
+
+### Q260: Eliminating DynamoDB throttling under unpredictable, sub-second traffic spikes
+
+A mobile application stores session data in Amazon DynamoDB. The application has highly unpredictable traffic patterns — during major global events, traffic can spike from 1,000 reads/second to 500,000 reads/second within seconds, then drop back within minutes. The team has experienced throttling errors during spikes with Provisioned capacity mode. The solution must eliminate throttling without requiring manual capacity management or over-provisioning. Which solution eliminates throttling for this workload?
+
+- A. Switch DynamoDB to On-Demand capacity mode — DynamoDB automatically scales throughput to handle any request rate.
+- B. Use Provisioned capacity mode with DynamoDB Auto Scaling — set target utilization to 70% with configured min/max capacity units.
+- C. Add a DynamoDB Accelerator (DAX) cluster — cache reads to reduce actual DynamoDB load.
+- D. Increase Provisioned RCU to 600,000 to cover the maximum possible spike and eliminate throttling.
+
+<details>
+<summary>Show answer
+
+**Answer: A**
+
+On-Demand capacity mode handles any request rate instantly with no throttling, no configuration, and no capacity planning. You pay per request — no over-provisioning cost.
+
+- **B is wrong:** Auto Scaling reacts over minutes by monitoring utilization trends. A 500x spike happening within seconds causes throttling for the minutes Auto Scaling takes to respond.
+- **C is wrong:** DAX caches repeated reads of the same items. Session data is unique per user — cache misses for new sessions still hit DynamoDB directly. Throttling during spikes of new users persists.
+- **D is wrong:** Provisioning 600,000 RCUs for a table that normally uses 1,000 RCUs means paying for 600x capacity 24/7. This is extreme over-provisioning — the question explicitly rules this out.
+</details>
+
+### Q261: Fanning IoT telemetry to multiple independent real-time consumers with replay
+
+A company collects IoT telemetry data from 100,000 sensors. Each sensor sends 10 data points per second, resulting in 1,000,000 data records per second. The data must be processed by THREE different systems simultaneously: a real-time anomaly detection system, a near-real-time dashboard that refreshes every 60 seconds, and a long-term analytics data lake in S3 for historical analysis. Any system needs to reprocess historical data from the last 7 days. Which AWS service best meets all requirements?
+
+- A. Amazon SQS Standard Queue — fan out to three queues using SNS and process each independently.
+- B. Amazon Kinesis Data Streams with 1,000 shards — three consumer applications read simultaneously using Enhanced Fan-Out; configure 7-day data retention.
+- C. Amazon MSK (Managed Streaming for Apache Kafka) with three separate consumer groups.
+- D. AWS Lambda triggered by SNS — three Lambda functions process IoT data simultaneously.
+
+<details>
+<summary>Show answer
+
+**Answer: B**
+
+Kinesis supports multiple independent consumers via Enhanced Fan-Out (each gets 2MB/s per shard), 7-day retention for reprocessing, and 1GB/s+ ingestion capacity with 1,000 shards.
+
+- **A is wrong:** SQS messages are consumed — once read by one consumer, they're unavailable to others. Even with SNS fan-out, true replay/reprocessing from 7 days of history is not supported by SQS.
+- **C is wrong:** MSK could technically meet requirements but has significantly higher operational complexity than Kinesis. Kinesis is the purpose-built AWS managed streaming answer.
+- **D is wrong:** SNS+Lambda provides no message retention or replay capability. If a Lambda fails, the event is lost. 7-day historical reprocessing cannot be implemented through SNS invocations.
+</details>
+
+### Q262: Greatest cost reduction for a fixed, predictable 24/7 EC2 workload
+
+A company runs a production web application that serves consistent traffic 24/7/365. The application runs on 10 EC2 m5.xlarge instances in an Auto Scaling Group with a minimum of 10 instances always running. Over the past 12 months, the instances have run at an average of 75% CPU utilization continuously. The company wants to significantly reduce EC2 costs for this workload without changing instance type, reducing instance count, or modifying the application. Which purchasing option provides the greatest cost reduction for this workload?
+
+- A. Convert all On-Demand instances to Spot Instances — Spot provides up to 90% savings.
+- B. Purchase Compute Savings Plans with a 1-year, no-upfront commitment for the baseline 10 instances.
+- C. Purchase Standard Reserved Instances for all 10 m5.xlarge instances with a 3-year, all-upfront payment.
+- D. Purchase Convertible Reserved Instances for a 1-year term with partial-upfront payment.
+
+<details>
+<summary>Show answer
+
+**Answer: C**
+
+The workload is perfectly predictable: fixed instance type, fixed count, 24/7 running. Standard RIs with 3-year all-upfront provide the maximum discount (~72–75%) for committed stable workloads.
+
+- **A is wrong:** Production web applications serving 24/7 traffic CANNOT use Spot — instances can be reclaimed with 2 minutes' notice. Random terminations create unacceptable availability risk.
+- **B is wrong:** Compute Savings Plans provide up to ~66% savings with flexibility to change instance types. For a completely fixed, stable workload with no expected changes, Standard RIs offer comparable or higher savings.
+- **D is wrong:** Convertible RIs offer exchange flexibility (~54% discount) but the instance type won't change. Paying for flexibility that won't be used results in lower savings than Standard RIs.
+</details>
+
+### Q263: Multi-stage S3 lifecycle for logs with a known access pattern and 7-year retention
+
+A company stores application log files in Amazon S3. Logs are accessed frequently during the first 30 days (for debugging and analysis), occasionally between 30 and 90 days (for compliance review), and almost never accessed after 90 days but must be retained for 7 years for regulatory compliance. The company currently stores all logs in S3 Standard, which is generating significant storage costs. Which S3 storage configuration minimizes cost while meeting all access requirements?
+
+- A. Store all logs in S3 Intelligent-Tiering — it automatically moves objects between tiers based on access patterns.
+- B. S3 Lifecycle policy: Standard for 30 days → Standard-IA after 30 days → Glacier Flexible Retrieval after 90 days → expire after 7 years.
+- C. Store all logs in S3 Glacier Deep Archive immediately — cheapest storage but 12-hour retrieval time.
+- D. Lifecycle policy: Transition to S3 One Zone-IA after 30 days, delete after 90 days.
+
+<details>
+<summary>Show answer
+
+**Answer: B**
+
+This precisely matches each tier to actual access patterns: Standard for active debugging, Standard-IA for occasional compliance access (immediate retrieval), Glacier for long-term retention at minimal cost, and expiration enforcing the 7-year retention.
+
+- **A is wrong:** Intelligent-Tiering works best for unknown patterns. Since this company KNOWS the lifecycle, explicit Lifecycle policies are more cost-effective — Intelligent-Tiering charges a per-object monitoring fee.
+- **C is wrong:** 12-hour retrieval time for ALL access — including active debugging in the first 30 days — is completely impractical. Engineers need logs quickly during incident response.
+- **D is wrong:** S3 One Zone-IA stores data in a single AZ — if the AZ fails, data is permanently lost. For 7-year compliance retention, that durability risk is unacceptable. Also, deleting after 90 days violates the 7-year requirement.
+</details>
+
+### Q264: Eliminating NAT Gateway data-processing charges driven by S3 traffic
+
+A company has EC2 instances in private subnets that frequently access Amazon S3 to read and write large datasets (averaging 10TB per day). Monthly bills show that NAT Gateway data processing charges account for $15,000 of their $18,000 monthly networking bill. The solutions architect determines that S3 traffic is the primary driver of NAT Gateway costs. What is the most cost-effective solution to eliminate these NAT Gateway charges for S3 traffic?
+
+- A. Replace the NAT Gateway with a NAT Instance to eliminate the managed service premium.
+- B. Move EC2 instances to public subnets so they can access S3 directly through the Internet Gateway.
+- C. Create a Gateway VPC Endpoint for Amazon S3 — update private subnet route tables to route S3 traffic through the free endpoint instead of the NAT Gateway.
+- D. Create an Interface VPC Endpoint for Amazon S3 — use private DNS to route S3 traffic privately.
+
+<details>
+<summary>Show answer
+
+**Answer: C**
+
+Gateway VPC Endpoints for S3 are completely FREE — no hourly charge, no data processing fee. S3 traffic routes over AWS's private network, so the $15,000 monthly NAT charge is eliminated entirely.
+
+- **A is wrong:** S3 traffic still flows through a NAT Instance — data processing costs are replaced by EC2 data transfer charges at similar rates. The core cost is not eliminated, just shifted.
+- **B is wrong:** Moving application servers to public subnets creates major security exposure. The Gateway Endpoint achieves the same cost elimination without compromising security architecture.
+- **D is wrong:** Interface Endpoints for S3 cost ~$0.01/hour per AZ plus $0.01/GB data processing. For 10TB/day, that's ~$3,000+/month. When a FREE Gateway Endpoint achieves the same result, an Interface Endpoint is wrong for cost optimization.
+</details>
+
+### Q265: Consolidating duplicated per-account networking infrastructure across three accounts
+
+A company has three AWS accounts: Production, Development, and Staging. Each account has its own VPC with its own NAT Gateway, Internet Gateway, and multiple Interface VPC Endpoints for AWS services (SSM, Secrets Manager, CloudWatch). The finance team reports that networking costs are duplicated across all three accounts. The company wants to reduce duplicated networking infrastructure while maintaining logical separation between environments. Which solution MOST effectively reduces duplicated networking costs?
+
+- A. Merge all three environments into a single AWS account with VPC peering between their separate VPCs.
+- B. Use AWS Resource Access Manager (RAM) to create a Shared VPC — central networking account owns the VPC infrastructure — share specific subnets with Production, Development, and Staging via RAM.
+- C. Deploy AWS Transit Gateway to connect the three account VPCs and route all internet traffic through one central NAT Gateway.
+- D. Purchase Reserved Instances for the NAT Gateways across all three accounts to reduce the hourly rate.
+
+<details>
+<summary>Show answer
+
+**Answer: B**
+
+Shared VPC consolidates NAT Gateways, Interface Endpoints, and IGW into ONE set. Instead of 3x infrastructure, you pay for 1x — potentially 67% reduction in networking infrastructure costs, while RAM subnet sharing keeps each environment logically separated.
+
+- **A is wrong:** Merging environments into one account eliminates the logical environment isolation that multi-account architecture provides. This is a security and governance regression.
+- **C is wrong:** Transit Gateway centralizes NAT Gateway but has its own per-attachment and per-GB charges. It also doesn't consolidate Interface VPC Endpoints — each account still needs its own endpoints.
+- **D is wrong:** NAT Gateways are a managed service — there are NO Reserved Instance or committed pricing options for NAT Gateways. This pricing model simply does not exist for NAT Gateways.
+</details>
+
+### Q266: Encrypting in one region and decrypting the same ciphertext in another with KMS
+
+A company runs an active-active application across us-east-1 and eu-west-1. Both regions encrypt data using AWS KMS. The application needs to encrypt data in one region and decrypt the SAME ciphertext in the other region without re-encrypting or making cross-region API calls during decryption. Which KMS solution meets this requirement?
+
+- A. Create a single Customer Managed Key (CMK) in us-east-1 and grant cross-region IAM permissions to the eu-west-1 application.
+- B. Create a KMS Multi-Region Key in us-east-1 and replicate it as a Multi-Region Replica Key in eu-west-1 — both share the same key ID and key material.
+- C. Use AWS KMS encryption context to tag the ciphertext in us-east-1, then call DescribeKey cross-region to validate before decrypting locally.
+- D. Use AWS Secrets Manager instead of KMS, since secrets can be replicated automatically across regions.
+
+<details>
+<summary>Show answer
+
+**Answer: B**
+
+KMS Multi-Region Keys are designed exactly for this. A primary key and its replica in another region share the same key ID and key material, so ciphertext encrypted in one region can be decrypted in the replica region with no cross-region call during decryption.
+
+- **A is wrong:** Standard KMS keys are region-bound. A key in us-east-1 cannot be used to decrypt in eu-west-1 even with IAM permissions — the key material never leaves the region.
+- **C is wrong:** Encryption context is used for additional authenticated data, not for enabling cross-region decryption. This does not solve the fundamental region-bound key limitation.
+- **D is wrong:** Secrets Manager replication addresses secret values, not the envelope-encryption key material for KMS-encrypted data. This doesn't solve the stated encryption/decryption requirement.
+</details>
+
+### Q267: Restricting private EC2 to exactly one S3 bucket with traffic that never leaves AWS (Select TWO)
+
+An online retail company wants production EC2 instances in a private subnet to access only ONE specific S3 bucket (with sensitive company data) and explicitly block access to any other S3 buckets, even public ones, while traffic must never leave the AWS network. What combination should a solutions architect provide? (Select TWO.)
+
+- A. Create a Gateway VPC Endpoint for S3 and attach an endpoint policy that allows access only to the specific S3 bucket ARN.
+- B. Add a bucket policy on company-data that allows access only from the specific VPC Endpoint ID using the aws:sourceVpce condition.
+- C. Configure a NAT Gateway with a route to 0.0.0.0/0 and rely on Security Groups to restrict S3 IP ranges.
+- D. Use AWS PrivateLink with an Interface Endpoint for S3 instead of a Gateway Endpoint.
+- E. Enable S3 Transfer Acceleration on the bucket to ensure traffic stays within AWS edge locations.
+
+<details>
+<summary>Show answer
+
+**Answer: A, B**
+
+The Gateway Endpoint keeps traffic on the AWS network, and its endpoint policy restricts which S3 resources are reachable through it — limiting access to just the approved bucket. Combining the endpoint policy with a bucket-side `aws:sourceVpce` condition creates defense in depth — the bucket itself will only accept requests arriving through that specific endpoint.
+
+- **C is wrong:** Routing through a NAT Gateway sends traffic over the public internet — violating the "must never leave the AWS network" requirement. Security Groups also cannot filter by S3 IP ranges reliably.
+- **D is wrong:** An Interface Endpoint works but is not free and is not the optimal solution — Gateway Endpoints are free for S3.
+- **E is wrong:** Transfer Acceleration optimizes upload speed via CloudFront edge locations — it doesn't restrict bucket access or keep traffic within the private network for this use case.
+</details>
+
+### Q268: Eliminating a hardcoded RDS password entirely with temporary, IAM-tied credentials
+
+A company runs an application on Amazon ECS that connects to an Amazon RDS PostgreSQL database. The database credentials were hardcoded in the application source code. The security team requires that database authentication use temporary, automatically-rotating credentials tied to IAM identities — with NO master password stored or used by the application at all. Which solution meets these requirements?
+
+- A. Store the RDS master password in AWS Secrets Manager with 24-hour automatic rotation.
+- B. Enable IAM Database Authentication on the RDS instance — grant the ECS task IAM role rds-db:connect permission — the application generates a short-lived auth token via the IAM role to connect.
+- C. Use AWS Systems Manager Session Manager to proxy database connections through a bastion host with IAM-based access control.
+- D. Configure RDS Proxy with a static IAM role and disable password authentication at the PostgreSQL engine level entirely.
+
+<details>
+<summary>Show answer
+
+**Answer: B**
+
+IAM Database Authentication eliminates passwords entirely. The application uses AWS SigV4-signed authentication tokens (valid 15 minutes) generated from the IAM role — no password is ever stored or used.
+
+- **A is wrong:** This still uses a master password — just rotated automatically. The requirement explicitly states NO master password should be used by the application at all.
+- **C is wrong:** Session Manager is for shell port-forwarding access to instances, not a database authentication mechanism. This doesn't replace database credential authentication.
+- **D is wrong:** RDS Proxy can use IAM authentication, but you cannot fully disable password authentication at the engine level for all use cases — IAM Database Authentication on the RDS instance is the direct, correct mechanism.
+</details>
+
+### Q269: Single org-wide security dashboard with automated response and least operational overhead
+
+A company manages 50 AWS accounts under AWS Organizations. The security team wants a single dashboard showing aggregated security findings — threat detections, compliance violations, and misconfigurations — from across ALL accounts, with automated response capability when critical findings appear. Which solution meets this requirement with the LEAST operational overhead?
+
+- A. Deploy Amazon GuardDuty independently in each of the 50 accounts and have each security team review their own account's findings separately.
+- B. Enable AWS Security Hub as the delegated administrator with GuardDuty as a finding source across the organization — aggregate findings centrally — use EventBridge rules to trigger automated remediation Lambda functions for critical findings.
+- C. Export CloudTrail logs from all 50 accounts to a central S3 bucket and build a custom Athena dashboard to query for security events.
+- D. Use AWS Config aggregators in each account to track configuration changes and manually review for security issues weekly.
+
+<details>
+<summary>Show answer
+
+**Answer: B**
+
+Security Hub natively aggregates findings (including GuardDuty) across all organization accounts into one dashboard. EventBridge integration enables automated response — fully managed, minimal overhead.
+
+- **A is wrong:** Independent reviews per account provide no centralized dashboard and require massive manual coordination across 50 teams — the opposite of least operational overhead.
+- **C is wrong:** This requires significant custom development to replicate functionality Security Hub provides natively, and doesn't include automated detection or response — high operational overhead.
+- **D is wrong:** Config aggregators track configuration compliance but don't provide threat detection (GuardDuty's role) or automated security finding aggregation that Security Hub provides.
+</details>
+
+### Q270: Automatically discovering and classifying PII/PHI stored in S3
+
+A healthcare company stores millions of documents in Amazon S3, including patient records that may contain personally identifiable information (PII) and protected health information (PHI). The compliance team needs to automatically discover which S3 objects contain sensitive data so they can apply appropriate access controls, without manually reviewing each file. Which AWS service should the organization use?
+
+- A. Amazon Macie — automatically scans S3 buckets using machine learning to discover and classify sensitive data such as PII and PHI.
+- B. AWS Config with a custom rule that scans object metadata for sensitive data patterns.
+- C. Amazon Inspector configured to scan S3 bucket contents for vulnerability patterns.
+- D. AWS Trusted Advisor with the security checks category enabled to flag buckets containing PII.
+
+<details>
+<summary>Show answer
+
+**Answer: A**
+
+Macie is purpose-built for exactly this use case — it uses ML and pattern matching to automatically discover, classify, and report on sensitive data like PII and PHI stored in S3.
+
+- **B is wrong:** AWS Config evaluates resource CONFIGURATIONS (like whether encryption is enabled), not the CONTENT of files. It cannot scan file contents for PII patterns.
+- **C is wrong:** Amazon Inspector scans EC2 instances, container images, and Lambda functions for software vulnerabilities — it does not scan S3 object content for sensitive data.
+- **D is wrong:** Trusted Advisor checks for best-practice configuration issues like public bucket access — it does not perform content-level data classification or PII discovery.
+</details>
+
+### Q271: Giving mobile guests read-only and signed-in users write access without a backend
+
+A mobile gaming company wants unauthenticated users to be able to read leaderboard data from DynamoDB at a demo level. Once a user creates an account and logs in via email/password, they should receive different, broader permissions to write their own scores. The solution must not require a backend server to issue AWS credentials. Which solution should a solutions architect select to meet these requirements?
+
+- A. Create IAM users for every player and embed long-term access keys in the mobile app for both guest and authenticated access.
+- B. Use Amazon Cognito Identity Pools with unauthenticated access enabled for guests (read-only IAM role) and Cognito User Pools for authentication — authenticated users assume a different IAM role with write permissions.
+- C. Deploy a Lambda function behind API Gateway that issues temporary STS credentials to any mobile client that calls it, with no authentication check.
+- D. Use AWS IAM Identity Center with SAML federation configured for the mobile application's guest and authenticated user flows.
+
+<details>
+<summary>Show answer
+
+**Answer: B**
+
+Cognito Identity Pools natively support both unauthenticated (guest) and authenticated identities, each mapped to different IAM roles with different permissions — issuing temporary credentials directly to the app with no backend server needed.
+
+- **A is wrong:** Embedding long-term IAM credentials in a mobile app is a severe security risk — credentials can be extracted from the app binary. This also doesn't scale to millions of users.
+- **C is wrong:** Issuing temporary STS credentials to any client with no authentication check is a security hole — and building/maintaining this is custom backend infrastructure, directly contradicting "must not require a backend server."
+- **D is wrong:** IAM Identity Center is designed for workforce SSO into AWS accounts and applications — not for consumer-facing mobile app authentication with millions of end users.
+</details>
+
+### Q272: Automatically blocking a credential-stuffing source IP on API Gateway while sparing legitimate traffic
+
+A company's public API, exposed through Amazon API Gateway, is experiencing a credential-stuffing attack — a single malicious IP address is sending over 10,000 login requests per 5 minutes. The security team needs to automatically block any IP address exceeding 2,000 requests within a 5-minute window, while allowing legitimate traffic to continue uninterrupted. Which solution meets this requirement with least operational overhead?
+
+- A. Configure API Gateway usage plans with a fixed throttle limit of 2,000 requests per 5 minutes applied to all API consumers.
+- B. Create an AWS WAF rate-based rule with a rate limit of 2,000 requests per 5-minute window, scoped to the source IP address, and attach the Web ACL to the API Gateway.
+- C. Enable AWS Shield Advanced on the API Gateway to automatically detect and mitigate the credential-stuffing pattern.
+- D. Implement a Lambda authorizer on API Gateway that tracks request counts per IP in DynamoDB and rejects requests exceeding the threshold.
+
+<details>
+<summary>Show answer
+
+**Answer: B**
+
+WAF rate-based rules track request rates PER SOURCE IP and automatically block only IPs that exceed the threshold — precisely targeting the attacking IP while leaving legitimate traffic unaffected.
+
+- **A is wrong:** A global throttle limit affects ALL users equally, including legitimate ones, rather than specifically targeting the abusive IP address. This would degrade service for everyone.
+- **C is wrong:** Shield Advanced protects against DDoS (volumetric/protocol) attacks. Credential stuffing from a single IP isn't a DDoS pattern — WAF rate-based rules are the correct purpose-built tool.
+- **D is wrong:** This is technically possible but requires building, testing, and maintaining significant custom logic. WAF rate-based rules provide this capability natively with no custom code.
+</details>
+
+### Q273: Enforcing data-sovereignty region restrictions across all accounts and future accounts
+
+A company operating under strict data sovereignty requirements must ensure that NO AWS resources can ever be created in any region except eu-west-1 and eu-central-1, across all 40 accounts in their AWS Organization — including any new accounts created in the future. Which solution enforces this with the least operational overhead?
+
+- A. Create an IAM policy denying actions outside the approved regions and attach it to every IAM user and role in all 40 accounts.
+- B. Create a Service Control Policy (SCP) with a Deny statement using the aws:RequestedRegion condition key for all regions except eu-west-1 and eu-central-1 — attach it to the root of the Organization.
+- C. Use AWS Config rules in each account to detect resources created outside approved regions and automatically delete them.
+- D. Configure AWS Control Tower guardrails for each account individually as accounts are created.
+
+<details>
+<summary>Show answer
+
+**Answer: B**
+
+SCPs apply organization-wide automatically, including future accounts, and override even root user permissions. The aws:RequestedRegion condition is the standard mechanism for region restriction at the org level.
+
+- **A is wrong:** This requires manual configuration in every account and doesn't cover root users or future accounts. High operational overhead and incomplete coverage.
+- **C is wrong:** This is a detective control — resources are created (and could process data) before being deleted. The requirement needs prevention, not after-the-fact cleanup.
+- **D is wrong:** Manually configuring guardrails per account doesn't scale and isn't automatic for future accounts. An organization-wide SCP is the correct centralized mechanism.
+</details>
+
+### Q274: Issuing and auto-renewing internal mTLS certificates for hundreds of microservices
+
+A company runs hundreds of internal microservices that communicate with each other over HTTPS within a VPC. They need each service to have a valid TLS certificate for mutual TLS (mTLS) authentication between services, want full control over the certificate authority, and need certificates to be automatically issued and renewed without using a public Certificate Authority. Which solution meets these requirements?
+
+- A. Use AWS Certificate Manager (ACM) to issue free public certificates for each internal microservice using its internal DNS name.
+- B. Set up AWS Private Certificate Authority (Private CA) to act as an internal root or subordinate CA — integrate with ACM to automatically issue and renew private certificates for each internal microservice.
+- C. Generate self-signed certificates for each microservice manually and distribute them via AWS Systems Manager Parameter Store.
+- D. Use AWS Secrets Manager to store a single shared TLS certificate used by all internal microservices.
+
+<details>
+<summary>Show answer
+
+**Answer: B**
+
+AWS Private CA is purpose-built for exactly this — operating a private certificate authority that issues certificates for internal use cases like mTLS, with ACM handling automatic issuance and renewal and giving full control over the CA.
+
+- **A is wrong:** ACM public certificates require domain validation through public DNS or email — they cannot be issued for purely internal/private DNS names not publicly resolvable and aren't designed for mTLS between internal services.
+- **C is wrong:** Manual self-signed certificate generation and distribution doesn't scale to hundreds of services, has no automatic renewal, and lacks centralized CA control and revocation capability.
+- **D is wrong:** A single shared certificate across all services defeats the purpose of mTLS (which requires unique service identities) and creates a massive blast radius if compromised.
+</details>
+
+### Q275: Cutting cross-region read latency AND providing sub-1-minute failover for an Aurora workload
+
+A global SaaS company runs its primary database on Amazon Aurora MySQL in us-east-1, serving customers worldwide. Customers in Asia-Pacific report slow read query performance due to cross-region latency. The company also needs disaster recovery capability with an RTO under 1 minute if us-east-1 becomes unavailable. Which solution should a solutions architect provide to meet BOTH requirements?
+
+- A. Create Aurora Read Replicas in ap-southeast-1 using standard cross-region read replication.
+- B. Configure Amazon Aurora Global Database with a secondary region in ap-southeast-1 — local reads served from the secondary cluster with typical lag under 1 second — managed failover promotes the secondary to primary in under 1 minute during a disaster.
+- C. Deploy a separate standalone Aurora cluster in ap-southeast-1 and use DMS to continuously replicate data between the two independent clusters.
+- D. Enable Aurora Multi-AZ within us-east-1 only, and rely on CloudFront caching to reduce perceived latency for Asia-Pacific users.
+
+<details>
+<summary>Show answer
+
+**Answer: B**
+
+Aurora Global Database is purpose-built for this combination — low-latency local reads in secondary regions via dedicated replication infrastructure, AND fast managed failover typically under 1 minute for disaster recovery.
+
+- **A is wrong:** Standard Aurora cross-region read replicas address read latency but typically take several minutes to promote during a regional failure — failing the under-1-minute RTO requirement.
+- **C is wrong:** DMS-based replication between independent clusters introduces higher replication lag and doesn't provide the fast managed failover capability of Aurora Global Database.
+- **D is wrong:** Multi-AZ provides HA within a single region — it does nothing for cross-region read latency. CloudFront caches static content, not dynamic database query results.
+</details>
+
+### Q276: Letting an instance finish its in-progress job before Auto Scaling terminates it
+
+A company runs a video encoding application on EC2 instances in an Auto Scaling Group. When the ASG scales in and terminates an instance, any video currently being encoded on that instance is lost, corrupting the output file. The company needs instances to complete their current encoding job and gracefully drain before termination. Which solution meets this requirement?
+
+- A. Increase the Auto Scaling Group cooldown period to 30 minutes to slow down scale-in actions.
+- B. Configure an Auto Scaling Lifecycle Hook on the EC2_INSTANCE_TERMINATING transition — the application monitors for the hook event and completes the in-progress encoding job before signaling CONTINUE to allow termination.
+- C. Set the Auto Scaling Group termination policy to OldestInstance so newer instances handling active jobs are never terminated.
+- D. Use EC2 instance termination protection on all instances in the Auto Scaling Group.
+
+<details>
+<summary>Show answer
+
+**Answer: B**
+
+Lifecycle hooks pause an instance in a wait state during termination, giving the application time to gracefully complete work (like finishing an encoding job) before signaling that termination can proceed.
+
+- **A is wrong:** Cooldown periods control the timing BETWEEN scaling activities — they do not give an individual instance time to finish work before it is terminated.
+- **C is wrong:** Termination policy only determines WHICH instance is chosen for termination — it doesn't pause termination to allow in-progress work to complete on the chosen instance.
+- **D is wrong:** Termination protection prevents ALL termination, including legitimate scale-in actions — this would break Auto Scaling entirely rather than gracefully draining individual instances.
+</details>
+
+### Q277: Ordered, exactly-once fan-out of trade events to three independent downstream systems
+
+A financial trading platform publishes trade execution events that must be processed by three downstream systems — settlement, compliance reporting, and customer notifications — in the EXACT order trades occurred, with no duplicate processing, and each system must receive every event independently and durably. Which architecture meets ALL requirements?
+
+- A. Publish events to an SNS Standard topic, with three SQS Standard queues subscribed for fan-out to each downstream system.
+- B. Publish events to an SNS FIFO topic with three SQS FIFO queues subscribed — each queue independently receives ordered, exactly-once events for its respective downstream system.
+- C. Publish events directly to three separate Lambda functions using SNS Standard topic subscriptions, relying on Lambda's built-in idempotency.
+- D. Use a single SQS FIFO queue with three separate consumer applications polling the same queue using distinct Message Group IDs.
+
+<details>
+<summary>Show answer
+
+**Answer: B**
+
+SNS FIFO topics deliver to SQS FIFO queues with strict ordering and exactly-once processing. Fanning out to three separate FIFO queues gives each system its own durable, ordered, duplicate-free copy of every event.
+
+- **A is wrong:** SNS Standard and SQS Standard both provide best-effort ordering and at-least-once delivery — duplicates are possible and strict ordering is NOT guaranteed. This fails the exact-order, no-duplicate requirement.
+- **C is wrong:** SNS Standard doesn't guarantee ordering, and Lambda does not have built-in idempotency — duplicate invocations are possible and must be handled by application logic, which doesn't meet the strict requirements.
+- **D is wrong:** A single SQS queue delivers each message to only ONE consumer — it cannot fan out the same message to three independent downstream systems. This isn't a fan-out pattern at all.
+</details>
+
+### Q278: Automatic primary/secondary failover and fail-back with Route 53 health checks
+
+A company runs its primary application on EC2 instances behind an ALB in us-east-1 and maintains a secondary, scaled-down deployment in us-west-2 for disaster recovery. The company wants DNS to automatically route all traffic to us-west-2 ONLY if the primary us-east-1 endpoint becomes unhealthy. When automatically fail back to us-east-1 once it recovers, with no manual intervention. Which Route 53 configuration should a solutions architect provide to meet this requirement?
+
+- A. Configure Route 53 weighted routing with a 90/10 split between us-east-1 and us-west-2.
+- B. Configure Route 53 failover routing policy with a health check on the us-east-1 primary record — Route 53 automatically routes to the us-west-2 secondary record only when the health check fails, and reverts automatically when it passes.
+- C. Configure Route 53 latency-based routing with both us-east-1 and us-west-2 records, letting users connect to whichever has lower latency.
+- D. Configure Route 53 geolocation routing to send US East Coast traffic to us-east-1 and US West Coast traffic to us-west-2.
+
+<details>
+<summary>Show answer
+
+**Answer: B**
+
+Failover routing is purpose-built for exactly this primary/secondary pattern. Route 53 continuously monitors the health check and automatically shifts DNS resolution to the secondary record during an outage, then reverts when health is restored.
+
+- **A is wrong:** Weighted routing sends a fixed percentage of traffic to both endpoints continuously, regardless of health — it doesn't implement automatic primary/secondary failover behavior.
+- **C is wrong:** Latency-based routing optimizes for performance, not failover — it doesn't account for endpoint health and would continue routing some users to a failed us-east-1 endpoint.
+- **D is wrong:** Geolocation routing is based on the user's geographic location, not endpoint health — it provides no automatic failover capability when an endpoint becomes unavailable.
+</details>
+
+### Q279: Auto scaling ECS Fargate tasks on ALB request count with no manual intervention
+
+A company runs a containerized API on Amazon ECS with Fargate, fronted by an Application Load Balancer. Traffic is highly variable throughout the day. The company wants the number of running tasks to automatically increase when the ALB's request count per target exceeds a threshold, and decrease when it drops, without manual intervention or custom monitoring scripts. Which solution meets this requirement with least operational overhead?
+
+- A. Manually update the ECS service's desired task count every few hours based on observed CloudWatch traffic graphs.
+- B. Configure ECS Service Auto Scaling with a target tracking scaling policy based on the ALBRequestCountPerTarget CloudWatch metric.
+- C. Create a Lambda function triggered every 5 minutes by EventBridge Scheduler that checks ALB metrics and calls UpdateService to adjust task count.
+- D. Use AWS Auto Scaling for EC2 instances in the underlying ECS cluster, assuming Fargate tasks will scale automatically with instance count.
+
+<details>
+<summary>Show answer
+
+**Answer: B**
+
+ECS Service Auto Scaling supports target tracking policies directly on ALB request count per target — ECS automatically adjusts the task count to maintain the target value, with zero manual intervention or custom scripts.
+
+- **A is wrong:** This requires constant manual intervention — directly contradicting the requirement for automatic scaling with no manual intervention.
+- **C is wrong:** This is a custom-built solution duplicating functionality ECS Service Auto Scaling already provides natively — significantly more operational overhead with no added benefit.
+- **D is wrong:** AWS Fargate is serverless and has no underlying EC2 instances to scale — this approach is architecturally incompatible with the Fargate launch type described in the scenario.
+</details>
+
+### Q280: Low-latency multi-region read AND write for globally distributed player profiles
+
+A company operates a multiplayer mobile game with players across North America, Europe, and Asia. Player profile data is stored in DynamoDB. The company needs players to read and write their profile data with low latency from whichever region they're closest to, with changes made in one region automatically and asynchronously available in all other regions within seconds. Which DynamoDB feature meets this requirement?
+
+- A. Deploy independent DynamoDB tables in each region and use DynamoDB Streams with a custom Lambda function to copy changes between all three tables.
+- B. Enable DynamoDB Global Tables across the three regions — each region has a fully replicated, multi-active table where writes in any region propagate to all other regions within seconds.
+- C. Use a single DynamoDB table in us-east-1 with DynamoDB Accelerator (DAX) clusters deployed in eu-west-1 and ap-southeast-1 for caching.
+- D. Use Amazon RDS with cross-region read replicas instead of DynamoDB, since RDS provides stronger consistency guarantees.
+
+<details>
+<summary>Show answer
+
+**Answer: B**
+
+DynamoDB Global Tables is the purpose-built, fully managed multi-region, multi-active replication feature — exactly matching the low-latency local read/write with automatic cross-region propagation requirement.
+
+- **A is wrong:** Building custom cross-region replication with Streams and Lambda is complex, introduces potential conflicts and lag issues, and duplicates functionality that DynamoDB provides natively.
+- **C is wrong:** DAX caches reads but all WRITES still go to the single us-east-1 table, creating high write latency for European and Asian players — this doesn't solve the low-latency write requirement.
+- **D is wrong:** RDS read replicas don't support multi-region WRITES at all — writes must go to the single primary, which would be in only one region, failing the low-latency write requirement entirely.
+</details>
+
+### Q281: A highly reliable control plane to manually shift traffic away from a degraded region
+
+A critical financial application runs across three AWS Regions in an active-active configuration. The operations team needs a highly reliable mechanism to manually and reliably shift 100% of traffic away from a degraded region during an incident, with a control system that itself has no single point of failure — even if an entire AWS Region is experiencing issues. Which AWS service is purpose-built for this requirement?
+
+- A. AWS Systems Manager Automation documents triggered manually from the AWS Management Console during an incident.
+- B. Amazon Route 53 Application Recovery Controller (ARC) — provides routing controls with a highly available, multi-region control plane specifically designed to remain operational even during regional outages, used to manually shift traffic away from impaired regions.
+- C. AWS Config with automatic remediation rules that detect regional health issues and update Route 53 records.
+- D. CloudWatch Synthetics canaries configured to automatically update DNS weighted routing values when failures are detected.
+
+<details>
+<summary>Show answer
+
+**Answer: B**
+
+Route 53 ARC is specifically built for this exact use case — its control plane is engineered with extreme redundancy (distributed across multiple regions) so operators can reliably shift traffic even during a regional impairment.
+
+- **A is wrong:** Systems Manager Automation runs from a single region's control plane — if that region is impaired, the operations team may be unable to trigger the automation. It's also not purpose-built for traffic shifting.
+- **C is wrong:** AWS Config evaluates resource configuration compliance — it is not designed for real-time traffic failover decisions during regional incidents and lacks ARC's resilient control plane design.
+- **D is wrong:** Synthetics monitors application health from outside but isn't designed as a resilient control mechanism for region-wide traffic shifting, and lacks the dedicated resilient control plane that ARC provides.
+</details>
+
+### Q282: AZ-resilient shared file storage with automated 35-day backups (Select TWO)
+
+A company runs a content management system on EC2 instances that store user-uploaded files on a shared file system. The files must remain available even if an entire Availability Zone fails, and the company needs automated daily backups retained for 35 days with point-in-time recovery capability. Which solution combinations meet these requirements? (Select TWO.)
+
+- A. Use Amazon EFS (Elastic File System) — EFS automatically stores data redundantly across multiple Availability Zones by default for Regional file systems.
+- B. Enable AWS Backup for the EFS file system with a backup plan configured for daily backups and a 35-day retention period.
+- C. Use Amazon EFS One Zone storage class to reduce costs while still maintaining multi-AZ availability.
+- D. Use EBS volumes with Multi-Attach enabled across instances in different Availability Zones to share the file system.
+- E. Configure EC2 instance-level snapshots on a daily schedule to back up the locally mounted file system data.
+
+<details>
+<summary>Show answer
+
+**Answer: A, B**
+
+EFS Regional file systems are inherently designed to store data redundantly across multiple AZs automatically — providing AZ failure resilience without any additional configuration. AWS Backup natively supports EFS as a backup source, providing automated scheduled backups with configurable retention periods — directly meeting the 35-day retention requirement.
+
+- **C is wrong:** EFS One Zone storage, as the name indicates, stores data in a SINGLE Availability Zone — this directly contradicts the requirement for files to survive an entire AZ failure.
+- **D is wrong:** EBS Multi-Attach only works within a SINGLE Availability Zone — it cannot span multiple AZs, making it unsuitable for surviving an AZ failure.
+- **E is wrong:** EC2 instance snapshots capture EBS root/data volumes — they do not back up data on a shared EFS file system mounted across multiple instances. AWS Backup with EFS support is the correct mechanism.
+</details>
+
+### Q283: Maximizing upload speed and reliability for large video files from global studios
+
+A media production company needs to upload very large video files (50GB–200GB each) from studios around the world to a single S3 bucket in us-east-1. Studios report extremely slow and frequently failing uploads. The company needs to maximize upload speed and reliability regardless of the studio's geographic distance from us-east-1. Which combination of S3 features best addresses this?
+
+- A. Enable S3 Transfer Acceleration on the bucket and use multipart upload to split each large file into parts uploaded in parallel.
+- B. Increase the S3 bucket's default request rate limits and use S3 Standard storage class for faster write performance.
+- C. Create separate S3 buckets in each studio's nearest region and configure Cross-Region Replication to consolidate files into us-east-1.
+- D. Use AWS Snowball Edge devices shipped to each studio to physically transport the video files to AWS.
+
+<details>
+<summary>Show answer
+
+**Answer: A**
+
+Transfer Acceleration routes uploads through the nearest CloudFront edge location over AWS's optimized backbone network, while multipart upload parallelizes large file transfer and allows resuming failed parts — together maximizing speed and reliability for large global uploads.
+
+- **B is wrong:** Using S3 prefixes you can scale the upload. By default, S3 supports at least 3,500 PUT/POST/COPY or DELETE per prefix and already scales automatically. Storage class doesn't affect upload speed.
+- **C is wrong:** This adds complexity of multiple buckets and replication lag, and doesn't directly solve the slow/failing UPLOAD problem from the studio to AWS — replication happens after upload completes.
+- **D is wrong:** Snowball is designed for offline bulk transfer (typically when network transfer would take weeks) — for active, ongoing production uploads needing fast turnaround, shipping delays don't fit the use case.
+</details>
+
+### Q284: Scaling ElastiCache for Redis write throughput beyond a single node
+
+A social media application uses a single-node Amazon ElastiCache for Redis cluster to store user session data and real-time activity feeds. As the user base has grown, the application has begun experiencing memory capacity limits, and the single node has become a write throughput bottleneck. The company needs to scale BOTH read and write capacity horizontally. Which ElastiCache configuration meets this requirement?
+
+- A. Increase the single node's instance size to the largest available ElastiCache node type.
+- B. Enable ElastiCache for Redis Cluster Mode with data partitioned (sharded) across multiple node groups — each shard handles a subset of the keyspace, distributing both read and write load across multiple primary nodes.
+- C. Add multiple read replicas to the existing single-shard cluster to distribute the load.
+- D. Switch from ElastiCache for Redis to ElastiCache for Memcached, since Memcached has no single-node limitations.
+
+<details>
+<summary>Show answer
+
+**Answer: B**
+
+Redis Cluster Mode shards data across multiple node groups, each with its own primary (handling writes) and optional replicas (handling reads) — this is the only ElastiCache Redis configuration that scales WRITE throughput horizontally.
+
+- **A is wrong:** Vertical scaling has a ceiling and doesn't address write throughput bottlenecks on a single node — and even the largest node remains a single point of failure for all write operations.
+- **C is wrong:** Read replicas only scale READ capacity — all writes still go to the single primary. This doesn't address the stated write throughput bottleneck.
+- **D is wrong:** Memcached is multi-threaded and can use multiple nodes, but switching engines requires significant application rework, and Memcached lacks the persistence and replication features the use case may need. Redis Cluster Mode is the more direct, in-place solution.
+</details>
+
+### Q285: Eliminating Lambda cold-start latency for a latency-sensitive API
+
+A company's Lambda function serves a customer-facing API. During traffic spikes, customers experience noticeable latency on the first request after a period of inactivity due to cold starts, which is unacceptable for their SLA. The function runs in a VPC, which adds further cold start overhead. The company needs to eliminate cold start latency for this function. Which solution meets this requirement?
+
+- A. Increase the Lambda function's memory allocation to the maximum available, since more memory proportionally increases CPU and reduces cold start time.
+- B. Configure Provisioned Concurrency for the Lambda function — this keeps a specified number of execution environments pre-initialized and ready to respond immediately, eliminating cold starts for those instances.
+- C. Convert the Lambda function to use AWS Lambda SnapStart, which is available for all Lambda runtimes and eliminates cold starts automatically with no configuration.
+- D. Remove the Lambda function from the VPC entirely to eliminate VPC-related cold start overhead, accepting reduced security.
+
+<details>
+<summary>Show answer
+
+**Answer: B**
+
+Provisioned Concurrency is purpose-built to eliminate cold starts — AWS keeps execution environments warm and fully initialized ahead of invocations, providing consistent low-latency responses even during idle periods.
+
+- **A is wrong:** While higher memory does reduce INIT phase duration somewhat, it does not eliminate cold starts entirely — there will still be a cold start the first time a new execution environment is created.
+- **C is wrong:** Lambda SnapStart is only available for specific runtimes (primarily Java, and later Python/.NET) and requires explicit configuration — it is not universally available for all runtimes with zero setup as stated.
+- **D is wrong:** While VPC attachment does add cold start latency historically, removing the function from the VPC may not be acceptable if it needs private network access, and this doesn't fully eliminate cold starts — it only reduces a specific source of overhead.
+</details>
+
+### Q286: Health-based global routing with fast regional failover for a custom TCP protocol
+
+A company runs a VoIP communication application using a custom TCP-based protocol (not HTTP/HTTPS) on EC2 instances across three AWS Regions. The company wants global users to be automatically routed to the healthiest, lowest-latency regional endpoint, with fast failover if a region becomes unhealthy. Which AWS service meets this requirement?
+
+- A. Amazon CloudFront with a custom origin pointing to the EC2 instances in each region.
+- B. AWS Global Accelerator — provides static Anycast IP addresses that route traffic to the optimal AWS endpoint based on health, supporting any TCP or UDP protocol, with automatic failover between regions.
+- C. Amazon Route 53 with latency-based routing across the three regional endpoints.
+- D. AWS Direct Connect with redundant connections to each of the three regions.
+
+<details>
+<summary>Show answer
+
+**Answer: B**
+
+Global Accelerator operates at the network layer (TCP/UDP) rather than being limited to HTTP — it natively supports custom protocols like VoIP traffic, routes to the healthiest endpoint, and provides fast automatic regional failover.
+
+- **A is wrong:** CloudFront is designed for HTTP/HTTPS content delivery and caching — it does not support arbitrary custom TCP protocols like the VoIP application described.
+- **C is wrong:** Route 53 latency routing operates at the DNS level — it doesn't provide the network-level health-based routing and fast failover that Global Accelerator offers, and DNS caching can delay failover.
+- **D is wrong:** Direct Connect provides dedicated private network connectivity between on-premises and AWS — it has nothing to do with routing END USER traffic to the optimal regional application endpoint.
+</details>
+
+### Q287: Solving Lambda-to-RDS connection exhaustion with minimal code changes
+
+A company has a serverless application where a Lambda function is invoked thousands of times per second, with each invocation opening a new connection to an Amazon RDS PostgreSQL database. The database frequently hits its maximum connection limit, causing failures. The company cannot easily redesign the application architecture. Which solution resolves the connection exhaustion problem with minimal code changes?
+
+- A. Increase the RDS instance size to the largest available instance type to support more maximum database connections.
+- B. Configure Amazon RDS Proxy in front of the RDS PostgreSQL instance — Lambda functions connect to the proxy endpoint instead of directly to RDS — RDS Proxy pools and reuses database connections efficiently.
+- C. Rewrite the application to use Amazon DynamoDB instead of RDS, since DynamoDB has no connection limits.
+- D. Implement exponential backoff and retry logic in the Lambda function to handle connection failures gracefully.
+
+<details>
+<summary>Show answer
+
+**Answer: B**
+
+RDS Proxy is purpose-built for exactly this Lambda-to-RDS connection scaling problem. It pools and multiplexes a small number of actual database connections across thousands of Lambda invocations, requiring only an endpoint change in the Lambda code.
+
+- **A is wrong:** While larger instances support more connections, at thousands of Lambda invocations per second, even the largest RDS instance will eventually be overwhelmed. This treats the symptom, not the root architectural mismatch between Lambda's connection model and RDS.
+- **C is wrong:** This contradicts the requirement of "minimal code changes" — migrating from a relational database to DynamoDB requires complete schema redesign and significant application rewrite.
+- **D is wrong:** Retry logic handles failures after they occur but doesn't solve the underlying connection exhaustion problem — it just means failed connections are retried, still hitting the same connection limit ceiling.
+</details>
+
+### Q288: Streaming clickstream into Redshift, batched and compressed, with no custom code
+
+A retail company wants to stream clickstream data from its website directly into Amazon Redshift for near-real-time analytics, with data automatically batched, compressed, and loaded without writing or managing any custom consumer code. The data should land in Redshift within 5 minutes of being generated. Which solution should a solutions architect select that meets this requirement?
+
+- A. Amazon Kinesis Data Streams with a custom Lambda consumer that batches records and calls the Redshift COPY command periodically.
+- B. Amazon Data Firehose configured with Amazon Redshift as the destination — Firehose automatically batches, compresses, and loads streaming data into Redshift on a configurable buffer interval.
+- C. AWS Glue streaming ETL jobs that continuously read from the website and write transformed records to Redshift.
+- D. Amazon SQS with a fleet of EC2 instances polling the queue and performing batch inserts into Redshift.
+
+<details>
+<summary>Show answer
+
+**Answer: B**
+
+Data Firehose is a fully managed delivery service with native Redshift integration — it handles batching, compression, and loading automatically with no consumer code required, easily meeting a 5-minute delivery target.
+
+- **A is wrong:** This requires writing and maintaining custom consumer code for batching, compression, and loading — directly contradicting the "without writing or managing any custom consumer code" requirement.
+- **C is wrong:** Glue streaming ETL requires writing and maintaining Spark-based ETL job code — more operationally complex than Firehose's fully managed, configuration-only approach for this straightforward load pattern.
+- **D is wrong:** This requires building, deploying, and managing custom EC2-based consumer infrastructure — a fully manual and operationally heavy solution compared to the fully managed Data Firehose approach.
+</details>
+
+### Q289: Making downloaders pay the S3 data transfer costs for a public dataset
+
+A genomics research company hosts large public datasets in an S3 bucket that thousands of external research institutions download for analysis. The company wants to make the data publicly available for research purposes but does NOT want to pay the data transfer costs for these downloads themselves — the downloading institution should bear that cost. Which S3 feature meets this requirement?
+
+- A. Configure S3 bucket policies to require all requesters to have a valid AWS account before downloading.
+- B. Enable Requester Pays on the S3 bucket — the requester must include specific headers in their request and explicitly agrees to pay the data transfer and request costs instead of the bucket owner.
+- C. Move the data to S3 Glacier and require requesters to pay for expedited retrieval fees.
+- D. Use S3 Transfer Acceleration and pass the acceleration fee on to requesters via a separate billing system.
+
+<details>
+<summary>Show answer
+
+**Answer: B**
+
+S3 Requester Pays is purpose-built for exactly this scenario — it shifts data transfer and request costs from the bucket owner to whoever downloads the data, ideal for sharing large public datasets without absorbing the transfer costs.
+
+- **A is wrong:** Requiring an AWS account controls access but does nothing to shift the data TRANSFER COST to the requester — the bucket owner still pays for all data transfer out by default.
+- **C is wrong:** Glacier retrieval fees only cover the RETRIEVAL operation, not standard data transfer costs, and Glacier's retrieval delay is impractical for active research datasets needing routine access.
+- **D is wrong:** Transfer Acceleration fees are billed to the bucket owner's AWS account, not the requester, and building a separate billing system adds significant unnecessary complexity. Requester Pays handles this natively.
+</details>
+
+### Q290: Placement strategy for tightly-coupled HPC instances needing lowest latency
+
+A scientific research company runs a tightly-coupled high-performance computing (HPC) simulation across multiple EC2 instances that constantly exchange data with each other. The simulation requires the lowest possible network latency and highest throughput between the instances. Which EC2 configuration best meets this requirement?
+
+- A. Launch the instances in a Spread Placement Group to maximize physical separation and reduce the risk of correlated hardware failures.
+- B. Launch the instances in a Cluster Placement Group within a single Availability Zone on the same underlying hardware/network infrastructure to maximize network throughput and minimize latency.
+- C. Launch the instances in a Partition Placement Group with 7 partitions to isolate groups of instances from each other.
+- D. Distribute the instances across three different Availability Zones for high availability.
+
+<details>
+<summary>Show answer
+
+**Answer: B**
+
+Cluster Placement Groups are specifically designed for tightly-coupled HPC — placing instances physically close together on the same low-latency, high-throughput network fabric within a single AZ.
+
+- **A is wrong:** Spread Placement Groups maximize physical separation across distinct hardware — this REDUCES network performance between instances, the opposite of the latency/throughput goal.
+- **C is wrong:** Partition Placement Groups are designed for large distributed workloads (like Hadoop/Cassandra) to limit the impact of failures to one partition — they don't optimize for the lowest possible inter-instance latency like Cluster groups do.
+- **D is wrong:** Spreading instances across multiple AZs significantly INCREASES network latency between them due to physical distance — this directly works against the lowest-latency requirement for tightly-coupled HPC.
+</details>
+
 ## References
 
 - [AWS Solutions Architect Associate - Official Exam Guide](https://aws.amazon.com/certification/certified-solutions-architect-associate/)
