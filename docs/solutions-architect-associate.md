@@ -6097,6 +6097,112 @@ Cluster Placement Groups are specifically designed for tightly-coupled HPC — p
 - **D is wrong:** Spreading instances across multiple AZs significantly INCREASES network latency between them due to physical distance — this directly works against the lowest-latency requirement for tightly-coupled HPC.
 </details>
 
+### Q291: Reducing the risk of losing all Spot capacity at once for a batch fleet
+
+A company runs a stateless batch processing workload on EC2 Spot Instances. They have experienced multiple incidents where their entire fleet was simultaneously reclaimed because they used only one instance type in one Availability Zone, causing the batch processing to completely stop until new Spot capacity became available. The company wants to dramatically reduce the chance of losing all capacity simultaneously while remaining on Spot Instances. Which strategy best addresses this?
+
+- A. Switch entirely to On-Demand Instances to guarantee capacity is never reclaimed.
+- B. Configure an EC2 Auto Scaling group or Spot Fleet using multiple instance types across multiple Availability Zones with capacity-optimized allocation — diversifying across many Spot capacity pools.
+- C. Use only the cheapest available Spot Instance type to minimize costs, accepting the interruption risk as a trade-off.
+- D. Request a Spot Instance Savings Plan to lock in guaranteed Spot capacity for the next 12 months.
+
+<details>
+<summary>Show answer
+
+**Answer: B**
+
+Diversifying across multiple instance types and AZs spreads the fleet across many independent Spot capacity pools — a simultaneous reclaim event affecting all pools at once becomes far less likely. Capacity-optimized allocation selects pools with the deepest available capacity.
+
+- **A is wrong:** This eliminates Spot's cost savings entirely (up to 90%), which contradicts staying on Spot Instances. The question asks for a strategy that addresses the reliability issue WHILE remaining on Spot.
+- **C is wrong:** Using only ONE instance type is the exact anti-pattern causing their current problem — a single capacity pool concentration risk. This doesn't address the stated reliability issue at all.
+- **D is wrong:** There is no such thing as a "Spot Instance Savings Plan" — Savings Plans apply to On-Demand equivalent usage commitments, not Spot capacity guarantees. Spot capacity, by definition, is never guaranteed regardless of commitment.
+</details>
+
+### Q292: Analyzing historical utilization to right-size 200 over-provisioned EC2 instances
+
+A company runs 200 EC2 instances across various workloads and suspects many are significantly over-provisioned, wasting money, but has no easy way to identify which instances are oversized or what the optimal instance type would be for each. The company wants AWS to analyze historical utilization and provide specific rightsizing recommendations. As a Solutions Architect which AWS service should you recommend?
+
+- A. AWS Trusted Advisor cost optimization checks, available at no cost regardless of support plan tier.
+- B. AWS Compute Optimizer to analyze historical usages for EC2 instances, EBS volumes and provides specific rightsizing recommendations with projected cost savings.
+- C. AWS Cost Explorer with the rightsizing recommendations report, which analyzes 7 days of network traffic to suggest instance changes.
+- D. Manually export CloudWatch metrics for all 200 instances to a spreadsheet and calculate average utilization to determine rightsizing candidates.
+
+<details>
+<summary>Show answer
+
+**Answer: B**
+
+Compute Optimizer is purpose-built for this use case — it uses ML to analyze actual historical utilization patterns and generates specific, actionable rightsizing recommendations (e.g., downsize from m5.2xlarge to m5.xlarge) with savings estimates.
+
+- **A is wrong:** Trusted Advisor cost optimization checks (including detailed rightsizing) require a Business or Enterprise Support plan — they are NOT available at no cost on Basic/Developer support tiers.
+- **C is wrong:** While Cost Explorer does have rightsizing recommendations, Compute Optimizer provides more sophisticated ML-based analysis across more metrics (CPU, memory, network, disk) and is the more comprehensive, purpose-built tool for this analysis.
+- **D is wrong:** This is an entirely manual process that doesn't scale well, lacks ML-driven analysis, and doesn't provide specific instance type recommendations — Compute Optimizer automates all of this natively.
+</details>
+
+### Q293: Organization-wide S3 storage usage and activity insights from a single dashboard
+
+A large enterprise has hundreds of S3 buckets spread across 30 AWS accounts in their AWS Organization. The finance team wants organization-wide visibility into S3 storage usage and activity trends, with the ability to identify buckets with rapidly growing storage costs, incomplete multipart uploads wasting money, and buckets with no recent access — all from a single dashboard. Which AWS service meets this requirement?
+
+- A. Manually run the S3 ls command with the --recursive flag against each of the hundreds of buckets and aggregate the output into a spreadsheet.
+- B. Enable Amazon S3 Storage Lens with an organization-wide dashboard — provides automated metrics on storage usage, activity trends, incomplete multipart uploads, and cost optimization recommendations across all accounts and buckets in a single view.
+- C. Use AWS Cost Explorer filtered by the S3 service to view spending trends across all linked accounts.
+- D. Enable S3 Inventory reports for each bucket and manually cross-reference the CSV outputs in Amazon Athena.
+
+<details>
+<summary>Show answer
+
+**Answer: B**
+
+S3 Storage Lens is purpose-built for exactly this — organization-wide S3 usage and activity visibility, including specific metrics like incomplete multipart upload bytes and buckets with declining activity, all from a single aggregated dashboard.
+
+- **A is wrong:** This is an entirely manual, non-scalable approach across 30 accounts and hundreds of buckets — completely impractical and provides none of the cost-trend analysis or incomplete multipart-upload detection requested.
+- **C is wrong:** Cost Explorer shows AGGREGATE billing data but does not provide bucket-level operational metrics like incomplete multipart uploads or per-bucket activity trends that Storage Lens provides.
+- **D is wrong:** S3 Inventory provides object-level listings per bucket but requires significant manual aggregation work across hundreds of buckets and doesn't natively provide the cost trend and activity insights Storage Lens delivers automatically.
+</details>
+
+### Q294: Cutting compute costs without losing performance or changing the On-Demand model (Select TWO)
+
+A company runs a fleet of EC2 instances for a stateless web application built on a standard Linux-compatible runtime with no architecture-specific dependencies. The company wants to reduce compute costs significantly without reducing performance or changing their On-Demand purchasing model. Which combinations of solutions should a Solutions Architect choose? (Select TWO.)
+
+- A. Migrate the workload to AWS Graviton-based instances. Graviton processors offer up to 40% better price-performance compared to equivalent x86-based instances for compatible workloads.
+- B. Use AWS Compute Optimizer to identify whether current instance types are oversized for actual utilization, then rightsize to smaller instance types within the same family.
+- C. Purchase 3-year All Upfront Standard Reserved Instances for guaranteed long-term savings.
+- D. Switch all instances to Spot Instances to take advantage of steep discounts.
+- E. Disable detailed CloudWatch monitoring on all instances to reduce monitoring costs.
+
+<details>
+<summary>Show answer
+
+**Answer: A, B**
+
+Graviton processors offer significantly better price-performance for compatible workloads with no architecture-specific dependencies. Since the application has no such dependencies, this delivers cost reduction with maintained or improved performance. Compute Optimizer rightsizing identifies over-provisioned instances and recommends appropriately-sized alternatives — directly reducing costs without changing the On-Demand model or degrading performance.
+
+- **C is wrong:** Reserved Instances are a different PURCHASING MODEL than On-Demand. The question specifies the company wants to keep their On-Demand purchasing model, so this doesn't meet the stated constraint.
+- **D is wrong:** Spot is a different purchasing model than On-Demand and introduces interruption risk that could affect a stateless web application's availability — not aligned with the stated requirement to keep the On-Demand model unchanged.
+- **E is wrong:** Detailed monitoring costs are typically a very small fraction of overall EC2 compute spend — this is a minor optimization that doesn't meaningfully address significant cost reduction as requested.
+</details>
+
+### Q295: Migrating Oracle to an open-source-compatible engine to eliminate licensing costs
+
+A company runs a commercial Oracle database on EC2 with expensive per-core licensing costs. They want to migrate to a cost-effective open-source-compatible managed database engine on AWS to eliminate Oracle licensing fees, while minimizing application code changes and migration downtime. Which solution best meets this requirement?
+
+- A. Migrate to Amazon RDS for Oracle to remove the operational burden of managing the database while keeping the existing Oracle engine and licensing.
+- B. Use AWS Database Migration Service (DMS) with the AWS Schema Conversion Tool (SCT) to migrate from Oracle to Amazon Aurora PostgreSQL-Compatible Edition — SCT converts schema and code objects, DMS performs the data migration with minimal downtime using continuous replication.
+- C. Export the Oracle database to CSV files and manually import them into a new Amazon DynamoDB table.
+- D. Use AWS Snowball to physically transfer the Oracle database files to an S3 bucket, then query the data directly using Amazon Athena.
+
+<details>
+<summary>Show answer
+
+**Answer: B**
+
+This is the canonical heterogeneous migration pattern: AWS SCT converts the Oracle schema and stored code objects to PostgreSQL, and DMS migrates the data with continuous replication so cutover downtime is minimal. Aurora PostgreSQL is an open-source-compatible managed engine, eliminating Oracle's per-core licensing.
+
+- **A is wrong:** RDS for Oracle still runs the Oracle engine and still incurs Oracle licensing costs — it doesn't meet the requirement to eliminate licensing fees.
+- **C is wrong:** DynamoDB is a NoSQL key-value database — migrating a relational Oracle workload to it requires complete data-model redesign and major application rewrites, contradicting "minimize application code changes."
+- **D is wrong:** Snowball + Athena addresses bulk file transfer and querying data at rest in S3 — it is not a path for migrating a live transactional Oracle database to a managed relational engine.
+</details>
+
 ## References
 
 - [AWS Solutions Architect Associate - Official Exam Guide](https://aws.amazon.com/certification/certified-solutions-architect-associate/)
