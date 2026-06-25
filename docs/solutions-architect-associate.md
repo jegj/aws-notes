@@ -123,6 +123,8 @@ Quick comparison:
 | **Supported services** | S3 and DynamoDB only | Most AWS services + PrivateLink services |
 | **Mechanism** | Route table entry | ENI with private IP |
 | **Cost** | Free | Per hour + per GB |
+| **Security Groups** | Not supported | Supported (control ingress/egress) |
+| **On-premises access** | Not reachable via Direct Connect or VPN | Reachable via Direct Connect or VPN |
 
 ![VPC endpoints — gateway and interface endpoints](https://github.com/user-attachments/assets/dfe3ee2e-23db-47c4-8a26-828099c3dec6)
 
