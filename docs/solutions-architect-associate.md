@@ -26,6 +26,7 @@ Notes for the AWS Solutions Architect Associate certification exam.
   - [EC2 Instance Savings Plans vs. Compute Savings Plans](#ec2-instance-savings-plans-vs-compute-savings-plans)
   - [Caching Strategies (Lazy Loading & Write-Through)](#caching-strategies-lazy-loading--write-through)
   - [CloudFront Price Classes](#cloudfront-price-classes)
+  - [CloudFront Functions vs. Lambda@Edge](#cloudfront-functions-vs-lambdaedge)
 - [Questions](#questions)
 - [References](#references)
 
@@ -365,6 +366,28 @@ A **price class** controls **which edge locations** CloudFront uses to serve you
 - **When to use Price Class 100:** most users are in North America / Europe and you want to **cut costs**, accepting slightly higher latency for the small percentage of users elsewhere.
 
 > Don't confuse with **Geo-Restriction**: a price class is a **cost/performance** control and never blocks anyone; Geo-Restriction is an **access control** that actually blocks users by country.
+
+### CloudFront Functions vs. Lambda@Edge
+
+Both let you run code at CloudFront edge locations to customize requests and responses, but they target different use cases. **CloudFront Functions** are lightweight, ultra-low-latency, high-scale functions for simple manipulations; **Lambda@Edge** is heavier but far more capable (network calls, larger payloads, longer execution).
+
+| | CloudFront Functions | Lambda@Edge |
+| --- | --- | --- |
+| **Runtime** | JavaScript (ECMAScript 5.1) | Node.js, Python |
+| **Where it runs** | Edge locations | Regional edge caches |
+| **Triggers** | Viewer Request, Viewer Response | Viewer Request/Response, Origin Request/Response (all 4) |
+| **Network calls** | ❌ No | ✅ Yes (call APIs, read DynamoDB, etc.) |
+| **Max execution time** | < 1 ms | 5s (viewer) / 30s (origin) |
+| **Access to request body** | ❌ No | ✅ Yes |
+| **Scale** | Millions of requests/sec | Thousands of requests/sec |
+| **Cost** | ~1/6th the price of Lambda@Edge | More expensive |
+
+**How to choose:**
+
+- **CloudFront Functions** — simple, deterministic, no external dependencies: header manipulation, URL rewrites/redirects, cache-key normalization, simple token validation. Only Viewer Request/Response.
+- **Lambda@Edge** — anything needing a **network call** (external auth API, DynamoDB lookup for A/B testing), the **request/response body**, or an **Origin** trigger.
+
+> Rule of thumb: reach for a **CloudFront Function** first; only step up to **Lambda@Edge** when you need network access, the origin triggers, or the request body.
 
 ## Questions
 
