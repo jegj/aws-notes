@@ -5330,7 +5330,7 @@ A media company processes video files uploaded to Amazon S3. When a video is upl
 - D. Use SNS to fan out the S3 event to three SQS queues — thumbnails, renditions, DynamoDB — each queue triggers a Lambda.
 
 <details>
-<summary>Show answer
+<summary>Show answer</summary>
 
 **Answer: C**
 
@@ -5351,7 +5351,7 @@ A company hosts a customer-facing e-commerce application on AWS in us-east-1. Th
 - D. Pilot Light: Run only RDS as a read replica in us-west-2 — keep EC2 as CloudFormation templates — promote replica and launch fleet during failover.
 
 <details>
-<summary>Show answer
+<summary>Show answer</summary>
 
 **Answer: C**
 
@@ -5372,7 +5372,7 @@ A company's web application uses an Application Load Balancer, an Auto Scaling G
 - D. Root cause: EC2 instances in AZ-b use the wrong AMI without package manager configuration. Fix: Update the launch template with the correct AMI.
 
 <details>
-<summary>Show answer
+<summary>Show answer</summary>
 
 **Answer: B**
 
@@ -5393,7 +5393,7 @@ A company is modernizing a monolithic application into microservices. Service A 
 - D. Implement retry logic with exponential backoff in Service A's code for all downstream service calls.
 
 <details>
-<summary>Show answer
+<summary>Show answer</summary>
 
 **Answer: B**
 
@@ -5415,7 +5415,7 @@ A company stores critical business data in Amazon S3. A developer accidentally d
 - E. Enable S3 Intelligent-Tiering to automatically protect objects from deletion based on access patterns.
 
 <details>
-<summary>Show answer
+<summary>Show answer</summary>
 
 **Answer: A, C**
 
@@ -5437,7 +5437,7 @@ A gaming company's leaderboard application reads player rankings from Amazon RDS
 - E. Create a DynamoDB table and migrate all player ranking data to it for faster reads.
 
 <details>
-<summary>Show answer
+<summary>Show answer</summary>
 
 **Answer: A, B**
 
@@ -5458,7 +5458,7 @@ A media company processes large video files (10GB–100GB each) that must be acc
 - D. Instance Store volumes on each EC2 instance with a synchronization script to keep files consistent.
 
 <details>
-<summary>Show answer
+<summary>Show answer</summary>
 
 **Answer: B**
 
@@ -5479,7 +5479,7 @@ A mobile application stores session data in Amazon DynamoDB. The application has
 - D. Increase Provisioned RCU to 600,000 to cover the maximum possible spike and eliminate throttling.
 
 <details>
-<summary>Show answer
+<summary>Show answer</summary>
 
 **Answer: A**
 
@@ -5500,7 +5500,7 @@ A company collects IoT telemetry data from 100,000 sensors. Each sensor sends 10
 - D. AWS Lambda triggered by SNS — three Lambda functions process IoT data simultaneously.
 
 <details>
-<summary>Show answer
+<summary>Show answer</summary>
 
 **Answer: B**
 
@@ -5521,7 +5521,7 @@ A company runs a production web application that serves consistent traffic 24/7/
 - D. Purchase Convertible Reserved Instances for a 1-year term with partial-upfront payment.
 
 <details>
-<summary>Show answer
+<summary>Show answer</summary>
 
 **Answer: C**
 
@@ -5542,7 +5542,7 @@ A company stores application log files in Amazon S3. Logs are accessed frequentl
 - D. Lifecycle policy: Transition to S3 One Zone-IA after 30 days, delete after 90 days.
 
 <details>
-<summary>Show answer
+<summary>Show answer</summary>
 
 **Answer: B**
 
@@ -5563,7 +5563,7 @@ A company has EC2 instances in private subnets that frequently access Amazon S3 
 - D. Create an Interface VPC Endpoint for Amazon S3 — use private DNS to route S3 traffic privately.
 
 <details>
-<summary>Show answer
+<summary>Show answer</summary>
 
 **Answer: C**
 
@@ -5584,7 +5584,7 @@ A company has three AWS accounts: Production, Development, and Staging. Each acc
 - D. Purchase Reserved Instances for the NAT Gateways across all three accounts to reduce the hourly rate.
 
 <details>
-<summary>Show answer
+<summary>Show answer</summary>
 
 **Answer: B**
 
@@ -5605,7 +5605,7 @@ A company runs an active-active application across us-east-1 and eu-west-1. Both
 - D. Use AWS Secrets Manager instead of KMS, since secrets can be replicated automatically across regions.
 
 <details>
-<summary>Show answer
+<summary>Show answer</summary>
 
 **Answer: B**
 
@@ -5627,7 +5627,7 @@ An online retail company wants production EC2 instances in a private subnet to a
 - E. Enable S3 Transfer Acceleration on the bucket to ensure traffic stays within AWS edge locations.
 
 <details>
-<summary>Show answer
+<summary>Show answer</summary>
 
 **Answer: A, B**
 
@@ -5648,7 +5648,7 @@ A company runs an application on Amazon ECS that connects to an Amazon RDS Postg
 - D. Configure RDS Proxy with a static IAM role and disable password authentication at the PostgreSQL engine level entirely.
 
 <details>
-<summary>Show answer
+<summary>Show answer</summary>
 
 **Answer: B**
 
@@ -5669,7 +5669,7 @@ A company manages 50 AWS accounts under AWS Organizations. The security team wan
 - D. Use AWS Config aggregators in each account to track configuration changes and manually review for security issues weekly.
 
 <details>
-<summary>Show answer
+<summary>Show answer</summary>
 
 **Answer: B**
 
@@ -5690,7 +5690,7 @@ A healthcare company stores millions of documents in Amazon S3, including patien
 - D. AWS Trusted Advisor with the security checks category enabled to flag buckets containing PII.
 
 <details>
-<summary>Show answer
+<summary>Show answer</summary>
 
 **Answer: A**
 
@@ -5711,7 +5711,7 @@ A mobile gaming company wants unauthenticated users to be able to read leaderboa
 - D. Use AWS IAM Identity Center with SAML federation configured for the mobile application's guest and authenticated user flows.
 
 <details>
-<summary>Show answer
+<summary>Show answer</summary>
 
 **Answer: B**
 
@@ -5732,7 +5732,7 @@ A company's public API, exposed through Amazon API Gateway, is experiencing a cr
 - D. Implement a Lambda authorizer on API Gateway that tracks request counts per IP in DynamoDB and rejects requests exceeding the threshold.
 
 <details>
-<summary>Show answer
+<summary>Show answer</summary>
 
 **Answer: B**
 
@@ -5753,7 +5753,7 @@ A company operating under strict data sovereignty requirements must ensure that 
 - D. Configure AWS Control Tower guardrails for each account individually as accounts are created.
 
 <details>
-<summary>Show answer
+<summary>Show answer</summary>
 
 **Answer: B**
 
@@ -5774,7 +5774,7 @@ A company runs hundreds of internal microservices that communicate with each oth
 - D. Use AWS Secrets Manager to store a single shared TLS certificate used by all internal microservices.
 
 <details>
-<summary>Show answer
+<summary>Show answer</summary>
 
 **Answer: B**
 
@@ -5795,7 +5795,7 @@ A global SaaS company runs its primary database on Amazon Aurora MySQL in us-eas
 - D. Enable Aurora Multi-AZ within us-east-1 only, and rely on CloudFront caching to reduce perceived latency for Asia-Pacific users.
 
 <details>
-<summary>Show answer
+<summary>Show answer</summary>
 
 **Answer: B**
 
@@ -5816,7 +5816,7 @@ A company runs a video encoding application on EC2 instances in an Auto Scaling 
 - D. Use EC2 instance termination protection on all instances in the Auto Scaling Group.
 
 <details>
-<summary>Show answer
+<summary>Show answer</summary>
 
 **Answer: B**
 
@@ -5837,7 +5837,7 @@ A financial trading platform publishes trade execution events that must be proce
 - D. Use a single SQS FIFO queue with three separate consumer applications polling the same queue using distinct Message Group IDs.
 
 <details>
-<summary>Show answer
+<summary>Show answer</summary>
 
 **Answer: B**
 
@@ -5858,7 +5858,7 @@ A company runs its primary application on EC2 instances behind an ALB in us-east
 - D. Configure Route 53 geolocation routing to send US East Coast traffic to us-east-1 and US West Coast traffic to us-west-2.
 
 <details>
-<summary>Show answer
+<summary>Show answer</summary>
 
 **Answer: B**
 
@@ -5879,7 +5879,7 @@ A company runs a containerized API on Amazon ECS with Fargate, fronted by an App
 - D. Use AWS Auto Scaling for EC2 instances in the underlying ECS cluster, assuming Fargate tasks will scale automatically with instance count.
 
 <details>
-<summary>Show answer
+<summary>Show answer</summary>
 
 **Answer: B**
 
@@ -5900,7 +5900,7 @@ A company operates a multiplayer mobile game with players across North America, 
 - D. Use Amazon RDS with cross-region read replicas instead of DynamoDB, since RDS provides stronger consistency guarantees.
 
 <details>
-<summary>Show answer
+<summary>Show answer</summary>
 
 **Answer: B**
 
@@ -5921,7 +5921,7 @@ A critical financial application runs across three AWS Regions in an active-acti
 - D. CloudWatch Synthetics canaries configured to automatically update DNS weighted routing values when failures are detected.
 
 <details>
-<summary>Show answer
+<summary>Show answer</summary>
 
 **Answer: B**
 
@@ -5943,7 +5943,7 @@ A company runs a content management system on EC2 instances that store user-uplo
 - E. Configure EC2 instance-level snapshots on a daily schedule to back up the locally mounted file system data.
 
 <details>
-<summary>Show answer
+<summary>Show answer</summary>
 
 **Answer: A, B**
 
@@ -5964,7 +5964,7 @@ A media production company needs to upload very large video files (50GB–200GB 
 - D. Use AWS Snowball Edge devices shipped to each studio to physically transport the video files to AWS.
 
 <details>
-<summary>Show answer
+<summary>Show answer</summary>
 
 **Answer: A**
 
@@ -5985,7 +5985,7 @@ A social media application uses a single-node Amazon ElastiCache for Redis clust
 - D. Switch from ElastiCache for Redis to ElastiCache for Memcached, since Memcached has no single-node limitations.
 
 <details>
-<summary>Show answer
+<summary>Show answer</summary>
 
 **Answer: B**
 
@@ -6006,7 +6006,7 @@ A company's Lambda function serves a customer-facing API. During traffic spikes,
 - D. Remove the Lambda function from the VPC entirely to eliminate VPC-related cold start overhead, accepting reduced security.
 
 <details>
-<summary>Show answer
+<summary>Show answer</summary>
 
 **Answer: B**
 
@@ -6027,7 +6027,7 @@ A company runs a VoIP communication application using a custom TCP-based protoco
 - D. AWS Direct Connect with redundant connections to each of the three regions.
 
 <details>
-<summary>Show answer
+<summary>Show answer</summary>
 
 **Answer: B**
 
@@ -6048,7 +6048,7 @@ A company has a serverless application where a Lambda function is invoked thousa
 - D. Implement exponential backoff and retry logic in the Lambda function to handle connection failures gracefully.
 
 <details>
-<summary>Show answer
+<summary>Show answer</summary>
 
 **Answer: B**
 
@@ -6069,7 +6069,7 @@ A retail company wants to stream clickstream data from its website directly into
 - D. Amazon SQS with a fleet of EC2 instances polling the queue and performing batch inserts into Redshift.
 
 <details>
-<summary>Show answer
+<summary>Show answer</summary>
 
 **Answer: B**
 
@@ -6090,7 +6090,7 @@ A genomics research company hosts large public datasets in an S3 bucket that tho
 - D. Use S3 Transfer Acceleration and pass the acceleration fee on to requesters via a separate billing system.
 
 <details>
-<summary>Show answer
+<summary>Show answer</summary>
 
 **Answer: B**
 
@@ -6111,7 +6111,7 @@ A scientific research company runs a tightly-coupled high-performance computing 
 - D. Distribute the instances across three different Availability Zones for high availability.
 
 <details>
-<summary>Show answer
+<summary>Show answer</summary>
 
 **Answer: B**
 
@@ -6132,7 +6132,7 @@ A company runs a stateless batch processing workload on EC2 Spot Instances. They
 - D. Request a Spot Instance Savings Plan to lock in guaranteed Spot capacity for the next 12 months.
 
 <details>
-<summary>Show answer
+<summary>Show answer</summary>
 
 **Answer: B**
 
@@ -6153,7 +6153,7 @@ A company runs 200 EC2 instances across various workloads and suspects many are 
 - D. Manually export CloudWatch metrics for all 200 instances to a spreadsheet and calculate average utilization to determine rightsizing candidates.
 
 <details>
-<summary>Show answer
+<summary>Show answer</summary>
 
 **Answer: B**
 
@@ -6174,7 +6174,7 @@ A large enterprise has hundreds of S3 buckets spread across 30 AWS accounts in t
 - D. Enable S3 Inventory reports for each bucket and manually cross-reference the CSV outputs in Amazon Athena.
 
 <details>
-<summary>Show answer
+<summary>Show answer</summary>
 
 **Answer: B**
 
@@ -6196,7 +6196,7 @@ A company runs a fleet of EC2 instances for a stateless web application built on
 - E. Disable detailed CloudWatch monitoring on all instances to reduce monitoring costs.
 
 <details>
-<summary>Show answer
+<summary>Show answer</summary>
 
 **Answer: A, B**
 
@@ -6217,7 +6217,7 @@ A company runs a commercial Oracle database on EC2 with expensive per-core licen
 - D. Use AWS Snowball to physically transfer the Oracle database files to an S3 bucket, then query the data directly using Amazon Athena.
 
 <details>
-<summary>Show answer
+<summary>Show answer</summary>
 
 **Answer: B**
 
